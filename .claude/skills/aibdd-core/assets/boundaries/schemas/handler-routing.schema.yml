@@ -1,0 +1,101 @@
+type: object
+required:
+  - routes
+  - handlers
+properties:
+  routes:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/route"
+  handlers:
+    type: object
+    additionalProperties: false
+    required:
+      - aggregate-given
+      - http-operation
+      - success-failure
+      - readmodel-then
+      - aggregate-then
+      - time-control
+      - external-stub
+    properties:
+      aggregate-given:
+        $ref: "#/$defs/handlerContract"
+      http-operation:
+        $ref: "#/$defs/handlerContract"
+      success-failure:
+        $ref: "#/$defs/handlerContract"
+      readmodel-then:
+        $ref: "#/$defs/handlerContract"
+      aggregate-then:
+        $ref: "#/$defs/handlerContract"
+      time-control:
+        $ref: "#/$defs/handlerContract"
+      external-stub:
+        $ref: "#/$defs/handlerContract"
+additionalProperties: false
+
+$defs:
+  route:
+    type: object
+    required:
+      - sentence_part
+      - keyword
+      - semantic
+      - handler
+    properties:
+      sentence_part:
+        type: string
+        enum:
+          - aggregate-given
+          - http-operation
+          - success-failure
+          - readmodel-then
+          - aggregate-then
+          - time-control
+          - external-stub
+      keyword:
+        type: array
+        minItems: 1
+        items:
+          enum:
+            - Given
+            - When
+            - Then
+            - Background
+      semantic:
+        type: string
+      handler:
+        type: string
+        enum:
+          - aggregate-given
+          - http-operation
+          - success-failure
+          - readmodel-then
+          - aggregate-then
+          - time-control
+          - external-stub
+    additionalProperties: false
+
+  handlerContract:
+    type: object
+    required:
+      - required_source_kinds
+      - l4_requirements
+    properties:
+      required_source_kinds:
+        type: array
+        minItems: 1
+        items:
+          type: string
+      optional_source_kinds:
+        type: array
+        items:
+          type: string
+      l4_requirements:
+        type: array
+        minItems: 1
+        items:
+          type: string
+    additionalProperties: false

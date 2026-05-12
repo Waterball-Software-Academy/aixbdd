@@ -1,0 +1,108 @@
+# Phase rollback rules — SSOT for /aibdd-rewind.
+#
+# Each entry under `phases:` declares one rollback target.
+# `phase_id` is the AIBDD phase skill name the user passes to /aibdd-rewind
+#   (e.g. `aibdd-discovery`). The semantic is "rewind to the moment that
+#   skill JUST FINISHED": that skill's outputs are PRESERVED and every
+#   downstream phase's outputs are erased.
+# `erases_skill` is the immediate downstream phase whose outputs this rule
+#   actually deletes (the first phase that must be undone to reach the
+#   `phase_id` checkpoint).
+# `delete_files` / `delete_files_glob` / `delete_dirs` / `revert_to_skeleton`
+#   / `revert_feature_to_rule_only` list exactly what `erases_skill` produced;
+#   the executor walks each list once.
+# `chain_before` lists prerequisite phase_ids whose rules must be applied
+#   FIRST (recursively). Use this when reaching a checkpoint requires
+#   undoing later phases on top of this one's own deletions.
+#
+# Operation kinds:
+#   - delete_files: list of literal paths; deleted if file exists.
+#   - delete_files_glob: list of glob patterns; every matching file deleted.
+#   - delete_dirs: list of directory paths; recursively removed.
+#   - revert_to_skeleton: list of {path, body}; file overwritten with body
+#     (kickoff-shape skeleton). Idempotent — skipped if content already matches.
+#   - revert_feature_to_rule_only: list of glob patterns matching .feature
+#     files. The executor reduces each file to its rule-only shape per
+#     `aibdd-form-feature-spec/references/patterns/rule-only-format.md`:
+#       * Strips Background, Scenario, Scenario Outline, Examples blocks.
+#       * Strips reducer comments: # @dsl_entry, # @binding_keys, # @type,
+#         # @techniques, # @dimensions, # @given_values, # @when_values,
+#         # @then_values, # @values_na, # @setup_required, # @merge_decision,
+#         # @cic, # @dimension_na.
+#       * Re-adds `@ignore` to the feature header tag line if absent
+#         (preserves existing operation/actor tags such as @command, @query,
+#         @administrator, @customer-service).
+#       * Keeps Feature: line + description + every Rule: line (with body)
+#         in original order.
+#     Idempotent — re-running on an already rule-only file is a no-op.
+#
+# All paths use `${VAR}` placeholders that resolve through `.aibdd/arguments.yml`.
+# The executor refuses any resolved path that escapes the workspace root.
+
+phases:
+
+  - phase_id: aibdd-discovery
+    erases_skill: /aibdd-plan
+    description: Rewind to the moment /aibdd-discovery just finished — preserves activities/features/spec.md/discovery-sourcing report; erases /aibdd-plan outputs and reverts /aibdd-plan-owned skeletons. Chains through aibdd-plan so any /aibdd-spec-by-example-analyze outputs (coverage + feature Examples) are undone first.
+    delete_files:
+      - "${TRUTH_BOUNDARY_ROOT}/boundary-map.yml"
+      - "${PLAN_MD}"
+      - "${CURRENT_PLAN_PACKAGE}/research.md"
+      - "${PLAN_REPORTS_DIR}/aibdd-plan-quality.md"
+    delete_files_glob:
+      - "${TRUTH_BOUNDARY_ROOT}/contracts/*.yml"
+      - "${TRUTH_BOUNDARY_ROOT}/contracts/*.yaml"
+      - "${TRUTH_BOUNDARY_ROOT}/data/*.dbml"
+      - "${TRUTH_BOUNDARY_ROOT}/data/*.yml"
+    delete_dirs:
+      - "${PLAN_IMPLEMENTATION_DIR}"
+    revert_to_skeleton:
+      - path: "${TEST_STRATEGY_FILE}"
+        body: |
+          # Owner: /aibdd-plan — kickoff placeholder; refine during planning
+          # Empty skeleton: no policy rows until planning binds scenarios.
+          version: 1
+          policies: {}
+      - path: "${BOUNDARY_SHARED_DSL}"
+        body: |
+          # shared/dsl.yml — boundary-wide reusable DSL mapping registry (YAML)
+          # Owner: /aibdd-plan. Skeleton from /aibdd-kickoff; semantic entries added by planning.
+          entries: []
+      - path: "${BOUNDARY_PACKAGE_DSL}"
+        body: |
+          # Local DSL registry (YAML).
+          # Owner: /aibdd-discovery placeholder + /aibdd-plan for semantic entries.
+          # Kickoff-safe empty skeleton — parse as YAML with key `entries`.
+          entries: []
+    # Reaching the `aibdd-discovery` checkpoint subsumes the `aibdd-plan`
+    # checkpoint — if /aibdd-spec-by-example-analyze ran, its coverage and
+    # feature-Examples mutations must be reverted first.
+    chain_before:
+      - aibdd-plan
+
+  - phase_id: aibdd-kickoff
+    erases_skill: /aibdd-discovery
+    description: Rewind to the moment /aibdd-kickoff just finished — preserves kickoff scaffold (.aibdd, specs/architecture, top-level boundary skeletons under specs/<boundary> such as shared/dsl.yml, test-strategy.yml, empty packages/); erases /aibdd-discovery outputs by recursively deleting the entire plan package directory and the entire truth function package directory (both are created by /aibdd-discovery via late-bind). Chains through aibdd-discovery so any /aibdd-plan outputs are erased first; that chained rule may revert BOUNDARY_PACKAGE_DSL etc. to skeleton, but those reverts live inside ${TRUTH_FUNCTION_PACKAGE} which this rule deletes recursively afterwards, so the net post-state is a clean kickoff baseline.
+    delete_files: []
+    delete_files_glob: []
+    delete_dirs:
+      - "${CURRENT_PLAN_PACKAGE}"
+      - "${TRUTH_FUNCTION_PACKAGE}"
+    revert_to_skeleton: []
+    # Reaching the `aibdd-kickoff` checkpoint subsumes the `aibdd-discovery`
+    # checkpoint — if /aibdd-plan (and beyond) ran, its outputs must be
+    # removed first.
+    chain_before:
+      - aibdd-discovery
+
+  - phase_id: aibdd-plan
+    erases_skill: /aibdd-spec-by-example-analyze
+    description: Rewind to the moment /aibdd-plan just finished — preserves boundary-map / contracts / data / dsl / test-strategy / implementation diagrams; erases /aibdd-spec-by-example-analyze outputs (reports + package coverage) and reverts /aibdd-spec-by-example-analyze-mutated feature files back to rule-only shape per `aibdd-form-feature-spec/references/patterns/rule-only-format.md`.
+    delete_files: []
+    delete_files_glob:
+      - "${PLAN_REPORTS_DIR}/aibdd-spec-by-example-*.md"
+    delete_dirs:
+      - "${TRUTH_FUNCTION_PACKAGE}/coverage"
+    revert_to_skeleton: []
+    revert_feature_to_rule_only:
+      - "${FEATURE_SPECS_DIR}/*.feature"

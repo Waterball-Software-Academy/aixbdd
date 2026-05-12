@@ -1,0 +1,12 @@
+[ACTIVITY] 員工報到流程（多角色線性）
+[ACTOR] 員工 -> {specs/actors/員工.md}
+[ACTOR] HR -> {specs/actors/HR.md}
+[ACTOR] IT -> {specs/actors/IT.md}
+
+[INITIAL]
+[STEP:1] @員工 {specs/features/B01-報到/001-填寫個人資料.dsl.feature}
+[STEP:2] @HR {specs/commands/審核到職文件.feature}
+[STEP:3] @HR {specs/commands/建立員工檔案.feature}
+[STEP:4] @IT {specs/commands/開通系統帳號.feature}
+[STEP:5] @員工 {specs/features/B01-報到/002-完成首日簽到.dsl.feature}
+[FINAL]

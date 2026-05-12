@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: ${ARTIFACT_ID}
+  datasource:
+    url: jdbc:postgresql://localhost:${DB_PORT}/${DB_NAME}
+    username: ${DB_USER}
+    password: ${DB_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+
+# API Configuration
+api:
+  v1:
+    prefix: /api/v1
+
+# JWT Configuration
+jwt:
+  secret-key: test-secret-key-do-not-use-in-production
+  algorithm: HS256
+  expire-hours: 1

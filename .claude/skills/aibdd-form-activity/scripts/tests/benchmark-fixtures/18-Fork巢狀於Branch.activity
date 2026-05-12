@@ -1,0 +1,26 @@
+[ACTIVITY] VIP 客戶訂單處理：VIP 走並行優先（通知＋升級服務），一般走線性
+[ACTOR] 客服 -> {specs/actors/客服.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+[ACTOR] 主管 -> {specs/actors/主管.md}
+
+[INITIAL]
+[STEP:1] @客服 {specs/features/V01-VIP/001-接收訂單請求.dsl.feature}
+[STEP:2] @系統 {specs/commands/查核客戶等級.feature}
+[DECISION:2a] 是否為 VIP 客戶
+  [BRANCH:2a:VIP]
+    [STEP:2a.1] @客服 {specs/commands/標記VIP優先處理.feature}
+    [FORK:2a1]
+      [PARALLEL:2a1]
+        [STEP:2a1.1] @系統 {specs/commands/發送VIP通知簡訊.feature}
+        [STEP:2a1.2] @客服 {specs/ui/顯示VIP關懷面板.md}
+      [PARALLEL:2a1]
+        [STEP:2a1.3] @主管 {specs/commands/啟動升級服務方案.feature}
+    [JOIN:2a1]
+    [STEP:2a.2] @系統 {specs/commands/套用VIP折扣.feature}
+  [BRANCH:2a:一般]
+    [STEP:2a.3] @系統 {specs/commands/建立一般訂單.feature}
+    [STEP:2a.4] @客服 {specs/commands/寄送一般確認信.feature}
+[MERGE:2a]
+[STEP:3] @系統 {specs/commands/結算訂單金額.feature}
+[STEP:4] @客服 {specs/features/V01-VIP/002-結束訂單流程.dsl.feature}
+[FINAL]

@@ -1,0 +1,30 @@
+[ACTIVITY] 訂單結帳流程（Chain B — 分支，共用 API）
+[ACTOR] 買家 -> {specs/actors/買家.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+[ACTOR] 金流服務 -> {specs/actors/金流服務.md}
+[ACTOR] 倉庫 -> {specs/actors/倉庫.md}
+
+[INITIAL]
+[STEP:1] @買家 {specs/features/A03-訂單/001-購物車.dsl.feature}
+[STEP:2] @買家 {specs/features/A03-訂單/002-結帳付款.dsl.feature}
+[DECISION:2a] 付款方式
+  [BRANCH:2a:信用卡]
+    [STEP:2a.1] @金流服務 {specs/commands/信用卡扣款.feature}
+    [DECISION:2a1] 扣款結果
+      [BRANCH:2a1:成功]
+        [STEP:2a1.1] @系統 {specs/commands/建立訂單.feature}
+      [BRANCH:2a1:失敗]
+        [STEP:2a1.2] @買家 {specs/ui/顯示付款失敗.md}
+    [MERGE:2a1]
+  [BRANCH:2a:超商]
+    [STEP:2a.2] @系統 {specs/commands/建立超商訂單.feature}
+[MERGE:2a]
+[STEP:3] @系統 {specs/features/A03-訂單/003-訂單追蹤.dsl.feature}
+[FORK:3a]
+  [PARALLEL:3a]
+    [STEP:3a.1] @倉庫 {specs/commands/鎖定庫存.feature}
+  [PARALLEL:3a]
+    [STEP:3a.2] @系統 {specs/commands/發送訂單確認通知.feature}
+[JOIN:3a]
+[STEP:4] @系統 {specs/commands/更新訂單狀態.feature}
+[FINAL]

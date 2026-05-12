@@ -1,0 +1,28 @@
+[ACTIVITY] 年終結算並行：稅務申報與庫存盤點（含分類決策）
+[ACTOR] 財務 -> {specs/actors/財務.md}
+[ACTOR] 倉庫 -> {specs/actors/倉庫.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[INITIAL]
+[STEP:1] @財務 {specs/commands/啟動年終結算.feature}
+[STEP:2] @系統 {specs/commands/凍結帳務期間.feature}
+[FORK:2a]
+  [PARALLEL:2a]
+    [STEP:2a.1] @財務 {specs/commands/彙整稅務憑證.feature}
+    [STEP:2a.2] @系統 {specs/commands/產出稅務報表.feature}
+  [PARALLEL:2a]
+    [STEP:2a.3] @倉庫 {specs/commands/執行實地盤點.feature}
+    [DECISION:2a1] 盤點差異分類
+      [BRANCH:2a1:正常損耗]
+        [STEP:2a1.1] @系統 {specs/commands/登錄損耗帳列.feature}
+      [BRANCH:2a1:異常短少]
+        [STEP:2a1.2] @倉庫 {specs/commands/啟動異常調查.feature}
+        [STEP:2a1.3] @財務 {specs/commands/列入待沖銷.feature}
+      [BRANCH:2a1:盤盈]
+        [STEP:2a1.4] @系統 {specs/commands/補登庫存增項.feature}
+    [MERGE:2a1]
+    [STEP:2a.4] @倉庫 {specs/ui/顯示盤點摘要.md}
+[JOIN:2a]
+[STEP:3] @財務 {specs/commands/核對結算結果.feature}
+[STEP:4] @系統 {specs/commands/發布年度報告.feature}
+[FINAL]

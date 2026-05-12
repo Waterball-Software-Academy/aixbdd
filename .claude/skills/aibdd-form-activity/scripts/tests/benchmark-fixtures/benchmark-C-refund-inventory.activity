@@ -1,0 +1,36 @@
+[ACTIVITY] 退款與庫存還原流程（Chain C — 並行，跨鏈依賴）
+[ACTOR] 買家 -> {specs/actors/買家.md}
+[ACTOR] 客服 -> {specs/actors/客服.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+[ACTOR] 金流服務 -> {specs/actors/金流服務.md}
+[ACTOR] 倉庫 -> {specs/actors/倉庫.md}
+
+[INITIAL]
+[STEP:1] @買家 {specs/features/A03-訂單/003-訂單追蹤.dsl.feature}
+[STEP:2] @客服 {specs/commands/建立退款申請.feature}
+[DECISION:2a] 退款原因
+  [BRANCH:2a:商品瑕疵]
+    [STEP:2a.1] @系統 {specs/commands/標記商品瑕疵.feature}
+  [BRANCH:2a:不想要了]
+    [STEP:2a.2] @客服 {specs/commands/確認退款資格.feature}
+  [BRANCH:2a:逾期不予退]
+    [STEP:2a.3] @買家 {specs/ui/顯示逾期拒絕通知.md}
+[MERGE:2a]
+[STEP:3] @系統 {specs/commands/核准退款.feature}
+[FORK:3a]
+  [PARALLEL:3a]
+    [STEP:3a.1] @金流服務 {specs/commands/執行退款至帳戶.feature}
+    [DECISION:3a1] 退款結果
+      [BRANCH:3a1:成功]
+        [STEP:3a1.1] @系統 {specs/commands/記錄退款交易.feature}
+      [BRANCH:3a1:失敗]
+        [STEP:3a1.2] @客服 {specs/commands/人工處理退款.feature}
+    [MERGE:3a1]
+  [PARALLEL:3a]
+    [STEP:3a.2] @倉庫 {specs/commands/接收退貨.feature}
+  [PARALLEL:3a]
+    [STEP:3a.3] @系統 {specs/commands/還原庫存數量.feature}
+[JOIN:3a]
+[STEP:4] @系統 {specs/commands/關閉退款案件.feature}
+[STEP:5] @買家 {specs/features/A01-會員/003-個人資料管理.dsl.feature}
+[FINAL]

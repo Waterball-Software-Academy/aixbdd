@@ -1,0 +1,8 @@
+[ACTIVITY] 線上請假申請（漏寫 actor）
+
+[ACTOR] 員工
+
+[INITIAL]
+[STEP:1] @員工 開啟請假表單
+[STEP:2] 填寫請假原因送出
+[FINAL]

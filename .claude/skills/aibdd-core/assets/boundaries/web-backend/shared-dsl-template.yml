@@ -1,0 +1,145 @@
+entries:
+  - id: shared.success-failure.operation-success
+    source:
+      rule_id: backend-shared-operation-success
+      boundary_id: backend
+      feature_path: null
+    L1:
+      then:
+        - 操作成功
+    L2:
+      context: Generic backend operation success assertion shared by all backend feature packages.
+      role: system
+      scope: boundary
+    L3:
+      type: assertion
+    L4:
+      surface_id: shared.response.success
+      surface_kind: response-verifier
+      callable_via: response
+      preset:
+        name: web-backend
+        sentence_part: success-failure
+        handler: success-failure
+        variant: "<backend-variant-id>"
+      param_bindings: {}
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings:
+        status_class:
+          kind: response_path
+          target: response:$.__http.status_class
+          value: success
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: null
+
+  - id: shared.success-failure.operation-failure
+    source:
+      rule_id: backend-shared-operation-failure
+      boundary_id: backend
+      feature_path: null
+    L1:
+      then:
+        - 操作失敗
+    L2:
+      context: Generic backend operation failure assertion shared by all backend feature packages.
+      role: system
+      scope: boundary
+    L3:
+      type: assertion
+    L4:
+      surface_id: shared.response.failure
+      surface_kind: response-verifier
+      callable_via: response
+      preset:
+        name: web-backend
+        sentence_part: success-failure
+        handler: success-failure
+        variant: "<backend-variant-id>"
+      param_bindings: {}
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings:
+        status_class:
+          kind: response_path
+          target: response:$.__http.status_class
+          value: failure
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: null
+
+  - id: shared.success-failure.operation-failure-reason
+    source:
+      rule_id: backend-shared-operation-failure-reason
+      boundary_id: backend
+      feature_path: null
+    L1:
+      then:
+        - 操作失敗, 原因為 "{reason}"
+    L2:
+      context: Generic backend operation failure reason assertion shared by all backend feature packages.
+      role: system
+      scope: boundary
+    L3:
+      type: assertion
+    L4:
+      surface_id: shared.response.failure-reason
+      surface_kind: response-verifier
+      callable_via: response
+      preset:
+        name: web-backend
+        sentence_part: success-failure
+        handler: success-failure
+        variant: "<backend-variant-id>"
+      param_bindings: {}
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings:
+        reason:
+          kind: response_path
+          target: response:$.error.reason
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: null
+
+  - id: shared.time-control.now
+    source:
+      rule_id: backend-shared-time-control-now
+      boundary_id: backend
+      feature_path: null
+    L1:
+      given: 現在時間為 "{now}"
+    L2:
+      context: Generic backend-visible test clock setup shared by all backend feature packages.
+      role: test-environment
+      scope: boundary
+    L3:
+      type: external
+    L4:
+      surface_id: shared.time.now
+      surface_kind: time-control
+      callable_via: adapter
+      preset:
+        name: web-backend
+        sentence_part: time-control
+        handler: time-control
+        variant: "<backend-variant-id>"
+      param_bindings:
+        now:
+          kind: literal
+          target: literal:time.now
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings: {}
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: test-strategy.yml#time_control

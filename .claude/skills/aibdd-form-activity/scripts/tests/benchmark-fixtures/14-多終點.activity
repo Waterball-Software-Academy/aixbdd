@@ -1,0 +1,18 @@
+[ACTIVITY] 退貨審核流程（Tier 5 — 多終點：退件提前 FINAL、通過走主線）
+[ACTOR] 買家 -> {specs/actors/買家.md}
+[ACTOR] 客服 -> {specs/actors/客服.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[INITIAL]
+[STEP:1] @買家 提交退貨申請資料 {specs/features/R01-退貨/001-提交退貨申請.feature}
+[STEP:2] @客服 審查退貨內容 {specs/commands/審查退貨內容.feature}
+[DECISION:2a] 退貨是否通過審核
+  [BRANCH:2a:退件]
+    [STEP:2a.1] @客服 撰寫退件理由 {specs/commands/撰寫退件理由.feature}
+    [STEP:2a.2] @系統 寄送退件通知 {specs/commands/寄送退件通知.feature}
+    [FINAL]
+  [BRANCH:2a:通過]
+    [STEP:2a.3] @系統 建立退貨物流單 {specs/commands/建立退貨物流單.feature}
+[MERGE:2a]
+[STEP:3] @買家 收到核准通知 {specs/ui/核准通知.md}
+[FINAL]

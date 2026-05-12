@@ -1,0 +1,11 @@
+[ACTIVITY] 月報自動生成（僅綁定）
+[ACTOR] 排程器 -> {specs/actors/排程器.md}
+[ACTOR] 報表服務 -> {specs/actors/報表服務.md}
+[ACTOR] 通知服務 -> {specs/actors/通知服務.md}
+
+[INITIAL]
+[STEP:1] @排程器 {specs/commands/觸發月報任務.feature}
+[STEP:2] @報表服務 {specs/commands/彙整月度資料.feature}
+[STEP:3] @報表服務 {specs/commands/輸出月報檔案.feature}
+[STEP:4] @通知服務 {specs/commands/寄送月報通知.feature}
+[FINAL]

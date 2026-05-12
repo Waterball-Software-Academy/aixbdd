@@ -1,0 +1,17 @@
+[ACTIVITY] 訂單成立後並行通知與鎖庫存
+[ACTOR] 買家 -> {specs/actors/買家.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+[ACTOR] 倉庫 -> {specs/actors/倉庫.md}
+
+[INITIAL]
+[STEP:1] @買家 {specs/features/A03-訂單/001-送出訂單.dsl.feature}
+[STEP:2] @系統 {specs/commands/建立訂單.feature}
+[FORK:2a]
+  [PARALLEL:2a]
+    [STEP:2a.1] @系統 {specs/commands/發送訂單確認通知.feature}
+    [STEP:2a.2] @買家 {specs/ui/顯示通知中心.md}
+  [PARALLEL:2a]
+    [STEP:2a.3] @倉庫 {specs/commands/鎖定庫存.feature}
+[JOIN:2a]
+[STEP:3] @系統 {specs/commands/更新訂單狀態.feature}
+[FINAL]

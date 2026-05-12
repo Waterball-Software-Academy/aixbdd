@@ -1,0 +1,26 @@
+# Boundary data/state truth
+boundary_id: "<boundary-id>"
+
+entities:
+  - entity_id: "<entity>"
+    persistence_kind: "<database | file-store | cache | none>"
+    fields:
+      - name: "<field>"
+        type: "<type>"
+        verifier_visible: true
+    source_refs:
+      - "<feature-or-activity-ref>"
+
+states:
+  - state_id: "<state>"
+    owner_entity: "<entity>"
+    allowed_values:
+      - "<value>"
+    transitions:
+      - from: "<state>"
+        to: "<state>"
+        triggered_by: "<operation-id>"
+    verifier:
+      verifier_id: "<verifier-id>"
+      mechanism: "<db-query | api-query | file-store-read | cache-read>"
+      source_ref: "<boundary-map.yml#persistence>"

@@ -1,0 +1,26 @@
+# Registry entry for speckit-aibdd-test-plan.
+#
+# Placeholder for a future integration into aibdd-core::planner-registry.yml
+# once the upstream family adopts Flow-Oriented Test Plan as a standard Phase.
+# MVP — this Planner lives in the spec-kit-aibdd plugin only.
+
+phase: "05"                           # within spec-kit-aibdd's 7-phase workflow (not AIBDD family's)
+id: "speckit-aibdd-test-plan"
+skill: "speckit-aibdd-test-plan"
+axis: "flow-oriented acceptance"
+core-decision: "Activity → Path extraction (Policy 1) + DSL-merge step-fill → test-plan/<slug>.feature"
+writes:
+  - "${SPECS_ROOT_DIR}/test-plan/*.feature"
+reads:
+  - "${SPECS_ROOT_DIR}/activities/*.activity"
+  - "${SPECS_ROOT_DIR}/features/**/*.feature"
+  - "${SPECS_ROOT_DIR}/dsl.md"
+  - ".specify/memory/dsl.md"
+  - "${SPECS_ROOT_DIR}/contracts/"
+  - "${SPECS_ROOT_DIR}/bdd-plan.md"
+  - "${BDD_CONSTITUTION_PATH}"
+  - "test-plan-rules.md"
+delegates:
+  - "activity-parser"
+  - "clarify-loop"
+user-invocable: true

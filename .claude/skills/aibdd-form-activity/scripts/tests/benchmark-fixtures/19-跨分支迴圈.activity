@@ -1,0 +1,26 @@
+[ACTIVITY] 線上考試章節學習流程（跨分支迴圈：章2 答錯需回章 1 重學）
+[ACTOR] 學員 -> {specs/actors/學員.md}
+[ACTOR] 學習平台 -> {specs/actors/學習平台.md}
+[ACTOR] 講師 -> {specs/actors/講師.md}
+
+[INITIAL]
+[STEP:1] @學員 {specs/features/E01-學習/001-登入並選課.dsl.feature}
+[STEP:2] @學習平台 {specs/commands/載入章節進度.feature}
+[DECISION:2a] 學員下一步要進入哪個章節
+  [BRANCH:2a:章1基礎]
+    [STEP:2a.1] @學員 {specs/features/E01-學習/002-閱讀章一教材.dsl.feature}
+    [STEP:2a.2] @學員 {specs/ui/章一隨堂小測.md}
+    [STEP:2a.3] @學習平台 {specs/commands/紀錄章一通過.feature}
+  [BRANCH:2a:章2進階]
+    [STEP:2a.4] @學員 {specs/features/E01-學習/003-閱讀章二教材.dsl.feature}
+    [STEP:2a.5] @學員 {specs/ui/章二隨堂小測.md}
+    [DECISION:2a5] 章二作答是否反映已掌握章一前置概念
+      [BRANCH:2a5:已掌握]
+        [STEP:2a5.1] @學習平台 {specs/commands/紀錄章二通過.feature}
+      [BRANCH:2a5:答錯回章1重學 -> 2a.1]
+      [BRANCH:2a5:需要講師輔導]
+        [STEP:2a5.2] @講師 {specs/commands/安排一對一輔導.feature}
+    [MERGE:2a5]
+[MERGE:2a]
+[STEP:3] @學習平台 {specs/commands/更新整體學習進度.feature}
+[FINAL]

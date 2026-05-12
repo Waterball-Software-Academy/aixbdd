@@ -1,0 +1,28 @@
+[ACTIVITY] 課程學習流程
+[ACTOR] 學員 -> {specs/actors/學員.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[INITIAL]
+[STEP:1] @學員 {specs/queries/查詢課程內容.feature}
+[STEP:2] @學員 {specs/ui/影片播放器.md}
+[DECISION:2a] 是否已看過此影片
+  [BRANCH:2a:是]
+    [STEP:2a.1] @學員 {specs/ui/從上次進度繼續.md}
+  [BRANCH:2a:否]
+    [STEP:2a.2] @學員 {specs/ui/從頭播放.md}
+[MERGE:2a]
+[STEP:3] @學員 {specs/ui/影片播放器.md}
+[STEP:4] @系統 {specs/commands/更新影片進度.feature}
+[FORK:4a]
+  [PARALLEL:4a]
+    [STEP:4a.1] @系統 {specs/commands/記錄學習行為.feature}
+  [PARALLEL:4a]
+    [STEP:4a.2] @系統 {specs/commands/更新學習時數.feature}
+[JOIN:4a]
+[STEP:5] @系統 {specs/queries/檢查課程完成度.feature}
+[DECISION:5a] 課程是否全部完成
+  [BRANCH:5a:否 -> 1]
+  [BRANCH:5a:是]
+    [STEP:5a.1] @學員 {specs/ui/完成證書.md}
+[MERGE:5a]
+[FINAL]

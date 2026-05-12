@@ -1,0 +1,8 @@
+[ACTIVITY] 大額訂單簽核流程（二者順序）
+[ACTOR] 買家 -> {specs/actors/買家.md}
+[ACTOR] 主管 -> {specs/actors/主管.md}
+
+[INITIAL]
+[STEP:1] @買家 填寫收貨資訊並送出訂單 {specs/commands/提交訂單.feature}
+[STEP:2] @主管 審核並簽核大額訂單 {specs/commands/簽核大額訂單.feature}
+[FINAL]

@@ -1,0 +1,152 @@
+{
+  "ok": true,
+  "skill_dir": "/Users/johnnypan/Projects/AIxBDD實驗用後端/.claude/skills/aibdd-plan",
+  "rp_count": 6,
+  "rp_reports": [
+    {
+      "id": "aibdd-plan.01-bind-planning-context",
+      "path": "reasoning/aibdd-plan/01-bind-planning-context.md",
+      "reasoning_density": {
+        "D": 12,
+        "S": 0,
+        "I": 0,
+        "unknown": 0,
+        "S_density": 0.0
+      },
+      "model_elements": [
+        "BoundaryTruth",
+        "DiscoveryScope",
+        "FunctionPackage",
+        "PlanPackage"
+      ],
+      "derived_axes": [
+        "BoundaryTruth",
+        "DiscoveryScope",
+        "FunctionPackage",
+        "PlanPackage"
+      ],
+      "reducer_completeness": "pass",
+      "findings": []
+    },
+    {
+      "id": "aibdd-plan.02-technical-boundary-dispatch",
+      "path": "reasoning/aibdd-plan/02-technical-boundary-dispatch.md",
+      "reasoning_density": {
+        "D": 13,
+        "S": 0,
+        "I": 0,
+        "unknown": 0,
+        "S_density": 0.0
+      },
+      "model_elements": [
+        "DependencyEdge",
+        "DispatchDefault",
+        "DispatchOverride",
+        "PersistenceDecision"
+      ],
+      "derived_axes": [
+        "DependencyEdge",
+        "DispatchDefault",
+        "DispatchOverride",
+        "PersistenceDecision"
+      ],
+      "reducer_completeness": "pass",
+      "findings": []
+    },
+    {
+      "id": "aibdd-plan.03-external-boundary-surface",
+      "path": "reasoning/aibdd-plan/03-external-boundary-surface.md",
+      "reasoning_density": {
+        "D": 12,
+        "S": 0,
+        "I": 0,
+        "unknown": 0,
+        "S_density": 0.0
+      },
+      "model_elements": [
+        "ExternalStubSurface",
+        "ProviderOperation",
+        "TestDoublePolicy"
+      ],
+      "derived_axes": [
+        "ExternalStubSurface",
+        "ProviderOperation",
+        "TestDoublePolicy"
+      ],
+      "reducer_completeness": "pass",
+      "findings": []
+    },
+    {
+      "id": "aibdd-plan.04-internal-implementation",
+      "path": "reasoning/aibdd-plan/04-internal-implementation.md",
+      "reasoning_density": {
+        "D": 12,
+        "S": 0,
+        "I": 0,
+        "unknown": 0,
+        "S_density": 0.0
+      },
+      "model_elements": [
+        "ImplementationPath",
+        "ImplementationTarget",
+        "InternalStructure"
+      ],
+      "derived_axes": [
+        "ImplementationPath",
+        "ImplementationTarget",
+        "InternalStructure"
+      ],
+      "reducer_completeness": "pass",
+      "findings": []
+    },
+    {
+      "id": "aibdd-plan.05-dsl-truth-synthesis",
+      "path": "reasoning/aibdd-plan/05-dsl-truth-synthesis.md",
+      "reasoning_density": {
+        "D": 18,
+        "S": 0,
+        "I": 0,
+        "unknown": 0,
+        "S_density": 0.0
+      },
+      "model_elements": [
+        "AssertionBinding",
+        "DSLEntry",
+        "DSLNoOp",
+        "ParameterBinding"
+      ],
+      "derived_axes": [
+        "AssertionBinding",
+        "DSLEntry",
+        "DSLNoOp",
+        "ParameterBinding"
+      ],
+      "reducer_completeness": "pass",
+      "findings": []
+    },
+    {
+      "id": "aibdd-plan.06-handoff-graph",
+      "path": "reasoning/aibdd-plan/06-handoff-graph.md",
+      "reasoning_density": {
+        "D": 11,
+        "S": 0,
+        "I": 0,
+        "unknown": 0,
+        "S_density": 0.0
+      },
+      "model_elements": [
+        "ArtifactPointer",
+        "ReviewFocus",
+        "TraceLink"
+      ],
+      "derived_axes": [
+        "ArtifactPointer",
+        "ReviewFocus",
+        "TraceLink"
+      ],
+      "reducer_completeness": "pass",
+      "findings": []
+    }
+  ],
+  "findings": []
+}

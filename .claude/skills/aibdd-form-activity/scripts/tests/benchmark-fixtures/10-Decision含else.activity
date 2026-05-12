@@ -1,0 +1,19 @@
+[ACTIVITY] 結帳付款方式分流（Tier 4 — Decision 含 else）
+[ACTOR] 買家 -> {specs/actors/買家.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+[ACTOR] 金流服務 -> {specs/actors/金流服務.md}
+
+[INITIAL]
+[STEP:1] @買家 選擇付款方式 {specs/features/結帳/001-選擇付款方式.feature}
+[DECISION:1a] 付款方式
+  [BRANCH:1a:信用卡]
+    [STEP:1a.1] @金流服務 信用卡扣款 {specs/commands/信用卡扣款.feature}
+    [STEP:1a.2] @系統 建立信用卡訂單 {specs/commands/建立信用卡訂單.feature}
+  [BRANCH:1a:超商]
+    [STEP:1a.3] @系統 產生超商繳費代碼 {specs/commands/產生超商繳費代碼.feature}
+    [STEP:1a.4] @買家 取得繳費單 {specs/ui/超商繳費單.md}
+  [BRANCH:1a:else]
+    [STEP:1a.5] @系統 走預設第三方支付（例如 LinePay）{specs/commands/預設第三方支付.feature}
+[MERGE:1a]
+[STEP:2] @系統 寄送訂單確認通知 {specs/commands/寄送訂單確認通知.feature}
+[FINAL]

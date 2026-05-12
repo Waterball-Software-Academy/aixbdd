@@ -1,0 +1,22 @@
+[ACTIVITY] 保險理賠審核流程（Decision 巢狀於 Branch）
+[ACTOR] 保戶 -> {specs/actors/保戶.md}
+[ACTOR] 理賠專員 -> {specs/actors/理賠專員.md}
+[ACTOR] 主管 -> {specs/actors/主管.md}
+
+[INITIAL]
+[STEP:1] @保戶 {specs/features/B01-理賠/001-提出理賠申請.dsl.feature}
+[STEP:2] @理賠專員 {specs/commands/檢視保單條款.feature}
+[DECISION:2a] 合約是否涵蓋此事故
+  [BRANCH:2a:涵蓋]
+    [STEP:2a.1] @理賠專員 {specs/commands/估算理賠金額.feature}
+    [DECISION:2a1] 金額是否超過十萬
+      [BRANCH:2a1:超過]
+        [STEP:2a1.1] @主管 {specs/commands/主管覆核.feature}
+      [BRANCH:2a1:未超過]
+        [STEP:2a1.2] @理賠專員 {specs/commands/直接核准理賠.feature}
+    [MERGE:2a1]
+  [BRANCH:2a:不涵蓋]
+    [STEP:2a.2] @理賠專員 {specs/commands/拒絕理賠並通知保戶.feature}
+[MERGE:2a]
+[STEP:3] @理賠專員 {specs/features/B01-理賠/002-結案歸檔.dsl.feature}
+[FINAL]

@@ -1,0 +1,17 @@
+[ACTIVITY] 用戶登入流程（Chain A — 線性）
+[ACTOR] 使用者 -> {specs/actors/使用者.md}
+[ACTOR] 認證服務 -> {specs/actors/認證服務.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[INITIAL]
+[STEP:1] @使用者 {specs/features/A01-會員/002-登入登出.dsl.feature}
+[STEP:2] @認證服務 {specs/commands/驗證帳號密碼.feature}
+[DECISION:2a] 帳號是否有效
+  [BRANCH:2a:有效]
+    [STEP:2a.1] @認證服務 {specs/commands/產生存取權杖.feature}
+  [BRANCH:2a:無效]
+    [STEP:2a.2] @使用者 {specs/ui/顯示登入失敗.md}
+[MERGE:2a]
+[STEP:3] @系統 {specs/commands/記錄登入事件.feature}
+[STEP:4] @使用者 {specs/features/A01-會員/003-個人資料管理.dsl.feature}
+[FINAL]

@@ -1,0 +1,8 @@
+[ACTIVITY] 課堂點名（打錯角色名字）
+
+[ACTOR] 學員
+
+[INITIAL]
+[STEP:1] @學員 報到簽名
+[STEP:2] @老師 確認名單
+[FINAL]

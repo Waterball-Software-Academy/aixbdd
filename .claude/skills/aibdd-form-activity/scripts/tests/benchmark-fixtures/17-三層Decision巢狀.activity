@@ -1,0 +1,35 @@
+[ACTIVITY] 大宗電商出貨三階審核流程
+[ACTOR] 賣家 -> {specs/actors/賣家.md}
+[ACTOR] 營運主管 -> {specs/actors/營運主管.md}
+[ACTOR] 法務 -> {specs/actors/法務.md}
+
+[INITIAL]
+[STEP:1] @賣家 {specs/commands/提交大宗出貨申請.feature}
+[STEP:2] @營運主管 {specs/queries/檢核訂單金額與庫存.feature}
+[DECISION:1a] 金額層級
+  [BRANCH:1a:高額]
+    [STEP:1a.1] @營運主管 {specs/commands/啟動高額出貨審核.feature}
+    [DECISION:1a1] 商品類型
+      [BRANCH:1a1:管制品]
+        [STEP:1a1.1] @營運主管 {specs/commands/管制品類加強簽核.feature}
+        [DECISION:1a1a] 法務複核
+          [BRANCH:1a1a:需要]
+            [STEP:1a1a.1] @法務 {specs/commands/法務深度審查.feature}
+          [BRANCH:1a1a:免除]
+            [STEP:1a1a.2] @法務 {specs/commands/備案存檔.feature}
+        [MERGE:1a1a]
+      [BRANCH:1a1:一般品]
+        [STEP:1a1.2] @營運主管 {specs/commands/一般品類簽核.feature}
+        [DECISION:1a1b] 跨境合規風險
+          [BRANCH:1a1b:高風險]
+            [STEP:1a1b.1] @法務 {specs/commands/跨境合規評估.feature}
+          [BRANCH:1a1b:低風險]
+            [STEP:1a1b.2] @法務 {specs/commands/快速核可.feature}
+        [MERGE:1a1b]
+    [MERGE:1a1]
+  [BRANCH:1a:小額]
+    [STEP:1a.2] @營運主管 {specs/commands/小額快速核可.feature}
+[MERGE:1a]
+
+[STEP:3] @賣家 {specs/ui/顯示審核結果.md}
+[FINAL]

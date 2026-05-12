@@ -1,0 +1,20 @@
+# Boundary test strategy truth
+boundary_id: "<boundary-id>"
+
+dependency_edges:
+  - edge_id: "<consumer-to-provider>"
+    consumer: "<consumer>"
+    provider: "<provider>"
+    provider_kind: "internal_boundary | third_party"
+    double_kind: "stub | fake | real | none"
+    lifecycle: "per_scenario | per_test_run | shared_readonly"
+    reset_mechanism: "<fixture-reset | in-memory-reset | container-reset | none>"
+    allowed_failure_modes:
+      - "<failure-mode>"
+    contract_ref: "<contracts/path.yml#operation>"
+    dsl_stub_ref: "<dsl-entry-id | pending>"
+
+fixture_policy:
+  shape: "file | folder | mixed | none"
+  root: "<fixture-root | none>"
+  missing_file_behavior: "<raise | default-empty | skip | none>"

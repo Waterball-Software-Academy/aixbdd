@@ -1,0 +1,251 @@
+# =============================================================================
+# Path binding
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# 0. TEMPLATE_META
+# -----------------------------------------------------------------------------
+
+# STARTER_VARIANT — kickoff 本專案技術的 technical archetype。
+# 值域：
+#   - python-e2e — Python E2E／Behave 慣例
+#   - java-e2e — Java E2E／Cucumber 慣例
+STARTER_VARIANT: python-e2e
+
+# DSL_KEY_LOCALE — DSL key 使用的自然語言。
+# 值域：
+#   - zh-hant — 繁體中文
+#   - zh-hans — 簡體中文
+#   - en-us — 美式英文
+#   - ja-jp — 日文
+#   - ko-kr — 韓文
+#   - prefer_spec_language — 跟隨規格文件的主要語言
+DSL_KEY_LOCALE: prefer_spec_language
+
+# PROJECT_SPEC_LANGUAGE — 專案規格主要撰寫語言。
+# 值域：
+#   - zh-hant — 繁體中文
+#   - zh-hans — 簡體中文
+#   - en-us — 美式英文
+#   - ja-jp — 日文
+#   - ko-kr — 韓文
+PROJECT_SPEC_LANGUAGE: {{PROJECT_SPEC_LANGUAGE}}
+
+# BACKEND_SUBDIR — 後端根目錄相對 repo 的路徑段；空字串表示後端即 repo 根。
+# 值域：
+#   - "" — 後端在 repo 根
+#   - <segment> — 單一路徑段（例：backend/）
+BACKEND_SUBDIR: '{{BACKEND_SUBDIR}}'
+
+# MAX_QUESTIONS_PER_ROUND — clarify 每輪最多提問數。
+# 值域：非負整數
+MAX_QUESTIONS_PER_ROUND: 10
+
+# ACTIVITY_EXT — Activity DSL 檔副檔名。
+# 值域：副檔名字串（例：.activity），目前不支援其他的值
+ACTIVITY_EXT: .activity
+
+# AIBDD_CONFIG_DIR — 專案層 AIBDD config root。
+AIBDD_CONFIG_DIR: .aibdd
+
+# AIBDD_ARGUMENTS_PATH — arguments.yml 的 SSOT 路徑；不存在時 STOP，不 fallback 到 specs/arguments.yml。
+AIBDD_ARGUMENTS_PATH: ${AIBDD_CONFIG_DIR}/arguments.yml
+
+# -----------------------------------------------------------------------------
+# 1. PROJECT_ROOTS
+# -----------------------------------------------------------------------------
+
+# SPECS_ROOT_DIR — specs 樹根目錄（相對路徑 token）。
+SPECS_ROOT_DIR: specs
+
+# PLAN_PACKAGES_DIR — plan package 根目錄。
+PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}
+
+# -----------------------------------------------------------------------------
+# 2. CONSTITUTIONS（相對 BACKEND_ROOT）
+# -----------------------------------------------------------------------------
+
+# DEV_CONSTITUTION_PATH — 開發治理憲法路徑；由 /aibdd-auto-backend-starter 產生，kickoff 只宣告路徑。
+DEV_CONSTITUTION_PATH: ${AIBDD_CONFIG_DIR}/dev-constitution.md
+
+# BDD_CONSTITUTION_PATH — Feature 檔名軸（§5.1）錨點；語意上隸屬 bdd-stack 憲法樹，由 starter 產生。
+BDD_CONSTITUTION_PATH: ${AIBDD_CONFIG_DIR}/bdd-stack/project-bdd-axes.md
+
+# -----------------------------------------------------------------------------
+# 3. CURRENT_SPEC_PACKAGE
+# kickoff 還沒有 raw idea，也沒有 Discovery Session；此處只放 plan package placeholder，
+# 讓下游知道 plan-side 檔案的預設展開方式，不代表已有功能包 truth。
+# -----------------------------------------------------------------------------
+
+# CURRENT_PLAN_PACKAGE — 當前功能規格包根目錄；kickoff 後仍是 placeholder，Discovery 會改寫。
+CURRENT_PLAN_PACKAGE: ${PLAN_PACKAGES_DIR}/000-kickoff-placeholder
+
+# PLAN_SPEC — 規格本文路徑。
+PLAN_SPEC: ${CURRENT_PLAN_PACKAGE}/spec.md
+
+# PLAN_MD — 技術 plan 路徑。
+PLAN_MD: ${CURRENT_PLAN_PACKAGE}/plan.md
+
+# PLAN_REPORTS_DIR — plan 報告目錄。
+PLAN_REPORTS_DIR: ${CURRENT_PLAN_PACKAGE}/reports
+
+# PLAN_COVERAGE_REPORT_DIR — coverage 報告目錄。
+PLAN_COVERAGE_REPORT_DIR: ${PLAN_REPORTS_DIR}/coverage
+
+# PLAN_IMPLEMENTATION_DIR — implementation 產物根目錄。
+PLAN_IMPLEMENTATION_DIR: ${CURRENT_PLAN_PACKAGE}/implementation
+
+# PLAN_SEQUENCE_DIR — sequence 圖目錄。
+PLAN_SEQUENCE_DIR: ${PLAN_IMPLEMENTATION_DIR}/sequences
+
+# PLAN_INTERNAL_STRUCTURE — 內部結構 class 圖路徑。
+PLAN_INTERNAL_STRUCTURE: ${PLAN_IMPLEMENTATION_DIR}/internal-structure.class.mmd
+
+# CLARIFY_DIR — 釐清迴圈產物目錄。
+CLARIFY_DIR: ${CURRENT_PLAN_PACKAGE}/clarify
+
+# -----------------------------------------------------------------------------
+# 4. ARCHITECTURE_TRUTH
+# -----------------------------------------------------------------------------
+
+# TRUTH_ARCHITECTURE_DIR — 跨 boundary 架構真相目錄。
+TRUTH_ARCHITECTURE_DIR: ${SPECS_ROOT_DIR}/architecture
+
+# BOUNDARY_YML — boundary 定義檔；由 /aibdd-kickoff 產生。
+BOUNDARY_YML: ${TRUTH_ARCHITECTURE_DIR}/boundary.yml
+
+# COMPONENT_DIAGRAM — 元件圖路徑；由 /aibdd-kickoff 產生。
+COMPONENT_DIAGRAM: ${TRUTH_ARCHITECTURE_DIR}/component-diagram.class.mmd
+
+# -----------------------------------------------------------------------------
+# 5. BOUNDARY_TRUTH（boundary-scoped 示意片段）
+# <boundary> 不是每輪 Discovery Session 要填入的動態參數；它表示此組路徑規則
+# 可套用到 boundary.yml 中的任一 boundary。此 happy-path fixture 的唯一 boundary id 是 backend。
+# -----------------------------------------------------------------------------
+
+# TRUTH_BOUNDARY_ROOT — 任一 boundary 下 specs 根目錄的路徑樣式。
+TRUTH_BOUNDARY_ROOT: ${SPECS_ROOT_DIR}/<boundary>
+
+# TRUTH_BOUNDARY_SHARED_DIR — boundary 內 shared 目錄。
+TRUTH_BOUNDARY_SHARED_DIR: ${TRUTH_BOUNDARY_ROOT}/shared
+
+# TRUTH_BOUNDARY_PACKAGES_DIR — boundary 內 packages 目錄。
+TRUTH_BOUNDARY_PACKAGES_DIR: ${TRUTH_BOUNDARY_ROOT}/packages
+
+# CONTRACTS_DIR — OpenAPI 等合約目錄。
+CONTRACTS_DIR: ${TRUTH_BOUNDARY_ROOT}/contracts
+
+# DATA_DIR — DBML 等資料模型目錄。
+DATA_DIR: ${TRUTH_BOUNDARY_ROOT}/data
+
+# BOUNDARY_SHARED_DSL — boundary 層共用 dsl.yml；kickoff 建立 placeholder。
+BOUNDARY_SHARED_DSL: ${TRUTH_BOUNDARY_SHARED_DIR}/dsl.yml
+
+# TEST_STRATEGY_FILE — 測試策略檔路徑；kickoff 建立 boundary-level placeholder。
+TEST_STRATEGY_FILE: ${TRUTH_BOUNDARY_ROOT}/test-strategy.yml
+
+# -----------------------------------------------------------------------------
+# 6. FUNCTION_PACKAGE_TRUTH（late-bound by /aibdd-discovery）
+# kickoff 絕對不建立、選擇、或啟用 NN-<功能模組描述>。
+# 下列 key 只能在 raw idea sourcing + package slug selection 後由 /aibdd-discovery 寫入；
+# 因此在 kickoff after fixture 內必須維持註解，不得變成有效 YAML key。
+# -----------------------------------------------------------------------------
+
+# TRUTH_FUNCTION_PACKAGE: ${TRUTH_BOUNDARY_PACKAGES_DIR}/NN-<功能模組描述>
+# FEATURE_SPECS_DIR: ${TRUTH_FUNCTION_PACKAGE}/features
+# ACTIVITIES_DIR: ${TRUTH_FUNCTION_PACKAGE}/activities
+# TRUTH_TEST_PLAN_DIR: ${TRUTH_FUNCTION_PACKAGE}/test-plan
+# BOUNDARY_PACKAGE_DSL: ${TRUTH_FUNCTION_PACKAGE}/dsl.yml
+
+# -----------------------------------------------------------------------------
+# 7. PYTHON_E2E_STARTER_OUTPUT_PATHS — starter 產物路徑綁定
+# 下列 key 只宣告 python-e2e walking skeleton 的輸出座標，讓 starter 與下游 skill
+# 可用同一組 path token 溝通；/aibdd-kickoff 不建立 product code，也不擁有架構規則。
+# 實體程式骨架、tests/features runtime、alembic scaffold 由 /aibdd-auto-backend-starter 產生。
+# -----------------------------------------------------------------------------
+
+# PY_APP_DIR — Python 應用碼根目錄。
+PY_APP_DIR: app
+
+# PY_MODELS_DIR — models 目錄。
+PY_MODELS_DIR: ${PY_APP_DIR}/models
+
+# PY_REPOSITORIES_DIR — repositories 目錄。
+PY_REPOSITORIES_DIR: ${PY_APP_DIR}/repositories
+
+# PY_SERVICES_DIR — services 目錄。
+PY_SERVICES_DIR: ${PY_APP_DIR}/services
+
+# PY_API_DIR — api 目錄。
+PY_API_DIR: ${PY_APP_DIR}/api
+
+# PY_CORE_DIR — core 目錄。
+PY_CORE_DIR: ${PY_APP_DIR}/core
+
+# PY_SCHEMAS_DIR — schemas 目錄。
+PY_SCHEMAS_DIR: ${PY_APP_DIR}/schemas
+
+# PY_MAIN_FILE — 應用程式進入點。
+PY_MAIN_FILE: ${PY_APP_DIR}/main.py
+
+# PY_TEST_FEATURES_DIR — runner 載入的 acceptance feature 根目錄。
+PY_TEST_FEATURES_DIR: tests/features
+
+# PY_STEPS_DIR — step definition 根目錄。
+PY_STEPS_DIR: ${PY_TEST_FEATURES_DIR}/steps
+
+# PY_ENV_FILE — Behave environment 模組路徑。
+PY_ENV_FILE: ${PY_TEST_FEATURES_DIR}/environment.py
+
+# PY_SHARED_STEPS_DIR — 共用 step 模組根目錄。
+PY_SHARED_STEPS_DIR: ${PY_TEST_FEATURES_DIR}/steps/shared
+
+# ALEMBIC_VERSIONS_DIR — Alembic migration 目錄。
+ALEMBIC_VERSIONS_DIR: alembic/versions
+
+# -----------------------------------------------------------------------------
+# 8. BDD_STRATEGY_REFS — AIBDD framework rule refs / language assets
+# 這些是 framework rule / language asset pointer；不是 starter 產生的專案檔案。
+# -----------------------------------------------------------------------------
+
+# GHERKIN_RULE_BODY_PREFIX_POLICY_REF — rule-only Rule line/body policy rule file.
+GHERKIN_RULE_BODY_PREFIX_POLICY_REF: .claude/skills/aibdd-core/references/gherkin-rule-body-prefix-policy/four-rules-prefix.md
+
+# GHERKIN_EXECUTABLE_STEP_LANGUAGE_REF — executable step prose language asset.
+GHERKIN_EXECUTABLE_STEP_LANGUAGE_REF: .claude/skills/aibdd-core/references/i18n/{{PROJECT_SPEC_LANGUAGE}}.md
+
+# FILENAME_AXES_CONVENTION_REF — feature filename convention rule file.
+FILENAME_AXES_CONVENTION_REF: .claude/skills/aibdd-core/references/filename-axes-convention/nn-prefix-then-title.md
+
+# FILENAME_AXES_TITLE_LANGUAGE_REF — feature filename title language asset.
+FILENAME_AXES_TITLE_LANGUAGE_REF: .claude/skills/aibdd-core/references/i18n/{{PROJECT_SPEC_LANGUAGE}}.md
+
+# SENTENCE_PARTS_FRAMEWORK_REF — sentence part classification rule file.
+SENTENCE_PARTS_FRAMEWORK_REF: .claude/skills/aibdd-core/references/sentence-parts-framework/default.md
+
+# DSL_OUTPUT_CONTRACT_REF — DSL L1-L4 output contract rule file.
+DSL_OUTPUT_CONTRACT_REF: .claude/skills/aibdd-core/references/dsl-output-contract/red-usable-l1-l4.md
+
+# BACKEND_PRESET_CONTRACT_REF — web-backend preset contract rule file.
+BACKEND_PRESET_CONTRACT_REF: .claude/skills/aibdd-core/references/preset-contract/web-backend.md
+
+# -----------------------------------------------------------------------------
+# 9. PROJECT_OWNED_BDD_STACK — starter-generated project BDD runtime docs
+# /aibdd-kickoff 只宣告路徑；實體文件由 /aibdd-auto-backend-starter 產生。
+# bdd-stack 是專案層 BDD runtime 憲法樹；不要把這些路徑誤認為 aibdd-core reference。
+# -----------------------------------------------------------------------------
+
+# ACCEPTANCE_RUNNER_RUNTIME_REF — acceptance runner command / dry-run / config / visibility instruction file.
+ACCEPTANCE_RUNNER_RUNTIME_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/acceptance-runner.md
+
+# STEP_DEFINITIONS_RUNTIME_REF — step definition layout / glob / shared step instruction file.
+STEP_DEFINITIONS_RUNTIME_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/step-definitions.md
+
+# FIXTURES_RUNTIME_REF — fixture shape / data source / reset / fallback instruction file.
+FIXTURES_RUNTIME_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/fixtures.md
+
+# FEATURE_ARCHIVE_RUNTIME_REF — spec feature → runtime feature archive / copy / include instruction file.
+FEATURE_ARCHIVE_RUNTIME_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/feature-archive.md
+
+# RED_PREHANDLING_HOOK_REF — Red phase pre-hook instruction file (python-e2e: schema-analysis / data-migration).
+RED_PREHANDLING_HOOK_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/prehandling-before-red-phase.md

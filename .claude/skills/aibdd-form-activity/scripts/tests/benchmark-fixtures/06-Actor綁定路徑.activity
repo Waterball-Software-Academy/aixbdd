@@ -1,0 +1,12 @@
+[ACTIVITY] VIP 客服處理流程
+[ACTOR] VIP客戶 -> {specs/actors/VIP客戶.md}
+[ACTOR] 客服專員 -> {specs/actors/客服專員.md}
+[ACTOR] 客服主管 -> {specs/actors/客服主管.md}
+
+[INITIAL]
+[STEP:1] @VIP客戶 {specs/features/A05-客服/001-提交申訴.dsl.feature}
+[STEP:2] @客服專員 {specs/features/A05-客服/002-受理申訴.dsl.feature}
+[STEP:3] @客服主管 {specs/commands/審核補償方案.feature}
+[STEP:4] @客服專員 {specs/commands/通知客戶結果.feature}
+[STEP:5] @VIP客戶 {specs/ui/查看處理結果.md}
+[FINAL]

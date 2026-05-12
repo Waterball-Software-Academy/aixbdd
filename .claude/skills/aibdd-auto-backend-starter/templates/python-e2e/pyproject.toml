@@ -1,0 +1,15 @@
+[project]
+name = "${PROJECT_SLUG}"
+version = "0.1.0"
+description = "${PROJECT_DESCRIPTION}"
+requires-python = ">=3.11"
+
+[tool.black]
+line-length = 88
+
+[tool.isort]
+profile = "black"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true

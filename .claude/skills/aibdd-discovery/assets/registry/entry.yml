@@ -1,0 +1,17 @@
+# aibdd-discovery — planner-registry entry
+
+- phase: "<TBD>"                       # aggregator 於 aibdd-core::planner-registry.yml 填入
+  id: "discovery"
+  skill: "aibdd-discovery"
+  axis: "動詞"
+  core-decision: "flow（Activity）+ atomic rules draft（per-operation feature）"
+  writes:
+    - "${ACTIVITIES_DIR}/*${ACTIVITY_EXT}"
+    - "${FEATURE_SPECS_DIR}/**/*.feature"
+  reads:
+    - "user_raw_idea"
+    - "${SPECS_ROOT_DIR}/**"
+  delegates:
+    - "aibdd-form-activity"
+    - "aibdd-form-feature-spec"
+  user-invocable: true

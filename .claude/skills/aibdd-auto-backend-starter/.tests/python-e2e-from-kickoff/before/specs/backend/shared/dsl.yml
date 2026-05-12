@@ -1,0 +1,3 @@
+# shared/dsl.yml — boundary-wide reusable DSL mapping registry (YAML)
+# Owner: /aibdd-plan. Skeleton from /aibdd-kickoff; semantic entries added by planning.
+entries: []

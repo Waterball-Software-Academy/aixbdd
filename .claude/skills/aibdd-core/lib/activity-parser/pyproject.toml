@@ -1,0 +1,33 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "activity-parser"
+version = "0.1.0"
+description = "Activity (Mermaid flowchart flat event-flow dialect) → AST → Paths → Gherkin skeleton, for spec-kit-aibdd Phase 5a."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "Johnny Pan" }]
+dependencies = [
+  "click>=8.1",
+  "pyyaml>=6.0",
+]
+
+[project.scripts]
+activity-parser = "activity_parser.cli:main"
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=4.1",
+  "ruff>=0.3",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/activity_parser"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"

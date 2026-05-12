@@ -1,0 +1,15 @@
+[ACTIVITY] 訂單金額審核流程
+[ACTOR] 客服 -> {specs/actors/客服.md}
+[ACTOR] 主管 -> {specs/actors/主管.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[INITIAL]
+[STEP:1] @客服 {specs/features/O02-訂單/001-提交訂單審核.dsl.feature}
+[DECISION:1a] 訂單金額是否超過十萬元 <!-- 注意：超過十萬需主管簽核，未滿十萬可由系統自動核准 -->
+  [BRANCH:1a:是]
+    [STEP:1a.1] @主管 {specs/commands/審核高額訂單.feature}
+  [BRANCH:1a:否]
+    [STEP:1a.2] @系統 {specs/commands/自動核准訂單.feature}
+[MERGE:1a]
+[STEP:2] @系統 {specs/commands/通知訂單審核結果.feature}
+[FINAL]

@@ -1,0 +1,44 @@
+{
+  "ok": true,
+  "skill_dir": "/Users/johnnypan/Projects/AIxBDD實驗用後端/.claude/skills/aibdd-plan",
+  "graph": {
+    "rp_count": 6,
+    "rp_ids": [
+      "aibdd-plan.01-bind-planning-context",
+      "aibdd-plan.02-technical-boundary-dispatch",
+      "aibdd-plan.03-external-boundary-surface",
+      "aibdd-plan.04-internal-implementation",
+      "aibdd-plan.05-dsl-truth-synthesis",
+      "aibdd-plan.06-handoff-graph"
+    ],
+    "axis_count": 13,
+    "produced_axes": [
+      "BoundaryDispatchModel",
+      "DSLDeltaModel",
+      "DownstreamHandoffGraph",
+      "ExternalSurfaceModel",
+      "ImplementationModel",
+      "PlanningContext"
+    ],
+    "consumed_axes": [
+      "ArgumentsAxis",
+      "BehaviorTruthAxis",
+      "BoundaryDispatchModel",
+      "CodeSkeletonAxis",
+      "DSLContractAxis",
+      "DSLDeltaModel",
+      "DiscoverySummaryAxis",
+      "ExistingTechnicalTruthAxis",
+      "ExternalSurfaceModel",
+      "HandoffArtifactAxis",
+      "ImplementationModel",
+      "PlanningContext"
+    ]
+  },
+  "outputs": {
+    "mermaid": "/Users/johnnypan/Projects/AIxBDD實驗用後端/.claude/skills/aibdd-plan/.quality/reasoning-derivation-graph.mmd",
+    "svg": null,
+    "svg_status": "mmd-only"
+  },
+  "findings": []
+}

@@ -1,0 +1,63 @@
+
+# ── 共用 ──────────────────────────────────────────────
+
+# 所有規格產出物的根目錄
+SPECS_ROOT_DIR: specs
+
+# 澄清紀錄目錄（所有 prompt 共用，見 shared/clarify-loop.md）
+CLARIFY_DIR: ${SPECS_ROOT_DIR}/clarify
+
+# 每回合最多提問數（Sub-question 不計入）
+MAX_QUESTIONS_PER_ROUND: 10
+
+# ── discovery 用 ────────────────────────────────────
+
+# Activity 檔案的存放目錄
+ACTIVITIES_DIR: ${SPECS_ROOT_DIR}/activities
+
+# Feature 檔案的存放目錄
+FEATURE_SPECS_DIR: ${SPECS_ROOT_DIR}/features
+
+# api.yml 的存放目錄
+API_SPECS_DIR: ${SPECS_ROOT_DIR}
+
+# erm.dbml 的存放目錄
+ENTITY_SPECS_DIR: ${SPECS_ROOT_DIR}
+
+# ── frontend automation 共用 ───────────────────────────
+
+# 前端原始碼根目錄
+SRC_DIR: src
+
+# ── 02-msw-fixtures-api-client 用 ─────────────────────
+
+# API 規格檔案（formulation 產出，MSW 的輸入）
+API_SPEC_FILE: ${API_SPECS_DIR}/api.yml
+
+# 實體模型檔案（formulation 產出，MSW 的輸入）
+ENTITY_SPEC_FILE: ${ENTITY_SPECS_DIR}/erm.dbml
+
+# Zod schemas + 型別
+TYPES_DIR: ${SRC_DIR}/lib/types
+
+# API 客戶端函式
+API_CLIENT_DIR: ${SRC_DIR}/lib/api
+
+# MSW 固定資料
+MSW_DIR: ${SRC_DIR}/mocks
+
+# MSW Handlers 目錄
+HANDLERS_DIR: ${MSW_DIR}/handlers
+
+# ── 03-frontend-gherkin 用 ────────────────────────────
+
+# 前端 Gherkin features
+FRONTEND_FEATURES_DIR: features
+
+# ── 04-test-scaffolding 用 ────────────────────────────
+
+# Page Objects
+PAGE_OBJECTS_DIR: page-objects
+
+# Step Definitions
+STEPS_DIR: steps

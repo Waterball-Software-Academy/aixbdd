@@ -1,0 +1,13 @@
+[ACTIVITY] OTP 驗證重試流程
+[ACTOR] 使用者 -> {specs/actors/使用者.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[INITIAL]
+[STEP:1] @系統 {specs/commands/寄送OTP驗證碼.feature}
+[STEP:2] @使用者 {specs/ui/輸入OTP驗證碼.md}
+[DECISION:2a] OTP 驗證碼是否正確
+  [BRANCH:2a:重試 -> 1]
+  [BRANCH:2a:通過]
+    [STEP:2a.1] @系統 {specs/commands/標記驗證完成.feature}
+[MERGE:2a]
+[FINAL]

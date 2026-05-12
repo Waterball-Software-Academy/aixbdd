@@ -1,0 +1,8 @@
+[ACTIVITY] 退貨申請流程（孤兒 MERGE — 使用者刪掉 DECISION 但忘記刪 MERGE）
+[ACTOR] 顧客 -> {specs/actors/顧客.md}
+
+[INITIAL]
+[STEP:1] @顧客 填寫退貨申請單 {specs/commands/提交退貨申請.feature}
+[STEP:2] @顧客 上傳退貨憑證 {specs/commands/上傳退貨憑證.feature}
+[MERGE:1a]
+[FINAL]

@@ -1,0 +1,52 @@
+flowchart LR
+  RP_aibdd_plan_01_bind_planning_context["Bind Planning Context"]
+  A_ArgumentsAxis(["ArgumentsAxis"])
+  A_ArgumentsAxis --> RP_aibdd_plan_01_bind_planning_context
+  A_DiscoverySummaryAxis(["DiscoverySummaryAxis"])
+  A_DiscoverySummaryAxis --> RP_aibdd_plan_01_bind_planning_context
+  A_PlanningContext(["PlanningContext"])
+  RP_aibdd_plan_01_bind_planning_context --> A_PlanningContext
+  RP_aibdd_plan_01_bind_planning_context -. downstream .-> RP_aibdd_plan_02_technical_boundary_dispatch
+  RP_aibdd_plan_02_technical_boundary_dispatch["Technical Boundary Dispatch"]
+  A_PlanningContext --> RP_aibdd_plan_02_technical_boundary_dispatch
+  A_BehaviorTruthAxis(["BehaviorTruthAxis"])
+  A_BehaviorTruthAxis --> RP_aibdd_plan_02_technical_boundary_dispatch
+  A_BoundaryDispatchModel(["BoundaryDispatchModel"])
+  RP_aibdd_plan_02_technical_boundary_dispatch --> A_BoundaryDispatchModel
+  RP_aibdd_plan_02_technical_boundary_dispatch -. downstream .-> RP_aibdd_plan_03_external_boundary_surface
+  RP_aibdd_plan_02_technical_boundary_dispatch -. downstream .-> RP_aibdd_plan_04_internal_implementation
+  RP_aibdd_plan_03_external_boundary_surface["External Boundary Surface"]
+  A_BoundaryDispatchModel --> RP_aibdd_plan_03_external_boundary_surface
+  A_ExistingTechnicalTruthAxis(["ExistingTechnicalTruthAxis"])
+  A_ExistingTechnicalTruthAxis --> RP_aibdd_plan_03_external_boundary_surface
+  A_ExternalSurfaceModel(["ExternalSurfaceModel"])
+  RP_aibdd_plan_03_external_boundary_surface --> A_ExternalSurfaceModel
+  RP_aibdd_plan_03_external_boundary_surface -. downstream .-> RP_aibdd_plan_04_internal_implementation
+  RP_aibdd_plan_03_external_boundary_surface -. downstream .-> RP_aibdd_plan_05_dsl_truth_synthesis
+  RP_aibdd_plan_04_internal_implementation["Internal Implementation"]
+  A_BoundaryDispatchModel --> RP_aibdd_plan_04_internal_implementation
+  A_ExternalSurfaceModel --> RP_aibdd_plan_04_internal_implementation
+  A_CodeSkeletonAxis(["CodeSkeletonAxis"])
+  A_CodeSkeletonAxis --> RP_aibdd_plan_04_internal_implementation
+  A_ImplementationModel(["ImplementationModel"])
+  RP_aibdd_plan_04_internal_implementation --> A_ImplementationModel
+  RP_aibdd_plan_04_internal_implementation -. downstream .-> RP_aibdd_plan_05_dsl_truth_synthesis
+  RP_aibdd_plan_04_internal_implementation -. downstream .-> RP_aibdd_plan_06_handoff_graph
+  RP_aibdd_plan_05_dsl_truth_synthesis["DSL Truth Synthesis"]
+  A_BoundaryDispatchModel --> RP_aibdd_plan_05_dsl_truth_synthesis
+  A_ExternalSurfaceModel --> RP_aibdd_plan_05_dsl_truth_synthesis
+  A_ImplementationModel --> RP_aibdd_plan_05_dsl_truth_synthesis
+  A_DSLContractAxis(["DSLContractAxis"])
+  A_DSLContractAxis --> RP_aibdd_plan_05_dsl_truth_synthesis
+  A_DSLDeltaModel(["DSLDeltaModel"])
+  RP_aibdd_plan_05_dsl_truth_synthesis --> A_DSLDeltaModel
+  RP_aibdd_plan_05_dsl_truth_synthesis -. downstream .-> RP_aibdd_plan_06_handoff_graph
+  RP_aibdd_plan_06_handoff_graph["Handoff Graph"]
+  A_HandoffArtifactAxis(["HandoffArtifactAxis"])
+  A_HandoffArtifactAxis --> RP_aibdd_plan_06_handoff_graph
+  A_BoundaryDispatchModel --> RP_aibdd_plan_06_handoff_graph
+  A_ExternalSurfaceModel --> RP_aibdd_plan_06_handoff_graph
+  A_ImplementationModel --> RP_aibdd_plan_06_handoff_graph
+  A_DSLDeltaModel --> RP_aibdd_plan_06_handoff_graph
+  A_DownstreamHandoffGraph(["DownstreamHandoffGraph"])
+  RP_aibdd_plan_06_handoff_graph --> A_DownstreamHandoffGraph

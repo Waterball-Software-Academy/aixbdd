@@ -1,0 +1,19 @@
+spring:
+  application:
+    name: backend
+  datasource:
+    url: jdbc:postgresql://localhost:5432/backend
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+
+# API Configuration
+api:
+  v1:
+    prefix: /api/v1
+
+# JWT Configuration
+jwt:
+  secret-key: test-secret-key-do-not-use-in-production
+  algorithm: HS256
+  expire-hours: 1

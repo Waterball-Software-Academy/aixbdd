@@ -1,0 +1,54 @@
+[ACTIVITY] 訂單處理流程
+[ACTOR] 客戶 -> {specs/actors/客戶.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+[ACTOR] 倉庫 -> {specs/actors/倉庫.md}
+[ACTOR] 金流 -> {specs/actors/金流.md}
+
+[INITIAL]
+
+[STEP:1] @客戶 {specs/commands/提交訂單.feature}
+[STEP:2] @系統 {specs/queries/驗證訂單.feature}
+  [DECISION:2a] 訂單是否有效
+    [BRANCH:2a:有效] {specs/ui/顯示確認頁.md}
+      [DECISION:2a1] 是否使用優惠券 # CiC(ASM): 假設優惠碼在確認頁輸入；若客戶在購物車階段就已輸入，這個決策點應提前到 STEP:1 之前。
+        [BRANCH:2a1:是] {specs/commands/套用優惠券.feature}
+          [DECISION:2a1a] 優惠券是否有效
+            [BRANCH:2a1a:有效] {specs/ui/顯示折扣金額.md}
+            [BRANCH:2a1a:過期] {specs/ui/優惠券過期提示.md}
+            [BRANCH:2a1a:已用] {specs/ui/優惠券已使用提示.md} # CiC(BDY): 優惠券狀態只有「有效/過期/已用」三種嗎？是否存在「未達最低消費門檻」的情境？
+          [MERGE:2a1a]
+        [BRANCH:2a1:否] {specs/ui/顯示原價.md}
+      [MERGE:2a1]
+    [BRANCH:2a:無效] {specs/ui/顯示錯誤訊息.md}
+      [DECISION:2a2] 錯誤類型
+        [BRANCH:2a2:庫存不足] {specs/ui/建議替代商品.md}
+        [BRANCH:2a2:地址無效] {specs/ui/地址修正表單.md} # CiC(BDY): 客戶修正地址後，是否可以重新提交驗證？目前流程走到這裡就結束，缺少 loop-back 回 STEP:1 的路徑。
+        [BRANCH:2a2:其他錯誤] {specs/ui/聯繫客服.md}
+      [MERGE:2a2]
+  [MERGE:2a]
+
+[STEP:3] @金流 {specs/commands/處理付款.feature}
+  [FORK:3a] # CiC(CON): FORK:3a 同時進行「扣款」與「發送確認信」，但確認信應在扣款成功後才發；並行執行會導致扣款失敗時確認信已發出，需確認這是否可接受。
+    [PARALLEL:3a] @金流 {specs/commands/扣款.feature}
+      [DECISION:3a1] 扣款結果
+        [BRANCH:3a1:成功] {specs/commands/記錄交易.feature}
+        [BRANCH:3a1:失敗] {specs/commands/標記付款失敗.feature} # CiC(CON): 扣款失敗後經 MERGE:3a1 → JOIN:3a → STEP:4（準備出貨），流程仍繼續進倉庫作業；付款失敗應終止流程或 loop-back，而非繼續出貨。
+      [MERGE:3a1]
+    [PARALLEL:3a] @系統 {specs/commands/鎖定庫存.feature}
+    [PARALLEL:3a] @系統 {specs/commands/發送確認信.feature}
+  [JOIN:3a]
+
+[STEP:4] @倉庫 {specs/commands/準備出貨.feature}
+  [FORK:4a]
+    [PARALLEL:4a] @倉庫 {specs/commands/揀貨.feature}
+    [PARALLEL:4a] @倉庫 {specs/commands/包裝.feature} # CiC(ASM): 假設揀貨和包裝可以並行；實際作業中包裝通常需要等揀貨完成，若有依賴關係應改為循序。
+      [DECISION:4a1] 是否需要禮品包裝
+        [BRANCH:4a1:是] {specs/commands/禮品包裝.feature}
+        [BRANCH:4a1:否] {specs/commands/標準包裝.feature}
+      [MERGE:4a1]
+    [PARALLEL:4a] @系統 {specs/commands/更新訂單狀態.feature}
+  [JOIN:4a]
+
+[STEP:5] @系統 {specs/commands/完成訂單.feature} # CiC(GAP): 流程在倉庫出貨後即「完成訂單」，但缺少客戶確認收貨的步驟；是否需要貨到付款或簽收確認環節？
+
+[FINAL]

@@ -1,0 +1,78 @@
+[ACTIVITY] 電商 VIP 訂單完整生命週期（Tier 10 — 全期複雜網：4 層 Decision 巢狀、Fork 內含 Branch 含 Fork、雙跨分支迴圈、3 終點）
+[ACTOR] 客戶 -> {specs/actors/客戶.md}
+[ACTOR] John Doe -> {specs/actors/John-Doe.md}
+[ACTOR] 風控小組 -> {specs/actors/風控小組.md}
+[ACTOR] 倉儲中心 -> {specs/actors/倉儲中心.md}
+[ACTOR] 通知系統 -> {specs/actors/通知系統.md}
+[ACTOR] 會計部門 -> {specs/actors/會計部門.md}
+
+[INITIAL]
+[STEP:1] @"John Doe" {specs/features/V20-VIP訂單/001-VIP身份驗證.dsl.feature}
+[STEP:2] @客戶 {specs/features/V20-VIP訂單/002-確認購物車.dsl.feature}
+
+[DECISION:1a] 付款方式選擇
+  [BRANCH:1a:信用卡]
+    [STEP:1a.1] @客戶 {specs/commands/輸入信用卡資料.feature}
+    [DECISION:1a1] 風控核准結果 <!-- 注意：高額或可疑交易需走人工複核，避免自動放行 -->
+      [BRANCH:1a1:通過]
+        [STEP:1a1.1] @風控小組 {specs/commands/標記低風險交易.feature}
+        [DECISION:1a1a] 交易金額層級
+          [BRANCH:1a1a:高額]
+            [STEP:1a1a.1] @風控小組 {specs/commands/啟動高額複審.feature}
+            [DECISION:1a1a1] 是否需補齊高額訂單收件驗證資料
+              [BRANCH:1a1a1:需要]
+                [STEP:1a1a1.1] @客戶 {specs/ui/上傳身分文件.md}
+              [BRANCH:1a1a1:免除]
+                [STEP:1a1a1.2] @風控小組 {specs/commands/直接放行高額交易.feature}
+              [BRANCH:1a1a1:else]
+                [STEP:1a1a1.3] @風控小組 {specs/commands/轉人工專案處理.feature}
+            [MERGE:1a1a1]
+          [BRANCH:1a1a:小額]
+            [STEP:1a1a.2] @風控小組 {specs/commands/自動放行小額交易.feature}
+        [MERGE:1a1a]
+      [BRANCH:1a1:駁回]
+        [STEP:1a1.2] @風控小組 {specs/commands/紀錄拒絕原因.feature}
+        [STEP:1a1.3] @通知系統 {specs/commands/通知客戶交易拒絕.feature}
+        [FINAL]
+      [BRANCH:1a1:改用超商 -> 1a.2]
+    [MERGE:1a1]
+  [BRANCH:1a:超商]
+    [STEP:1a.2] @客戶 {specs/ui/選取超商門市.md}
+    [DECISION:1a2] 超商門市是否可用
+      [BRANCH:1a2:可用]
+        [STEP:1a2.1] @通知系統 {specs/commands/寄送超商付款碼.feature}
+      [BRANCH:1a2:店家停業改信用卡 -> 1a.1]
+    [MERGE:1a2]
+  [BRANCH:1a:else]
+    [STEP:1a.3] @通知系統 {specs/ui/顯示無支援付款方式.md}
+[MERGE:1a]
+
+[STEP:3] @客戶 {specs/features/V20-VIP訂單/003-確認結帳.dsl.feature}
+
+[FORK:3a]
+  [PARALLEL:3a]
+    [STEP:3a.1] @倉儲中心 {specs/commands/執行揀貨.feature}
+    [DECISION:3a1] 揀貨結果分類
+      [BRANCH:3a1:成功]
+        [STEP:3a1.1] @倉儲中心 {specs/commands/包裝待出貨.feature}
+        [FORK:3a1a]
+          [PARALLEL:3a1a]
+            [STEP:3a1a.1] @通知系統 {specs/commands/寄送出貨通知.feature}
+          [PARALLEL:3a1a]
+            [STEP:3a1a.2] @會計部門 {specs/commands/開立電子發票.feature}
+        [JOIN:3a1a]
+      [BRANCH:3a1:商品損壞]
+        [STEP:3a1.2] @倉儲中心 {specs/commands/標記退貨待處理.feature}
+        [STEP:3a1.3] @通知系統 {specs/commands/通知客戶商品異常.feature}
+        [FINAL]
+      [BRANCH:3a1:庫存短缺重揀 -> 3a.1]
+    [MERGE:3a1]
+  [PARALLEL:3a]
+    [STEP:3a.2] @通知系統 {specs/commands/推送物流追蹤連結.feature}
+  [PARALLEL:3a]
+    [STEP:3a.3] @會計部門 {specs/commands/同步當日營收數據.feature}
+[JOIN:3a]
+
+[STEP:4] @客戶 {specs/ui/收貨確認頁.md}
+[STEP:5] @會計部門 {specs/commands/完成月底對帳.feature}
+[FINAL]

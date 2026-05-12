@@ -1,0 +1,22 @@
+[ACTIVITY] 訂單確認後決策出貨方式並並行包裝與通知
+[ACTOR] 買家 -> {specs/actors/買家.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+[ACTOR] 倉庫 -> {specs/actors/倉庫.md}
+
+[INITIAL]
+[STEP:1] @買家 {specs/features/C01-訂單/001-確認訂單.dsl.feature}
+[DECISION:1a] 選擇出貨方式
+  [BRANCH:1a:宅配]
+    [STEP:1a.1] @系統 {specs/commands/建立宅配運單.feature}
+  [BRANCH:1a:超商]
+    [STEP:1a.2] @系統 {specs/commands/建立超商取貨單.feature}
+[MERGE:1a]
+[STEP:2] @系統 {specs/commands/鎖定出貨資訊.feature}
+[FORK:2a]
+  [PARALLEL:2a]
+    [STEP:2a.1] @倉庫 {specs/commands/包裝商品.feature}
+  [PARALLEL:2a]
+    [STEP:2a.2] @系統 {specs/commands/發送出貨通知.feature}
+[JOIN:2a]
+[STEP:3] @系統 {specs/commands/更新訂單為已出貨.feature}
+[FINAL]

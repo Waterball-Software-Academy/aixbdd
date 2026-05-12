@@ -1,0 +1,15 @@
+[ACTIVITY] 大額訂單結帳風控決策流程
+[ACTOR] 買家 -> {specs/actors/買家.md}
+[ACTOR] 風控審核員 -> {specs/actors/風控審核員.md}
+[ACTOR] 系統 -> {specs/actors/系統.md}
+
+[INITIAL]
+[STEP:1] @買家 {specs/features/O01-結帳/001-提交訂單.dsl.feature}
+[STEP:2] @風控審核員 {specs/commands/評估訂單風險分數.feature}
+[DECISION:2a] 風控是否放行出貨
+  [BRANCH:2a:通過]
+    [STEP:2a.1] @系統 {specs/commands/建立出貨單.feature}
+  [BRANCH:2a:拒絕]
+    [STEP:2a.2] @買家 {specs/ui/顯示拒絕通知.md}
+[MERGE:2a]
+[FINAL]

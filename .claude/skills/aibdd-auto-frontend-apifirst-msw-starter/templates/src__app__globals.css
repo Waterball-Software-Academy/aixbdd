@@ -1,0 +1,129 @@
+@import "tailwindcss";
+
+/* next-themes：以 html.dark 驅動 Tailwind v4 的 dark: 變體 */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * Minimal shell aesthetic（參考 Apple Human Interface：系統字體、中性灰、細分隔、足夠留白）
+ * Primary accent 接近系統藍；強調色僅微調主色，避免花俏。
+ */
+:root {
+  --app-font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI",
+    Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+  --app-radius-lg: 0.9rem;
+  --app-radius-md: 0.65rem;
+  /* Light：近白底、極淡邊界（類似 Apple 淺色分組背景） */
+  --app-bg: oklch(0.988 0.004 260);
+  --app-sidebar: oklch(0.974 0.005 260);
+  --app-fg: oklch(0.2 0.02 264);
+  --app-muted: oklch(0.45 0.02 264);
+  --app-border: oklch(0.86 0.012 264);
+  /* 接近系統藍（非飽和霓虹） */
+  --app-primary: oklch(0.52 0.19 264);
+}
+
+html.dark {
+  /* 深色：提高邊界與側欄對比，避免「糊成一片」 */
+  --app-bg: oklch(0.13 0.012 264);
+  --app-sidebar: oklch(0.17 0.014 264);
+  --app-fg: oklch(0.97 0.008 264);
+  --app-muted: oklch(0.62 0.02 264);
+  --app-border: oklch(0.38 0.02 264);
+  --app-primary: oklch(0.72 0.14 264);
+}
+
+html[data-accent="ocean"] {
+  --app-primary: oklch(0.5 0.14 240);
+}
+
+html.dark[data-accent="ocean"] {
+  --app-primary: oklch(0.66 0.12 240);
+}
+
+html[data-accent="amber"] {
+  --app-primary: oklch(0.58 0.16 75);
+}
+
+html.dark[data-accent="amber"] {
+  --app-primary: oklch(0.74 0.14 75);
+}
+
+@theme {
+  --font-sans: var(--app-font-sans);
+  --color-background: var(--app-bg);
+  --color-muted: color-mix(in oklab, var(--app-bg) 88%, var(--app-fg) 12%);
+  --color-foreground: var(--app-fg);
+  --color-muted-foreground: var(--app-muted);
+  --color-border: var(--app-border);
+  --color-primary: var(--app-primary);
+  --color-sidebar: var(--app-sidebar);
+  --radius-lg: var(--app-radius-lg);
+  --radius-md: var(--app-radius-md);
+}
+
+@layer base {
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  body {
+    font-family: var(--app-font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(circle at 10% -10%, color-mix(in oklab, var(--app-primary) 12%, transparent), transparent 36%),
+      radial-gradient(circle at 90% 0%, color-mix(in oklab, var(--app-primary) 10%, transparent), transparent 35%);
+  }
+
+  html.dark body {
+    /* 深色模式減少背景光暈，讓卡片與邊界更清楚 */
+    background-image: none;
+  }
+}
+
+@layer components {
+  .ui-surface {
+    @apply rounded-xl border border-border bg-background shadow-[0_8px_24px_-14px_rgba(15,23,42,0.28)] dark:border-white/[0.1] dark:bg-[oklch(0.18_0.014_264)] dark:shadow-[0_12px_40px_-20px_rgba(0,0,0,0.55)];
+  }
+
+  .ui-input {
+    @apply h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/25 dark:border-white/[0.12] dark:bg-[oklch(0.15_0.012_264)];
+  }
+
+  .ui-select {
+    @apply h-10 rounded-md border border-border bg-background px-3 text-sm text-foreground outline-none transition focus-visible:border-primary/50 focus-visible:ring-2 focus-visible:ring-primary/25 dark:border-white/[0.12] dark:bg-[oklch(0.15_0.012_264)];
+  }
+
+  .ui-btn-primary {
+    @apply inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 text-sm font-medium text-white shadow-[0_8px_18px_-12px_color-mix(in_oklab,var(--app-primary)_70%,black)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .ui-btn-secondary {
+    @apply inline-flex h-10 items-center justify-center rounded-md border border-border/90 bg-muted/30 px-4 text-sm font-medium text-foreground transition hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .ui-toolbar-minimal-select {
+    @apply box-border h-8 max-h-8 w-[4.75rem] shrink-0 cursor-pointer rounded-md border border-border/50 bg-transparent py-0 pl-2 pr-6 text-[13px] leading-8 text-foreground transition hover:bg-muted/50 focus:outline-none focus-visible:outline-none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='11' height='11' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+    background-position: right 0.4rem center;
+    background-repeat: no-repeat;
+    appearance: none;
+  }
+
+  .ui-toolbar-minimal-select--palette {
+    @apply w-[5.75rem];
+  }
+
+  .ui-toolbar-minimal-select--with-icon {
+    @apply w-[3.75rem] border-0 bg-transparent pl-0 shadow-none hover:border-transparent hover:bg-transparent;
+  }
+
+  .ui-toolbar-minimal-select--with-icon.ui-toolbar-minimal-select--palette {
+    @apply w-[5rem];
+  }
+
+  .dark .ui-toolbar-minimal-select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  }
+}

@@ -1,0 +1,23 @@
+# speckit-aibdd-bdd-analyze — planner-registry entry
+
+- phase: "<TBD>"                       # aggregator 於 aibdd-core::planner-registry.yml 填入
+  id: "form-bdd-analysis"
+  skill: "speckit-aibdd-bdd-analyze"
+  axis: "業務例"
+  core-decision: "clause analysis + 覆蓋矩陣 → 最小必要 Example 句型集"
+  writes:
+    - "${FEATURE_SPECS_DIR}/**/*.feature"
+    - "${TRUTH_FUNCTION_PACKAGE}/coverage/*.coverage.yml"
+    - "${CURRENT_PLAN_PACKAGE}/promotion-proposal.md"   # 條件產出（新版 dsl.yml gate 可用時）
+  reads:
+    - "${FEATURE_SPECS_DIR}/**/*.feature"
+    - "${TRUTH_FUNCTION_PACKAGE}/coverage/*.coverage.yml"
+    - "${BOUNDARY_PACKAGE_DSL}"
+    - "${BOUNDARY_SHARED_DSL}"
+    - "${CONTRACTS_DIR}/**"
+    - "${DATA_DIR}/**"
+    - "${TEST_STRATEGY_FILE}"
+    - "${PLAN_REPORTS_DIR}/aibdd-plan-quality.md"
+  delegates:
+    - "aibdd-form-feature-spec"
+  user-invocable: true

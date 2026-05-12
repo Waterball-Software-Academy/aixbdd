@@ -1,0 +1,5 @@
+[ACTOR] 用戶
+
+[INITIAL]
+[STEP:1] @用戶 提交表單
+[FINAL]

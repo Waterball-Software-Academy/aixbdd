@@ -1,0 +1,227 @@
+%% ═══ 區段一：Activity 標頭與 Actor 宣告 ═══
+%% [ACTIVITY] 訂單處理流程
+%% [ACTOR] 客戶 -> {specs/actors/客戶.md}
+%% [ACTOR] 系統 -> {specs/actors/系統.md}
+%% [ACTOR] 倉庫 -> {specs/actors/倉庫.md}
+%% [ACTOR] 金流 -> {specs/actors/金流.md}
+
+flowchart TD
+
+%% ═══ 區段二：節點定義 ═══
+
+    Start(( ))
+
+    %% [STEP:1] @客戶 {specs/commands/提交訂單.feature}
+    S1["@客戶<br/>提交訂單"]
+
+    %% [STEP:2] @系統 {specs/queries/驗證訂單.feature}
+    S2["@系統<br/>驗證訂單"]
+
+    %% [DECISION:2a] 訂單是否有效
+    D2a{"訂單是否有效"}
+
+    %% [BRANCH:2a:有效] {specs/ui/顯示確認頁.md}
+    B2a_valid["顯示確認頁"]
+
+    %% CiC(ASM): 假設優惠碼在確認頁輸入；若客戶在購物車階段就已輸入，這個決策點應提前到 STEP:1 之前。
+    %% 選項 A: 確認頁輸入 → 現有結構不變
+    %% 選項 B: 購物車階段輸入 → DECISION:2a1 需前移至 STEP:1 之前，影響整體流程順序
+    %% 影響：決定優惠券功能的介入時機與對應 UI 頁面數量。
+    %% [DECISION:2a1] 是否使用優惠券
+    D2a1{"是否使用優惠券"}
+
+    %% [BRANCH:2a1:是] {specs/commands/套用優惠券.feature}
+    B2a1_yes["套用優惠券"]
+
+    %% [DECISION:2a1a] 優惠券是否有效
+    D2a1a{"優惠券是否有效"}
+
+    %% [BRANCH:2a1a:有效] {specs/ui/顯示折扣金額.md}
+    B2a1a_valid["顯示折扣金額"]
+
+    %% [BRANCH:2a1a:過期] {specs/ui/優惠券過期提示.md}
+    B2a1a_expired["優惠券過期提示"]
+
+    %% CiC(BDY): 優惠券狀態只有「有效/過期/已用」三種嗎？是否存在「未達最低消費門檻」的情境？
+    %% 選項 A: 僅三種狀態 → DECISION:2a1a 維持 3 條分支
+    %% 選項 B: 增加「未達門檻」→ DECISION:2a1a 變 4 條分支，多 1 個 .md
+    %% 影響：此決策決定 DECISION:2a1a 的分支數量。
+    %% [BRANCH:2a1a:已用] {specs/ui/優惠券已使用提示.md}
+    B2a1a_used["優惠券已使用提示"]
+
+    %% [MERGE:2a1a]
+    M2a1a(( ))
+
+    %% [BRANCH:2a1:否] {specs/ui/顯示原價.md}
+    B2a1_no["顯示原價"]
+
+    %% [MERGE:2a1]
+    M2a1(( ))
+
+    %% [BRANCH:2a:無效] {specs/ui/顯示錯誤訊息.md}
+    B2a_invalid["顯示錯誤訊息"]
+
+    %% [DECISION:2a2] 錯誤類型
+    D2a2{"錯誤類型"}
+
+    %% [BRANCH:2a2:庫存不足] {specs/ui/建議替代商品.md}
+    B2a2_stock["建議替代商品"]
+
+    %% CiC(BDY): 客戶修正地址後，是否可以重新提交驗證？目前流程走到這裡就結束，缺少 loop-back 回 STEP:1 的路徑。
+    %% 選項 A: 不允許重試 → 流程到此結束，客戶需重新下單
+    %% 選項 B: 允許重試 → 需增加 loop-back 邊回 S1，多 1 個 .feature 處理重新驗證
+    %% 影響：決定是否需要從此分支回到主線的 loop-back 路徑。
+    %% [BRANCH:2a2:地址無效] {specs/ui/地址修正表單.md}
+    B2a2_addr["地址修正表單"]
+
+    %% [BRANCH:2a2:其他錯誤] {specs/ui/聯繫客服.md}
+    B2a2_other["聯繫客服"]
+
+    %% [MERGE:2a2]
+    M2a2(( ))
+
+    %% [MERGE:2a]
+    M2a(( ))
+
+    %% [STEP:3] @金流 {specs/commands/處理付款.feature}
+    S3["@金流<br/>處理付款"]
+
+    %% CiC(CON): FORK:3a 同時進行「扣款」與「發送確認信」，但確認信應在扣款成功後才發；並行執行會導致扣款失敗時確認信已發出，需確認這是否可接受。
+    %% 選項 A: 維持並行 → 接受扣款失敗時確認信已發出的風險
+    %% 選項 B: 改為循序（扣款 → 成功後發確認信）→ FORK:3a 需拆解，發送確認信移至 BRANCH:3a1:成功 之後
+    %% 影響：決定 FORK:3a 是否保留，以及「發送確認信」的觸發時機。
+    %% [FORK:3a]
+    F3a[["並行"]]
+
+    %% [PARALLEL:3a] @金流 {specs/commands/扣款.feature}
+    P3a_1["@金流<br/>扣款"]
+
+    %% [DECISION:3a1] 扣款結果
+    D3a1{"扣款結果"}
+
+    %% [BRANCH:3a1:成功] {specs/commands/記錄交易.feature}
+    B3a1_ok["記錄交易"]
+
+    %% CiC(CON): 扣款失敗後經 MERGE:3a1 → JOIN:3a → STEP:4（準備出貨），流程仍繼續進倉庫作業；付款失敗應終止流程或 loop-back，而非繼續出貨。
+    %% 選項 A: 扣款失敗後終止流程 → 需在 BRANCH:3a1:失敗 後加 [FINAL] 或導向錯誤處理
+    %% 選項 B: 扣款失敗後 loop-back 回 S3 重試 → 需加回流邊
+    %% 影響：決定扣款失敗是否中斷整個訂單流程。
+    %% [BRANCH:3a1:失敗] {specs/commands/標記付款失敗.feature}
+    B3a1_fail["標記付款失敗"]
+
+    %% [MERGE:3a1]
+    M3a1(( ))
+
+    %% [PARALLEL:3a] @系統 {specs/commands/鎖定庫存.feature}
+    P3a_2["@系統<br/>鎖定庫存"]
+
+    %% [PARALLEL:3a] @系統 {specs/commands/發送確認信.feature}
+    P3a_3["@系統<br/>發送確認信"]
+
+    %% [JOIN:3a]
+    J3a(( ))
+
+    %% [STEP:4] @倉庫 {specs/commands/準備出貨.feature}
+    S4["@倉庫<br/>準備出貨"]
+
+    %% [FORK:4a]
+    F4a[["並行"]]
+
+    %% [PARALLEL:4a] @倉庫 {specs/commands/揀貨.feature}
+    P4a_1["@倉庫<br/>揀貨"]
+
+    %% CiC(ASM): 假設揀貨和包裝可以並行；實際作業中包裝通常需要等揀貨完成，若有依賴關係應改為循序。
+    %% 選項 A: 維持並行 → 揀貨與包裝同時進行（需倉庫流程支援）
+    %% 選項 B: 改為循序 → FORK:4a 拆解，揀貨完成後才開始包裝
+    %% 影響：決定 FORK:4a 的並行路徑數量與倉庫作業流程。
+    %% [PARALLEL:4a] @倉庫 {specs/commands/包裝.feature}
+    P4a_2["@倉庫<br/>包裝"]
+
+    %% [DECISION:4a1] 是否需要禮品包裝
+    D4a1{"是否需要禮品包裝"}
+
+    %% [BRANCH:4a1:是] {specs/commands/禮品包裝.feature}
+    B4a1_yes["禮品包裝"]
+
+    %% [BRANCH:4a1:否] {specs/commands/標準包裝.feature}
+    B4a1_no["標準包裝"]
+
+    %% [MERGE:4a1]
+    M4a1(( ))
+
+    %% [PARALLEL:4a] @系統 {specs/commands/更新訂單狀態.feature}
+    P4a_3["@系統<br/>更新訂單狀態"]
+
+    %% [JOIN:4a]
+    J4a(( ))
+
+    %% CiC(GAP): 流程在倉庫出貨後即「完成訂單」，但缺少客戶確認收貨的步驟；是否需要貨到付款或簽收確認環節？
+    %% 選項 A: 出貨即完成 → 現有流程不變
+    %% 選項 B: 增加「確認收貨」→ 需在 STEP:5 前新增 STEP 處理簽收，多 1 個 .feature
+    %% 影響：決定訂單完成的定義點與是否需要新增步驟。
+    %% [STEP:5] @系統 {specs/commands/完成訂單.feature}
+    S5["@系統<br/>完成訂單"]
+
+    End((( )))
+
+%% ═══ 區段三：邊定義 ═══
+
+    Start --> S1
+    S1 --> S2
+    S2 --> D2a
+
+    D2a -- 有效 --> B2a_valid
+    B2a_valid --> D2a1
+    D2a1 -- 是 --> B2a1_yes
+    B2a1_yes --> D2a1a
+    D2a1a -- 有效 --> B2a1a_valid
+    D2a1a -- 過期 --> B2a1a_expired
+    D2a1a -- 已用 --> B2a1a_used
+    B2a1a_valid --> M2a1a
+    B2a1a_expired --> M2a1a
+    B2a1a_used --> M2a1a
+    M2a1a --> M2a1
+    D2a1 -- 否 --> B2a1_no
+    B2a1_no --> M2a1
+    M2a1 --> M2a
+
+    D2a -- 無效 --> B2a_invalid
+    B2a_invalid --> D2a2
+    D2a2 -- 庫存不足 --> B2a2_stock
+    D2a2 -- 地址無效 --> B2a2_addr
+    D2a2 -- 其他錯誤 --> B2a2_other
+    B2a2_stock --> M2a2
+    B2a2_addr --> M2a2
+    B2a2_other --> M2a2
+    M2a2 --> M2a
+
+    M2a --> S3
+    S3 --> F3a
+    F3a --> P3a_1
+    P3a_1 --> D3a1
+    D3a1 -- 成功 --> B3a1_ok
+    D3a1 -- 失敗 --> B3a1_fail
+    B3a1_ok --> M3a1
+    B3a1_fail --> M3a1
+    M3a1 --> J3a
+    F3a --> P3a_2
+    P3a_2 --> J3a
+    F3a --> P3a_3
+    P3a_3 --> J3a
+
+    J3a --> S4
+    S4 --> F4a
+    F4a --> P4a_1
+    P4a_1 --> J4a
+    F4a --> P4a_2
+    P4a_2 --> D4a1
+    D4a1 -- 是 --> B4a1_yes
+    D4a1 -- 否 --> B4a1_no
+    B4a1_yes --> M4a1
+    B4a1_no --> M4a1
+    M4a1 --> J4a
+    F4a --> P4a_3
+    P4a_3 --> J4a
+
+    J4a --> S5
+    S5 --> End

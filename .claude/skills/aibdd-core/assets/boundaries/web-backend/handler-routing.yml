@@ -1,0 +1,107 @@
+routes:
+  - sentence_part: aggregate-given
+    keyword:
+      - Given
+      - Background
+    handler: aggregate-given
+    semantic: Prepare persisted backend state through repository-level setup.
+
+  - sentence_part: http-operation
+    keyword:
+      - Given
+      - When
+    handler: http-operation
+    semantic: Invoke a backend operation through the backend API. The operation contract decides HTTP method, request assembly, and whether the operation is read-only or mutating. Given usage is prerequisite setup; When usage is the target operation.
+
+  - sentence_part: success-failure
+    keyword:
+      - Then
+    handler: success-failure
+    semantic: Verify success, failure, status, or error result from the captured operation response.
+
+  - sentence_part: readmodel-then
+    keyword:
+      - Then
+    handler: readmodel-then
+    semantic: Verify response payload fields from the captured backend response.
+
+  - sentence_part: aggregate-then
+    keyword:
+      - Then
+    handler: aggregate-then
+    semantic: Verify persisted backend state after a mutation.
+
+  - sentence_part: time-control
+    keyword:
+      - Given
+      - When
+    handler: time-control
+    semantic: Control boundary-visible time for time-dependent backend behavior.
+
+  - sentence_part: external-stub
+    keyword:
+      - Given
+    handler: external-stub
+    semantic: Control backend-visible external resources through test-strategy-backed stubs.
+
+handlers:
+  aggregate-given:
+    required_source_kinds:
+      - data_model
+    l4_requirements:
+      - "`L4.callable_via` must resolve to a loader or repository-backed setup surface."
+      - "`L4.param_bindings` and `L4.datatable_bindings` must cover state identity and state field values."
+      - "`L4.source_refs` must point to data truth for the state shape."
+      - "`L4.param_bindings + datatable_bindings + default_bindings` must 100% cover the NOT-NULL columns of the DBML table named in `L4.source_refs.data`. Exemptions are limited to columns marked `[pk, increment]` and columns with an explicit DBML `[default: ...]` modifier. Conventional timestamps (`created_at`, `updated_at`) are NOT exempt unless the DBML declares a default. FK NOT-NULL columns must be bound directly; lookup-chain resolution does not exempt them."
+
+  http-operation:
+    required_source_kinds:
+      - operation_contract
+    l4_requirements:
+      - "`L4.callable_via` must resolve to exactly one operation contract."
+      - HTTP method, path, request body, query parameters, and headers come from that operation contract.
+      - Required request inputs must be covered by `param_bindings`, `datatable_bindings`, or `default_bindings`.
+      - This handler must not own assertion bindings.
+
+  success-failure:
+    required_source_kinds:
+      - operation_contract_response
+    l4_requirements:
+      - "`L4.assertion_bindings` must identify the expected outcome or status class."
+      - "`L4.source_refs` must point to response semantics from the operation contract."
+      - "`L4.callable_via` must refer to the already captured response, not a new operation call."
+
+  readmodel-then:
+    required_source_kinds:
+      - operation_contract_response
+    l4_requirements:
+      - "`L4.assertion_bindings` must map expected values to response targets."
+      - Response targets must use the allowed `response:` binding prefix or contract response references.
+      - "`L4.callable_via` must refer to the already captured response."
+
+  aggregate-then:
+    required_source_kinds:
+      - data_model
+    l4_requirements:
+      - "`L4.callable_via` must resolve to a repository-backed verifier surface."
+      - "`L4.assertion_bindings` must map expected values to data field targets."
+      - "`L4.param_bindings` or `datatable_bindings` must cover lookup identity."
+      - "`L4.source_refs` must point to data truth for the verified state shape."
+
+  time-control:
+    required_source_kinds:
+      - test_strategy
+    l4_requirements:
+      - "`L4.callable_via` must resolve to the configured test-time control surface."
+      - "`L4.param_bindings` must cover the target instant, duration, timezone, or named clock state used by the sentence."
+      - "`L4.source_refs` must point to test strategy truth that declares how backend-visible time is controlled."
+
+  external-stub:
+    required_source_kinds:
+      - test_strategy
+    optional_source_kinds:
+      - provider_contract
+    l4_requirements:
+      - "`L4.callable_via` must resolve to the configured stub surface for the external resource."
+      - "`L4.param_bindings` and `L4.datatable_bindings` must cover request matching, fixture payloads, side effects, or emitted messages required by the sentence."
+      - "`L4.source_refs` must point to provider contract truth when a provider contract exists, and to test strategy truth for the stub mechanism."
