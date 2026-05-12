@@ -20,8 +20,16 @@ AIBDD execute skills.
 
 ## Core References
 
-- `GHERKIN_*_REF`, `FILENAME_*_REF`, `DSL_OUTPUT_CONTRACT_REF`, and
-  `BACKEND_PRESET_CONTRACT_REF` are file paths.
+- `GHERKIN_*_REF`, `FILENAME_*_REF`, `DSL_OUTPUT_CONTRACT_REF` are file paths.
+- The active preset contract reference is dispatched by `${PRESET_KIND}`:
+  - `PRESET_KIND == web-backend` → `BACKEND_PRESET_CONTRACT_REF`
+  - `PRESET_KIND == web-frontend` → `FRONTEND_PRESET_CONTRACT_REF`
+  - missing `PRESET_KIND` → defaults to `web-backend` for backward compatibility
+    with backend projects authored before profile dispatch was introduced.
+  Only one of the two preset contract refs is required per project. Future
+  preset additions extend this dispatch table rather than each consumer's
+  hardcoded list (mirror of `aibdd-core::boundary-profile-contract.md`
+  §Profile dispatch and `/aibdd-plan` SOP §Phase 6.8.1).
 - The loader reads those paths directly.
 - The loader must not infer rules from key names, basenames, or conventions.
 

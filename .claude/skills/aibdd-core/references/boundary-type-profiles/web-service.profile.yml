@@ -25,6 +25,33 @@ operation_contract_specifier:
   output_dir_key: CONTRACTS_DIR
   default_filename: api.yml
 
+# Component contract specifier (Story-export-level UI truth, I4 binding anchor).
+# Backend boundaries have no UI surface → skill: none.
+component_contract_specifier:
+  skill: none
+  format: none
+  output_dir_key: ""
+  default_filename: ""
+
+# Handler used to seed boundary-persisted state in plan DSL.
+# Consumed by /aibdd-plan persistence-ownership coverage gate and
+# /aibdd-spec-by-example-analyze entity-coverage gate.
+persistence_handler:
+  handler_id: aggregate-given
+  state_ref_pattern: "data/<file>.dbml#<table>"
+  routing_yml: aibdd-core/assets/boundaries/web-backend/handler-routing.yml
+  coverage_gate: not-null-columns
+
+# Allowed L4 binding target prefixes for this preset.
+# Consumed by check_dsl_entries.py.
+allowed_l4_target_prefixes:
+  - contracts/      # OpenAPI operation field
+  - data/           # DBML table field
+  - response        # response body field
+  - fixture         # fixture builder slot
+  - stub_payload    # external-stub override payload
+  - literal         # literal value
+
 test_strategy:
   layer: e2e
   io_boundary:

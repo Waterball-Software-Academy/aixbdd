@@ -1,4 +1,11 @@
-# Owner: /aibdd-plan — kickoff placeholder; refine during planning
-# Empty skeleton: no policy rows until planning binds scenarios.
+# Owner: /aibdd-plan — kickoff placeholder; refine during planning.
+# Schema (per boundary):
+#   - web-frontend: aibdd-core/assets/boundaries/web-frontend/test-strategy-schema.md
+#       (tier2_handlers / viewport_profiles / coverage_gates / policies)
+#   - web-backend:  (schema TBD)
+# Empty skeleton: only base keys here. Boundary-specific keys are added by
+# /aibdd-plan when first feature package is bound; before that, prehandling
+# pre-red gates that depend on boundary-specific keys treat their absence as
+# "not yet configured" rather than failure.
 version: 1
 policies: {}

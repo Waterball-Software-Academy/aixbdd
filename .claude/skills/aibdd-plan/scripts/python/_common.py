@@ -111,6 +111,56 @@ def load_boundary_id(args_path: Path, args: dict[str, str]) -> str | None:
     return bid or None
 
 
+def load_boundary_type(args_path: Path, args: dict[str, str]) -> str | None:
+    """Load boundary type (e.g., 'web-app', 'web-service') from BOUNDARY_YML."""
+    boundary_rel = expand_vars(args.get("BOUNDARY_YML", ""), args)
+    if not boundary_rel:
+        return None
+    p = Path(boundary_rel)
+    if not p.is_absolute():
+        p = specs_root(args_path, args).parent / p
+    p = p.resolve()
+    if not p.is_file():
+        return None
+    raw = load_yaml(p) or {}
+    boundaries = raw.get("boundaries") if isinstance(raw, dict) else None
+    if not boundaries:
+        return None
+    btype = str(boundaries[0].get("type") or "").strip()
+    return btype or None
+
+
+def _aibdd_skills_root(args_path: Path) -> Path | None:
+    """Walk up from args_path to find the .claude/skills directory."""
+    cur = args_path.parent.resolve()
+    while cur != cur.parent:
+        candidate = cur / ".claude" / "skills"
+        if candidate.is_dir():
+            return candidate
+        cur = cur.parent
+    return None
+
+
+def load_profile(args_path: Path, args: dict[str, str]) -> dict[str, Any] | None:
+    """Load the boundary profile yaml for the project's primary boundary.
+
+    Resolves boundary type via BOUNDARY_YML, then locates the profile under
+    aibdd-core/references/boundary-type-profiles/<type>.profile.yml. Returns
+    parsed dict or None if any link in the chain is missing.
+    """
+    btype = load_boundary_type(args_path, args)
+    if not btype:
+        return None
+    skills_root = _aibdd_skills_root(args_path)
+    if skills_root is None:
+        return None
+    profile_path = skills_root / "aibdd-core" / "references" / "boundary-type-profiles" / f"{btype}.profile.yml"
+    if not profile_path.is_file():
+        return None
+    data = load_yaml(profile_path)
+    return data if isinstance(data, dict) else None
+
+
 def apply_boundary(value: str, boundary_id: str | None) -> str:
     if not boundary_id:
         return value

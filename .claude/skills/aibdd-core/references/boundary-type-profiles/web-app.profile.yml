@@ -1,0 +1,86 @@
+id: web-app
+role: frontend
+
+description: >
+  Frontend web application boundary. UI operations are verified via browser-level E2E
+  tests (Playwright). Backend API calls are stubbed via Playwright `page.route`
+  interception with mock state held in the test-process fixture closure — no
+  in-app mock module, no /__test__/* HTTP indirection. Operation contract formulation
+  is delegated to `/aibdd-form-api-spec` (OpenAPI authored by plan from frontend
+  reasoning when no upstream contract is supplied; if `${CONTRACTS_DIR}/api.yml`
+  already exists at plan start, it is treated as imported truth and plan only
+  extends it via `slice_list`). Persistent state formulation remains `none` in
+  v1 — see "Future Expansion" below.
+
+operation:
+  trigger: user-interaction
+  protocol: playwright-e2e
+
+state_specifier:
+  skill: none
+  format: none
+  semantics: ephemeral-mock
+  output_dir_key: DATA_DIR
+  default_filename: ""
+
+contract:
+  format: openapi
+
+operation_contract_specifier:
+  skill: /aibdd-form-api-spec
+  format: openapi
+  output_dir_key: CONTRACTS_DIR
+  default_filename: api.yml
+
+# Component contract specifier (Story-export-level UI truth, boundary invariant I4 binding anchor).
+# Plan reasons about component modeling units and DELEGATEs CSF3 rendering;
+# Story files serve as the locator anchor for ui-action / ui-readmodel-then DSL bindings.
+component_contract_specifier:
+  skill: /aibdd-form-story-spec
+  format: csf3
+  output_dir_key: FE_STORIES_DIR
+  default_filename: ""
+
+# Handler used to seed boundary-persisted state in plan DSL.
+# Consumed by /aibdd-plan persistence-ownership coverage gate and
+# /aibdd-spec-by-example-analyze entity-coverage gate.
+persistence_handler:
+  handler_id: mock-state-given
+  state_ref_pattern: "src/lib/schemas/<schema>.ts#<SchemaName>"
+  routing_yml: aibdd-core/assets/boundaries/web-frontend/handler-routing.yml
+  coverage_gate: deferred-v1
+
+# Allowed L4 binding target prefixes for this preset.
+# Consumed by check_dsl_entries.py.
+allowed_l4_target_prefixes:
+  - contracts/      # OpenAPI ref — authored by plan via /aibdd-form-api-spec, or imported from upstream backend before plan
+  - data/           # state truth ref (Zod schema spec pointer)
+  - response        # response body field
+  - fixture         # fixture builder slot
+  - stub_payload    # api-stub override payload
+  - literal         # literal value
+  - "ui:"           # ui-action / ui-readmodel-then / success-failure / mock-state-then targets
+  - "url:"          # url-then targets
+  - "route:"        # route-given targets
+
+test_strategy:
+  layer: e2e
+  io_boundary:
+    do_not_mock:
+      - Next.js app (dev server)
+      - React component rendering
+      - browser DOM
+    must_stub:
+      - backend API (via Playwright `page.route` interception in the fixture closure per nextjs-playwright variant; mock state lives in test-process, not dev-server)
+
+# Future Expansion (not active in v1):
+#   state_specifier: Zod-schema-based mock data-model formulation skill
+#     (frontend equivalent of /aibdd-form-entity-spec)
+#   persistence_handler.coverage_gate: enable Zod-schema-required-field coverage gate
+#     (mirrors web-backend NOT-NULL column coverage)
+#
+# Activated in v1 (was previously deferred):
+#   operation_contract_specifier: now /aibdd-form-api-spec — plan authors api.yml
+#     from frontend reasoning. Consumer-mode usage (importing upstream backend's
+#     api.yml) remains supported by placing api.yml in ${CONTRACTS_DIR} BEFORE
+#     plan runs; plan reads it as truth and only extends it via slice_list.

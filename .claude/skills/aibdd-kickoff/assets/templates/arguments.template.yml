@@ -65,7 +65,7 @@ PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}
 # 2. CONSTITUTIONS（相對 BACKEND_ROOT）
 # -----------------------------------------------------------------------------
 
-# DEV_CONSTITUTION_PATH — 開發治理憲法路徑；由 /aibdd-auto-backend-starter 產生，kickoff 只宣告路徑。
+# DEV_CONSTITUTION_PATH — 開發治理憲法路徑；由 /aibdd-auto-starter 產生，kickoff 只宣告路徑。
 DEV_CONSTITUTION_PATH: ${AIBDD_CONFIG_DIR}/dev-constitution.md
 
 # BDD_CONSTITUTION_PATH — Feature 檔名軸（§5.1）錨點；語意上隸屬 bdd-stack 憲法樹，由 starter 產生。
@@ -161,7 +161,7 @@ TEST_STRATEGY_FILE: ${TRUTH_BOUNDARY_ROOT}/test-strategy.yml
 # 7. PYTHON_E2E_STARTER_OUTPUT_PATHS — starter 產物路徑綁定
 # 下列 key 只宣告 python-e2e walking skeleton 的輸出座標，讓 starter 與下游 skill
 # 可用同一組 path token 溝通；/aibdd-kickoff 不建立 product code，也不擁有架構規則。
-# 實體程式骨架、tests/features runtime、alembic scaffold 由 /aibdd-auto-backend-starter 產生。
+# 實體程式骨架、tests/features runtime、alembic scaffold 由 /aibdd-auto-starter 產生。
 # -----------------------------------------------------------------------------
 
 # PY_APP_DIR — Python 應用碼根目錄。
@@ -231,7 +231,7 @@ BACKEND_PRESET_CONTRACT_REF: .claude/skills/aibdd-core/references/preset-contrac
 
 # -----------------------------------------------------------------------------
 # 9. PROJECT_OWNED_BDD_STACK — starter-generated project BDD runtime docs
-# /aibdd-kickoff 只宣告路徑；實體文件由 /aibdd-auto-backend-starter 產生。
+# /aibdd-kickoff 只宣告路徑；實體文件由 /aibdd-auto-starter 產生。
 # bdd-stack 是專案層 BDD runtime 憲法樹；不要把這些路徑誤認為 aibdd-core reference。
 # -----------------------------------------------------------------------------
 

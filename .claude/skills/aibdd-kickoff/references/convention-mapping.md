@@ -6,10 +6,11 @@
 
 | 參數 | 預設值 |
 |------|--------|
-| STARTER_VARIANT | `python-e2e` 或 `java-e2e`（由 Q1 決定，預設 `python-e2e`） |
+| STARTER_VARIANT | `python-e2e`、`java-e2e`、或 `nextjs-storybook-cucumber-e2e`（由 Q1 決定） |
 | PROJECT_SPEC_LANGUAGE | zh-hant |
 | DSL_KEY_LOCALE | prefer_spec_language |
-| BACKEND_SUBDIR | "" |
+| BACKEND_SUBDIR | `""` | （backend stack 專用：`python-e2e` / `java-e2e`） |
+| FRONTEND_SUBDIR | `""` | （frontend stack 專用：`nextjs-storybook-cucumber-e2e`） |
 | AIBDD_CONFIG_DIR | .aibdd |
 | AIBDD_ARGUMENTS_PATH | ${AIBDD_CONFIG_DIR}/arguments.yml |
 | SPECS_ROOT_DIR | specs |
@@ -35,7 +36,16 @@
 - `BACKEND_SUBDIR = ""`（預設）→ `${BACKEND_ROOT} = ${PROJECT_ROOT}`（backend 與 specs/ 都直接掛在 repo 最外層）
 - `BACKEND_SUBDIR = "<name>"`（例如 `backend`）→ `${BACKEND_ROOT} = ${PROJECT_ROOT}/${BACKEND_SUBDIR}`
 
-所有 path 變數（`AIBDD_ARGUMENTS_PATH`、`SPECS_ROOT_DIR`、`PY_APP_DIR`、`PY_TEST_FEATURES_DIR`、`ALEMBIC_VERSIONS_DIR` 等）都解析為 `${BACKEND_ROOT}/<value>`。下游 `/aibdd-auto-backend-starter` 的 same-repo guard 會以 `${BACKEND_ROOT}/${AIBDD_ARGUMENTS_PATH}` 為唯一合法 args 位置。
+所有 path 變數（`AIBDD_ARGUMENTS_PATH`、`SPECS_ROOT_DIR`、`PY_APP_DIR`、`PY_TEST_FEATURES_DIR`、`ALEMBIC_VERSIONS_DIR` 等）都解析為 `${BACKEND_ROOT}/<value>`。下游 `/aibdd-auto-starter` 的 same-repo guard 會以 `${BACKEND_ROOT}/${AIBDD_ARGUMENTS_PATH}` 為唯一合法 args 位置。
+
+### Frontend Root 組合規則
+
+`FRONTEND_SUBDIR` 控制前端程式碼是否放在 repo root 的子目錄（語意與 `BACKEND_SUBDIR` 對稱）：
+
+- `FRONTEND_SUBDIR = ""`（預設）→ `${FRONTEND_ROOT} = ${PROJECT_ROOT}`（frontend 與 specs/ 都直接掛在 repo 最外層）
+- `FRONTEND_SUBDIR = "<name>"`（例如 `oxo`）→ `${FRONTEND_ROOT} = ${PROJECT_ROOT}/${FRONTEND_SUBDIR}`
+
+所有 path 變數（`AIBDD_ARGUMENTS_PATH`、`SPECS_ROOT_DIR`、`FE_APP_DIR`、`FE_FEATURES_DIR` 等）都解析為 `${FRONTEND_ROOT}/<value>`。下游 `/aibdd-auto-frontend-starter` 的 same-repo guard 會以 `${FRONTEND_ROOT}/${AIBDD_ARGUMENTS_PATH}` 為唯一合法 args 位置。
 
 ### truth（佔位符：`<boundary>`；function package late-bound）
 
@@ -117,15 +127,15 @@ scope 值意義：
 | DB_PASSWORD | `postgres` |
 | DB_PORT | `5432` |
 
-> Java stack 的所有 source / test 落點（`src/main/java/<base_package_path>/`、`src/test/resources/features/` 等）由 starter 從 `BASE_PACKAGE_PATH` 推導；kickoff 不在 `arguments.yml` 列舉這些路徑。完整輸出規範見 `aibdd-auto-backend-starter/references/variants/java-e2e.md`。
+> Java stack 的所有 source / test 落點（`src/main/java/<base_package_path>/`、`src/test/resources/features/` 等）由 starter 從 `BASE_PACKAGE_PATH` 推導；kickoff 不在 `arguments.yml` 列舉這些路徑。完整輸出規範見 `aibdd-auto-starter/references/variants/java-e2e.md`。
 
 ## Unsupported Variants
 
-TypeScript、Frontend Only、Unit Test 在 kickoff 互動中只可顯示為「尚未支援」，不得寫入 artifact plan 或 `arguments.yml`。
+其他 frontend 框架（Vue / Svelte 等）、Unit Test only、Mobile 在 kickoff 互動中只可顯示為「尚未支援」，不得寫入 artifact plan 或 `arguments.yml`。TypeScript / Next.js 已透過 `stack=nextjs_playwright` 支援；其他 TypeScript 後端（Nest / Hono 等）尚未支援。
 
 ## arguments.yml 範例
 
-範例分兩個 stack，分別由 `assets/templates/arguments.template.yml`（python-e2e）與 `assets/templates/arguments.template.java-e2e.yml`（java-e2e）渲染：
+範例分三個 stack，分別由 `assets/templates/arguments.template.yml`（python-e2e）、`assets/templates/arguments.template.java-e2e.yml`（java-e2e）與 `assets/templates/arguments.template.nextjs-playwright.yml`（nextjs-playwright）渲染：
 
 ### Python E2E
 
@@ -268,7 +278,7 @@ DB_PASSWORD: postgres
 DB_PORT: "5432"
 ```
 
-> Java starter 的 source / test 目錄座標（`src/main/java/<base_package_path>/`、`src/test/resources/features/` 等）由 `/aibdd-auto-backend-starter` 從 `BASE_PACKAGE` / `BASE_PACKAGE_PATH` 推導，不在 `arguments.yml` 列舉。
+> Java starter 的 source / test 目錄座標（`src/main/java/<base_package_path>/`、`src/test/resources/features/` 等）由 `/aibdd-auto-starter` 從 `BASE_PACKAGE` / `BASE_PACKAGE_PATH` 推導，不在 `arguments.yml` 列舉。
 
 ## Boundary Path Resolution（consumer 側）
 
@@ -295,15 +305,16 @@ boundaries:
 
 | 技術堆疊 + 測試策略 | Starter Skill |
 |---------------------|---------------|
-| Python + E2E Test | `/aibdd-auto-backend-starter`（變體：`python-e2e`） |
-| Java + E2E Test | `/aibdd-auto-backend-starter`（變體：`java-e2e`） |
+| Python + E2E Test | `/aibdd-auto-starter`（變體：`python-e2e`） |
+| Java + E2E Test | `/aibdd-auto-starter`（變體：`java-e2e`） |
 | TypeScript + E2E Test | （尚未建立） |
 
 ### 前端 Starter
 
-| Starter Skill |
-|---------------|
-| `/aibdd-auto-frontend-apifirst-msw-starter` |
+| 技術堆疊 + 測試策略 | Starter Skill |
+|---------------------|---------------|
+| Next.js 16 + Storybook + Playwright BDD | `/aibdd-auto-starter`（變體：`nextjs-storybook-cucumber-e2e`） |
+| API-first MSW workflow | `/aibdd-auto-frontend-apifirst-msw-starter` |
 
 前端 starter 永遠顯示，不受 Q1 技術堆疊選擇影響。
 specformula Phase 03（Frontend Engineering）需要前端骨架已就位。

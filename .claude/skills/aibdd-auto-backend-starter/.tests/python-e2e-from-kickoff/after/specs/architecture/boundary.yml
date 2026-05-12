@@ -1,7 +1,0 @@
-version: 2
-boundaries:
-  - id: backend
-    level: 1
-    role: backend
-    type: web-service
-    description: backend Python FastAPI backend service
