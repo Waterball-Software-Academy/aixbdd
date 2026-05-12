@@ -101,10 +101,19 @@ references:
 7. ASSERT 指派 **BVA** 之 rule 在 `$$rule_test_data` 中至少有一組邊界代表值或 CiC(BDY)；否則 STOP
 8. ASSERT 指派 **State Transition** 之 rule 具 `from/event/to` 或等價狀態枚舉；否則 STOP
 9. ASSERT 每個 renderable Example / Scenario / Scenario Outline 已具備前置狀態建構分析；下列子規則 **皆為 hard-stop**，不得用 CiC(GAP) 旁路、不得自行發明 Given：
-   9.A 識別該 Example 的 When step 所需的所有參與 entity（含 aggregate root 與被 FK 引用的 child entity）
-   9.B 對每個參與 entity，必須在 plan DSL（local + shared）中找到對應的 `aggregate-given` builder（`L4.preset.handler == aggregate-given` AND `L4.source_refs.data` 指該 entity 的 primary table）；composite aggregate-given（同條 entry seed 多個 entity）**不算**涵蓋其底層 base entity 的 builder 義務（譬如 `student-assigned` 不視為涵蓋 `student` 的 builder）
-   9.C 對每個 Given step 所引用的既有 entity ID（如 `學員 X`、`旅程 Y`、`stage Z`），必須能由 plan DSL 的 aggregate-given 串鏈唯一構造出來，不得依賴未宣告的隱式 fixture
-   9.D IF 任一參與 entity 缺對應 plan DSL aggregate-given builder 或串鏈不可達：**STOP + REPORT 指示回 `/aibdd-plan` 補 entity-level aggregate-given**；**禁止**改用 CiC(GAP) 標註後繼續、**禁止**發明未列於 plan DSL 的 Given step、**禁止**假設 composite given 已涵蓋 base entity
+   9.0 `$$boundary_profile` = READ `aibdd-core::boundary-type-profiles/${boundary_type}.profile.yml` per [`aibdd-core::boundary-profile-contract.md`](aibdd-core::boundary-profile-contract.md)；`$boundary_type` 取自 `${BOUNDARY_YML}#boundaries[0].type`
+       9.0.1 `$persistence_handler` = COMPUTE `$$boundary_profile.persistence_handler.handler_id`
+       9.0.2 `$persistence_state_ref_pattern` = COMPUTE `$$boundary_profile.persistence_handler.state_ref_pattern`
+       9.0.3 `$persistence_coverage_gate` = COMPUTE `$$boundary_profile.persistence_handler.coverage_gate`
+       9.0.4 ASSERT `$persistence_handler` non-empty AND `$persistence_state_ref_pattern` non-empty AND `$persistence_coverage_gate ∈ {"not-null-columns", "deferred-v1", "none"}`；違反時 STOP + REPORT 指示回 `/aibdd-kickoff` 或 `/aibdd-plan` 補 boundary profile 之 `persistence_handler` 區塊
+       9.0.5 BRANCH `$persistence_coverage_gate`
+              `not-null-columns` → 套用 9.A–9.D（preset 啟用 entity coverage gate）
+              `deferred-v1`      → SKIP 9.A–9.D，記錄 reason="profile coverage_gate=deferred-v1"，繼續 step 10
+              `none`             → SKIP 9.A–9.D，記錄 reason="profile coverage_gate=none"，繼續 step 10
+   9.A 識別該 Example 的 When step 所需的所有參與 entity（含 aggregate root 與被 `${$persistence_state_ref_pattern}` 引用的 child entity）
+   9.B 對每個參與 entity，必須在 plan DSL（local + shared）中找到對應的 `${$persistence_handler}` builder（`L4.preset.handler == ${$persistence_handler}` AND `L4.source_refs.data` 符合 `${$persistence_state_ref_pattern}` 樣式並指向該 entity 的 primary state ref）；composite builder（同條 entry seed 多個 entity）**不算**涵蓋其底層 base entity 的 builder 義務（譬如 `student-assigned` 不視為涵蓋 `student` 的 builder）
+   9.C 對每個 Given step 所引用的既有 entity ID（如 `學員 X`、`旅程 Y`、`stage Z`），必須能由 plan DSL 的 `${$persistence_handler}` 串鏈唯一構造出來，不得依賴未宣告的隱式 fixture
+   9.D IF 任一參與 entity 缺對應 plan DSL `${$persistence_handler}` builder 或串鏈不可達：**STOP + REPORT 指示回 `/aibdd-plan` 補 entity-level `${$persistence_handler}`**；**禁止**改用 CiC(GAP) 標註後繼續、**禁止**發明未列於 plan DSL 的 Given step、**禁止**假設 composite given 已涵蓋 base entity
 10. ASSERT 每個 **Scenario Outline** 合併群組附 internal `merge_decision` trace（見 R18）；若 Step0 不通過仍合成 Outline → STOP
 11. SCAN `$$reason_handoff` 是否引入 `test-strategy.yml` / plan DSL 未列舉之外部依賴
     11.1 IF 有: STOP + REPORT 指示回 `/aibdd-plan` 補 dependency edge / external-stub DSL

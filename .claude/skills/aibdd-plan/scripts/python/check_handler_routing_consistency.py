@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-"""Validate aibdd-core/assets/boundaries/web-backend/handler-routing.yml structure beyond JSON Schema."""
+"""Validate handler-routing.yml internal consistency for any boundary preset.
+
+This check is preset-agnostic: it does NOT presume a fixed handler set.
+The preset's own SSOT (handlers map) defines the universe; routes are
+validated against it. Adding a new preset (e.g., mobile-app, desktop-app)
+requires no change to this script.
+"""
 
 from __future__ import annotations
 
@@ -8,18 +14,6 @@ from pathlib import Path
 from typing import Any
 
 from _common import emit, load_yaml, violation
-
-HANDLER_IDS = frozenset(
-    {
-        "aggregate-given",
-        "http-operation",
-        "success-failure",
-        "readmodel-then",
-        "aggregate-then",
-        "time-control",
-        "external-stub",
-    }
-)
 
 
 def main() -> int:
@@ -41,29 +35,11 @@ def main() -> int:
     handlers = data.get("handlers")
     routes = data.get("routes")
 
+    declared_handler_ids: set[str] = set()
     if not isinstance(handlers, dict):
         violations.append(violation("HANDLERS_MISSING", str(path), "handlers must be a mapping"))
     else:
-        hk = set(handlers.keys())
-        if hk != HANDLER_IDS:
-            missing = sorted(HANDLER_IDS - hk)
-            extra = sorted(hk - HANDLER_IDS)
-            if missing:
-                violations.append(
-                    violation(
-                        "HANDLERS_INCOMPLETE",
-                        str(path),
-                        f"handlers keys missing: {missing}",
-                    )
-                )
-            if extra:
-                violations.append(
-                    violation(
-                        "HANDLERS_EXTRA",
-                        str(path),
-                        f"handlers keys not allowed: {extra}",
-                    )
-                )
+        declared_handler_ids = set(handlers.keys())
         for hid, block in handlers.items():
             if not isinstance(block, dict):
                 violations.append(
@@ -80,6 +56,7 @@ def main() -> int:
                         )
                     )
 
+    referenced_handler_ids: set[str] = set()
     if not isinstance(routes, list):
         violations.append(violation("ROUTES_NOT_ARRAY", str(path), "routes must be a list"))
     else:
@@ -88,20 +65,14 @@ def main() -> int:
                 continue
             h = r.get("handler")
             sp = r.get("sentence_part")
-            if h not in HANDLER_IDS:
+            if isinstance(h, str):
+                referenced_handler_ids.add(h)
+            if isinstance(h, str) and declared_handler_ids and h not in declared_handler_ids:
                 violations.append(
                     violation(
                         "ROUTE_HANDLER_UNKNOWN",
                         str(path),
-                        f"routes[{i}] unknown handler {h!r}",
-                    )
-                )
-            elif isinstance(handlers, dict) and h not in handlers:
-                violations.append(
-                    violation(
-                        "ROUTE_HANDLER_NOT_IN_HANDLERS",
-                        str(path),
-                        f"routes[{i}] handler {h!r} missing from handlers map",
+                        f"routes[{i}] handler {h!r} not declared in handlers map",
                     )
                 )
             if sp != h:
@@ -112,6 +83,17 @@ def main() -> int:
                         f"routes[{i}] sentence_part {sp!r} must equal handler {h!r}",
                     )
                 )
+
+    if declared_handler_ids:
+        unreferenced = declared_handler_ids - referenced_handler_ids
+        for hid in sorted(unreferenced):
+            violations.append(
+                violation(
+                    "HANDLER_NOT_ROUTED",
+                    str(path),
+                    f"handlers.{hid} declared but not referenced by any route",
+                )
+            )
 
     return emit(not violations, "handler-routing consistency", violations)
 

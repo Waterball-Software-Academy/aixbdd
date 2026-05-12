@@ -98,7 +98,12 @@ references:
 > produces: `$$config`, `$$core_refs`, `$$runtime_refs`, `$$pre_hook_doc`
 
 1. `$$config` = PARSE `$$arguments_path` as project config.
-2. `$$core_refs` = READ every configured `GHERKIN_*_REF`, `FILENAME_*_REF`, `DSL_OUTPUT_CONTRACT_REF`, and `BACKEND_PRESET_CONTRACT_REF`.
+   1.1 `$preset_kind` = COMPUTE `${PRESET_KIND}` from `$$config`（default `web-backend` when key missing — backward compat for existing backend projects）
+   1.2 BRANCH `$preset_kind`
+       web-backend  → `$preset_contract_ref_key` = COMPUTE `BACKEND_PRESET_CONTRACT_REF`
+       web-frontend → `$preset_contract_ref_key` = COMPUTE `FRONTEND_PRESET_CONTRACT_REF`
+       other        → STOP with `unsupported_preset_kind`
+2. `$$core_refs` = READ every configured `GHERKIN_*_REF`, `FILENAME_*_REF`, `DSL_OUTPUT_CONTRACT_REF`, and `${$preset_contract_ref_key}` (active key dispatched by `$preset_kind`).
 3. ASSERT every core ref path exists and is read from path, not basename.
 4. `$$runtime_refs` = READ `ACCEPTANCE_RUNNER_RUNTIME_REF`, `STEP_DEFINITIONS_RUNTIME_REF`, `FIXTURES_RUNTIME_REF`, and `FEATURE_ARCHIVE_RUNTIME_REF`.
 5. ASSERT every runtime ref exists and declares command, glob, fixture, archive, or visibility behavior it owns.

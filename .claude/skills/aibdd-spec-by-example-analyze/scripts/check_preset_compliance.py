@@ -117,7 +117,13 @@ def _collect_dsl_l1_patterns(paths: dict) -> tuple[set[str], list[dict]]:
                 continue
             for key in ("given", "when"):
                 body = l1.get(key)
-                if body:
+                if body is None:
+                    continue
+                if isinstance(body, list):
+                    for item in body:
+                        if item:
+                            patterns.add(canonicalize(str(item)))
+                else:
                     patterns.add(canonicalize(str(body)))
             then = l1.get("then")
             if isinstance(then, list):

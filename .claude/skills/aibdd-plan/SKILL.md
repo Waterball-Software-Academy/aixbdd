@@ -96,6 +96,8 @@ references:
     purpose: Self-contained semantic quality gate rubric and verdict shape.
   - path: references/backend-preset-contract.md
     purpose: 本 skill 對 web-backend boundary 的 preset 使用契約（指向 aibdd-core SSOT）。
+  - path: references/frontend-preset-contract.md
+    purpose: 本 skill 對 web-frontend boundary 的 preset 使用契約（指向 aibdd-core SSOT）。
   - path: references/sentence-parts-framework.md
     purpose: Legacy tombstone — sentence-parts SSOT 已搬到 aibdd-core/assets/boundaries/web-backend/handler-routing.yml；保留以避免重新發明。
   - path: assets/templates/plan-md.template.md
@@ -104,7 +106,7 @@ references:
     purpose: Planning research and trade-off record template.
   - path: assets/templates/dsl-entry.template.yml
     purpose: DSL entry skeleton used when rendering local/shared DSL truth.
-  - path: .claude/skills/aibdd-reconcile/references/planner-handoff-contract.md
+  - path: ../aibdd-reconcile/references/planner-handoff-contract.md
     purpose: Optional reconcile caller payload schema for `plan.md` narrative injection.
   - path: aibdd-core::spec-package-paths.md
     purpose: Boundary-aware plan/truth path semantics and argument keys.
@@ -112,6 +114,8 @@ references:
     purpose: Physical mapping discipline for DSL L4 surfaces.
   - path: aibdd-core::preset-contract/web-backend.md
     purpose: Preset rule instance；物理 routing SSOT：aibdd-core/assets/boundaries/web-backend/handler-routing.yml。
+  - path: aibdd-core::preset-contract/web-frontend.md
+    purpose: Preset rule instance；物理 routing SSOT：aibdd-core/assets/boundaries/web-frontend/handler-routing.yml。
   - path: aibdd-core::diagram-file-naming.md
     purpose: Mermaid compound extensions for sequence/class diagram filenames.
   - path: aibdd-core::boundary-profile-contract.md
@@ -130,14 +134,17 @@ references:
 | R8 | `references/dsl-output-contract.md` | Phase 6 + Phase 7 | DSL L1-L4, bindings, external stub, fixture upload, and red-usability contract. |
 | R9 | `references/impacted-feature-files-contract.md` | Phase 3 + Phase 8 | Defines how plan.md records the current plan package's impacted feature files for downstream task planning. |
 | R10 | `aibdd-core::preset-contract/web-backend.md` | Phase 6 | Preset rule instance；物理 routing SSOT：`aibdd-core/assets/boundaries/web-backend/handler-routing.yml`。 |
+| R10F | `aibdd-core::preset-contract/web-frontend.md` | Phase 6 | Preset rule instance（frontend 對偶）；物理 routing SSOT：`aibdd-core/assets/boundaries/web-frontend/handler-routing.yml`。 |
 | R11 | `references/forbidden-mutations.md` | global | Artifacts and responsibilities this skill must not mutate. |
 | R12 | `references/quality-gate-contract.md` | Phase 7 | Self-contained semantic quality gate rubric and verdict shape. |
 | R13 | `assets/templates/plan-md.template.md` | Phase 3 + Phase 8 | Plan package technical plan template. |
 | R14 | `assets/templates/research-md.template.md` | Phase 3 + Phase 8 | Planning research and trade-off record template. |
 | R15 | `assets/templates/dsl-entry.template.yml` | Phase 6 | DSL entry skeleton used when rendering local/shared DSL truth. |
 | R16 | `aibdd-core::diagram-file-naming.md` | Phase 5 | Mermaid compound extensions for sequence/class diagram filenames. |
-| R17 | `aibdd-core::boundary-profile-contract.md` | Phase 2 + Phase 3 | Boundary type profile, state specifier, and operation contract specifier dispatch. |
+| R17 | `aibdd-core::boundary-profile-contract.md` | Phase 2 + Phase 3 | Boundary type profile, state specifier, operation contract specifier, and component contract specifier dispatch. |
+| R17S | `.claude/skills/aibdd-form-story-spec/references/role-and-contract.md` | Phase 3 (step 15.5) | Caller payload schema for `/aibdd-form-story-spec` DELEGATE (used when component_contract_specifier.skill = /aibdd-form-story-spec). |
 | R18 | `.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml` | Phase 6 | Boundary preset routing SSOT（routes keyword → sentence_part/handler，`handlers.*` L4 binding 要求）；DSL 合成前必讀。 |
+| R18F | `.claude/skills/aibdd-core/assets/boundaries/web-frontend/handler-routing.yml` | Phase 6 | Boundary preset routing SSOT（frontend 對偶；含 4 條 boundary-level invariants I1–I4）；DSL 合成前必讀。 |
 | R19 | `.claude/skills/aibdd-reconcile/references/planner-handoff-contract.md` | Phase 1 + Phase 3 | Optional reconcile caller payload schema for `plan.md` narrative injection. |
 
 ## §2 SOP
@@ -213,7 +220,7 @@ references:
 23. ASSERT no input path points to plan package when truth path is required
 
 ### Phase 3 — PLAN technical boundary truth
-> produces: `$$boundary_delta`, `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$impacted_feature_files`, `$$plan_doc`, `$$research_doc`
+> produces: `$$boundary_delta` (incl. `components` for frontend boundaries), `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$impacted_feature_files`, `$$plan_doc`, `$$research_doc`
 
 1. `$truth_rules` = PARSE [`references/technical-truth-rules.md`](references/technical-truth-rules.md)
 2. `$ownership` = PARSE [`references/truth-ownership.md`](references/truth-ownership.md)
@@ -236,6 +243,27 @@ references:
     `/aibdd-form-entity-spec` → DELEGATE `/aibdd-form-entity-spec` with entity/state reasoning from `$$data_delta` and target paths under `${TRUTH_BOUNDARY_ROOT}/data/`
     empty/none                → ASSERT `$$data_delta.files` empty
     other                     → STOP with unsupported state specifier message
+15.5 BRANCH `$$boundary_profile.component_contract_specifier.skill`
+    `/aibdd-form-story-spec` → GOTO #15.5.1
+    empty/none                → GOTO #15.5.5
+    other                     → STOP with unsupported component contract specifier message
+   15.5.0 ASSERT `$$boundary_delta.components` is a list AND every entry has `identifier`, `import_path`, `title`, and a non-empty `stories[]` with `export_name`, `role`, `accessible_name`, `accessible_name_arg` per [`.claude/skills/aibdd-form-story-spec/references/role-and-contract.md`](.claude/skills/aibdd-form-story-spec/references/role-and-contract.md) §2
+   15.5.0.5 `$design_pen_path` = COMPUTE `${CURRENT_PLAN_PACKAGE}/design.pen`
+   15.5.0.6 `$design_style_profile_path` = COMPUTE `${CURRENT_PLAN_PACKAGE}/design/style-profile.yml`
+   15.5.0.7 `$design_source` = COMPUTE
+       IF path_exists(`$design_pen_path`):
+         `{ kind: "pen", path: $design_pen_path, screen_id: null, style_profile_path: ($design_style_profile_path if path_exists else null) }`
+       ELSE:
+         `{ kind: "none" }`
+   15.5.1 LOOP per `$component` in `$$boundary_delta.components`
+       15.5.1.1 `$story_target_path` = RENDER `${FE_STORIES_DIR}/${$component.identifier}.stories.ts`
+       15.5.1.2 `$story_payload` = DERIVE form-story-spec caller payload from `$component` per [`.claude/skills/aibdd-form-story-spec/references/role-and-contract.md`](.claude/skills/aibdd-form-story-spec/references/role-and-contract.md) §2
+       15.5.1.3 DELEGATE `/aibdd-form-story-spec` with target_path=`$story_target_path`, format=".stories.ts", mode="create", design_source=`$design_source`, reasoning.component_modeling=`$story_payload`
+       15.5.1.4 IF DELEGATE returns `incomplete`:
+           15.5.1.4.1 EMIT "component modeling 推理包不完整：${$component.identifier}" to user
+           15.5.1.4.2 STOP
+       END LOOP
+   15.5.5 ASSERT `$$boundary_delta.components` is empty OR every entry is marked `deferred: true`; on violation STOP with "component_contract_specifier=none but boundary_delta.components non-empty"
 16. WRITE `${TEST_STRATEGY_FILE}` ← rendered strategy from `$$strategy_delta`
 17. `$plan_template` = READ [`assets/templates/plan-md.template.md`](assets/templates/plan-md.template.md)
 18. `$research_template` = READ [`assets/templates/research-md.template.md`](assets/templates/research-md.template.md)
@@ -296,9 +324,27 @@ references:
        prefer_spec_language → `$$dsl_key_locale` = COMPUTE `prefer_spec_language` GOTO #6.7
        en-us                → `$$dsl_key_locale` = COMPUTE `en-us` GOTO #6.7
 7. `$dsl_contract` = PARSE `${DSL_OUTPUT_CONTRACT_REF}`
-8. `$backend_preset` = PARSE `${BACKEND_PRESET_CONTRACT_REF}`
-9. `$handler_routing_policy` = READ `.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml`（對齊 `L4.preset.name: web-backend`；routes + handlers SSOT）
-10. `$$dsl_delta` = THINK per [`reasoning/aibdd-plan/05-dsl-truth-synthesis.md`](reasoning/aibdd-plan/05-dsl-truth-synthesis.md), input=`$$activity_truth`, `$$feature_truth`, `$$boundary_delta`, `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$external_surface_model`, `$$implementation_model`, `$handler_routing_policy`, `$dsl_contract`, `$backend_preset`, `$$dsl_key_locale`
+8. `$preset_kind` = COMPUTE `${PRESET_KIND}`（default `web-backend` when key missing — backward compat for existing backend projects）
+   8.1 BRANCH `$preset_kind`
+       web-backend  → `$preset_contract_path`  = COMPUTE `${BACKEND_PRESET_CONTRACT_REF}`
+                      `$boundary_assets_dir`   = COMPUTE `aibdd-core/assets/boundaries/web-backend/`
+                      `$default_variant`       = COMPUTE `python-e2e`
+                      `$external_stub_handler` = COMPUTE `external-stub`
+       web-frontend → `$preset_contract_path`  = COMPUTE `${FRONTEND_PRESET_CONTRACT_REF}`
+                      `$boundary_assets_dir`   = COMPUTE `aibdd-core/assets/boundaries/web-frontend/`
+                      `$default_variant`       = COMPUTE `nextjs-playwright`
+                      `$external_stub_handler` = COMPUTE `api-stub`
+       other        → EMIT "PRESET_KIND `${$preset_kind}` not supported by /aibdd-plan v1（supported: web-backend, web-frontend）" to user
+                      STOP
+   8.2 `$persistence_handler` = COMPUTE `$$boundary_profile.persistence_handler.handler_id` per [`aibdd-core::boundary-profile-contract.md`](aibdd-core::boundary-profile-contract.md) — value comes from the boundary profile (Phase 2 step 13), not from a per-preset hardcoded branch.
+   8.3 `$persistence_state_ref_pattern` = COMPUTE `$$boundary_profile.persistence_handler.state_ref_pattern`
+   8.4 `$persistence_coverage_gate` = COMPUTE `$$boundary_profile.persistence_handler.coverage_gate`
+   8.5 `$persistence_ownership_required` = COMPUTE `$persistence_coverage_gate == "not-null-columns"`
+   8.6 ASSERT `$persistence_handler` non-empty AND `$persistence_state_ref_pattern` non-empty AND `$persistence_coverage_gate ∈ {"not-null-columns", "deferred-v1", "none"}`
+       8.6.1 IF assertion fails: EMIT "boundary profile missing or invalid persistence_handler — see aibdd-core/references/boundary-profile-contract.md" to user; STOP
+9. `$preset_contract` = PARSE `$preset_contract_path`
+   9.1 `$handler_routing_policy` = READ `${$boundary_assets_dir}/handler-routing.yml`（對齊 `L4.preset.name: ${$preset_kind}`；routes + handlers SSOT）
+10. `$$dsl_delta` = THINK per [`reasoning/aibdd-plan/05-dsl-truth-synthesis.md`](reasoning/aibdd-plan/05-dsl-truth-synthesis.md), input=`$$activity_truth`, `$$feature_truth`, `$$boundary_delta`, `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$external_surface_model`, `$$implementation_model`, `$handler_routing_policy`, `$dsl_contract`, `$preset_contract`, `$$dsl_key_locale`
 11. ASSERT every changed DSL entry has L1, L2, L3, L4
 12. ASSERT every L1 placeholder has exactly one binding in exactly one of (`L4.param_bindings`, `L4.assertion_bindings`)
 13. ASSERT every Then expected value has `L4.assertion_bindings`
@@ -306,14 +352,18 @@ references:
 15. ASSERT operation-backed entries have <= 3 L1 sentence parameters and <= 6 datatable parameters after defaults
 16. ASSERT every L4 binding target uses allowed source prefix: `contracts/`, `data/`, `response`, `fixture`, `stub_payload`, `literal`
 17. ASSERT every `L4.default_bindings` item has target, value, atomic-rule reason, and override policy
-18. ASSERT backend operation entries reference `web-backend` handler and variant, defaulting to `python-e2e`
-19. ASSERT external dependency entries use `external-stub` surface kind and do not reference same-boundary internal collaborator
-19.A ASSERT every aggregate-root entity declared in `${TRUTH_BOUNDARY_ROOT}/data/` AND listed under `boundary-map.yml#persistence_ownership` has at least one DSL entry where `L4.preset.handler == aggregate-given` AND `L4.source_refs.data` 指向該 entity 的 primary table — **每個聚合根都必須有獨立的 aggregate-given builder**；composite aggregate-given（單條 entry 同時 seed 多個 entity rows，例如 `student-assigned` 同時牽涉 student / journey / stage / assignment）**不豁免** base-entity aggregate-given 的獨立存在義務。Missing entity coverage 視為 plan-level gap，**禁止**寫弱 placeholder DSL，**禁止**讓下游 `/aibdd-spec-by-example-analyze` 自行用 CiC(GAP) bypass，必須在本 phase STOP。
+18. ASSERT operation entries reference `${$preset_kind}` handler and variant, defaulting to `${$default_variant}`
+19. ASSERT external dependency entries use `${$external_stub_handler}` surface kind and do not reference same-boundary internal collaborator
+19.A IF `$persistence_ownership_required`:
+     ASSERT every aggregate-root entity declared in `${TRUTH_BOUNDARY_ROOT}/data/` AND listed under `boundary-map.yml#persistence_ownership` has at least one DSL entry where `L4.preset.handler == ${$persistence_handler}` AND `L4.source_refs.data` 指向該 entity 的 primary table — **每個聚合根都必須有獨立的 persistence builder**；composite builder（單條 entry 同時 seed 多個 entity rows，例如 `student-assigned` 同時牽涉 student / journey / stage / assignment）**不豁免** base-entity builder 的獨立存在義務。Missing entity coverage 視為 plan-level gap，**禁止**寫弱 placeholder DSL，**禁止**讓下游 `/aibdd-spec-by-example-analyze` 自行用 CiC(GAP) bypass，必須在本 phase STOP。
+     ELSE: # frontend boundary — persistence-ownership coverage gate is future work (see web-frontend preset README §"Future Expansion"); skip this assertion in v1.
     19.A.1 IF assertion fails:
         19.A.1.1 `$missing_builder_msg` = RENDER list of persistence_ownership entities lacking aggregate-given DSL builder
         19.A.1.2 EMIT `$missing_builder_msg` to user
         19.A.1.3 STOP
-19.B ASSERT every `L4.preset.handler == aggregate-given` DSL entry **100% 覆蓋**對應 DBML table 的 NOT-NULL 欄位集合：對每條 builder 從 `L4.source_refs.data` 解析出 `data/<file>.dbml#<table>`，把該 table 所有 `[not null]`（含 `[pk]`）欄位收成 `required_columns`；把 `param_bindings + datatable_bindings + default_bindings` 中 target 形如 `data/<file>.dbml#<table>.<column>` 的 column 收成 `bound_columns`；要求 `required_columns ⊆ bound_columns`，唯一豁免清單為 (a) `[pk, increment]` 自增欄位，(b) DBML 顯式宣告 `[default: ...]` 欄位。`created_at` / `updated_at` 等慣例 timestamp **沒有** DBML 預設就**不**自動豁免——若想豁免必須在 DBML 加 `[default: ...]` modifier。FK NOT-NULL 欄位（譬如 `responses.assignment_id`、`appointments.assignment_id`、`retention_letters.assignment_id`、`responses.stage_id`）**不得**用 lookup-chain 推論豁免——builder 必須有直接 binding。違反屬於 plan-level gap，**禁止**寫弱 placeholder DSL，必須 STOP。
+19.B IF `$persistence_ownership_required`:
+     ASSERT every `L4.preset.handler == ${$persistence_handler}` DSL entry **100% 覆蓋**對應 DBML table 的 NOT-NULL 欄位集合：對每條 builder 從 `L4.source_refs.data` 解析出 `data/<file>.dbml#<table>`，把該 table 所有 `[not null]`（含 `[pk]`）欄位收成 `required_columns`；把 `param_bindings + datatable_bindings + default_bindings` 中 target 形如 `data/<file>.dbml#<table>.<column>` 的 column 收成 `bound_columns`；要求 `required_columns ⊆ bound_columns`，唯一豁免清單為 (a) `[pk, increment]` 自增欄位，(b) DBML 顯式宣告 `[default: ...]` 欄位。`created_at` / `updated_at` 等慣例 timestamp **沒有** DBML 預設就**不**自動豁免——若想豁免必須在 DBML 加 `[default: ...]` modifier。FK NOT-NULL 欄位（譬如 `responses.assignment_id`、`appointments.assignment_id`、`retention_letters.assignment_id`、`responses.stage_id`）**不得**用 lookup-chain 推論豁免——builder 必須有直接 binding。違反屬於 plan-level gap，**禁止**寫弱 placeholder DSL，必須 STOP。
+     ELSE: # frontend boundary — Zod-schema-based mock-state coverage gate is future work; skip this assertion in v1.
     19.B.1 IF assertion fails:
         19.B.1.1 `$missing_columns_msg` = RENDER per-builder list of unbound NOT-NULL columns（含 table、column、type、reason "missing param/datatable/default binding"）
         19.B.1.2 EMIT `$missing_columns_msg` to user
@@ -322,7 +372,7 @@ references:
     20.1 ASSERT DSL includes fixture catalog/path, loader or wrapper, upload invocation, response verifier, state or file-store verifier, and missing-file behavior
 21. `$local_entries` = DERIVE entries scoped to `${BOUNDARY_PACKAGE_DSL}` from `$$dsl_delta`
 22. `$shared_entries` = DERIVE entries scoped to `${BOUNDARY_SHARED_DSL}` from `$$dsl_delta`
-22.1 `$shared_template_entries` = DERIVE missing backend canonical shared entries from `aibdd-core/assets/boundaries/web-backend/shared-dsl-template.yml`, resolving `<backend-variant-id>` to backend variant, when `${BOUNDARY_SHARED_DSL}` lacks success/failure or time-control entries
+22.1 `$shared_template_entries` = DERIVE missing canonical shared entries from `${$boundary_assets_dir}/shared-dsl-template.yml`, resolving `<backend-variant-id>` / `<frontend-variant-id>` to `${$default_variant}`, when `${BOUNDARY_SHARED_DSL}` lacks the boundary's canonical shared entries (web-backend: success/failure + time-control; web-frontend: route-given + viewport-control + success/failure + time-control)
 22.2 `$shared_entries` = UNION `$shared_entries`, `$shared_template_entries`
 23. IF `$local_entries` non-empty:
     23.1 WRITE `${BOUNDARY_PACKAGE_DSL}` ← merged local DSL registry
@@ -341,8 +391,10 @@ references:
 3. `$impacted_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_impacted_feature_files.py" "${$$args_path}"`
 4. `$ownership_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_truth_ownership.py" "${$$args_path}"`
 5. `$dsl_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_dsl_entries.py" "${$$args_path}"`
-6. `$routing_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_handler_routing_consistency.py" ".claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml"`
-7. `$preset_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_backend_preset_refs.py" ".claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`
+6. `$routing_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_handler_routing_consistency.py" "${$boundary_assets_dir}/handler-routing.yml"`
+7. BRANCH `$preset_kind`
+   web-backend  → `$preset_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_backend_preset_refs.py" "${$boundary_assets_dir}/handler-routing.yml" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`
+   web-frontend → `$preset_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_frontend_preset_refs.py" "${$boundary_assets_dir}/handler-routing.yml" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`  # script body deferred — fail-loud signals scaffolding incomplete
 8. `$mock_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_external_mock_policy.py" "${TRUTH_BOUNDARY_ROOT}/boundary-map.yml" "${TEST_STRATEGY_FILE}" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`
 9. `$fixture_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_fixture_upload_mapping.py" "${TRUTH_BOUNDARY_ROOT}/contracts" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`
 10. `$sequence_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_sequence_diagrams.py" "${$$args_path}"`

@@ -1,0 +1,212 @@
+# Web Frontend Boundary Preset — Handler Routing
+#
+# v1 — 11 handlers, split into Tier-1 (always-required) and Tier-2 (opt-in per package).
+# Tier-3 / future expansion lives in README.md (browser-storage-given/then, a11y-then, etc.).
+#
+# ── Boundary-level invariants (apply to all handlers below; not repeated per-handler) ──
+#
+#  (I1) Cross-process surfaces — All mock-* and api-* handlers' callable_via MUST
+#       resolve to a variant-defined surface that crosses the browser↔test-runner
+#       process boundary. The canonical v1 mechanism for the nextjs-playwright
+#       variant is Playwright `page.route` interception (DevTools protocol-backed)
+#       with mock state held in the fixture closure on the test-runner side; the
+#       previously-allowed dev-only `/__test__/*` HTTP endpoints inside the dev
+#       server are deprecated. The mock layer MUST NOT live inside the app under
+#       test (`src/mocks/**` is forbidden); the variant's fixture file is the
+#       single source of truth for mock state and behavior.
+#
+#  (I2) OpenAPI schema gate — The mock layer MUST Zod-validate every outgoing call
+#       against the OpenAPI operation schema; non-conforming dispatch fails the
+#       test automatically. This is a layer-level gate, NOT a per-scenario sentence —
+#       handlers below MUST NOT redeclare schema enforcement in l4_requirements.
+#
+#  (I3) Per-scenario reset — Handlers that mutate cross-process state
+#       (mock-state-given, api-stub) MUST declare a per-scenario reset; the variant
+#       provides the reset hook. State leakage across scenarios is forbidden.
+#
+#  (I4) Storybook contract granularity — UI handlers (ui-action, ui-readmodel-then)
+#       reference component contracts at the **Story export** level (e.g.,
+#       `src/stories/Button.stories.ts::Primary`), not the component file alone.
+#       Same component in different states may bind to different stories.
+
+routes:
+  # ─── Tier-1 — always required ───
+
+  - sentence_part: route-given
+    keyword:
+      - Given
+      - Background
+    handler: route-given
+    semantic: Land the browser context on a specific application route as a scenario precondition.
+
+  - sentence_part: viewport-control
+    keyword:
+      - Given
+      - When
+    handler: viewport-control
+    semantic: Control browser viewport dimensions or device emulation profile.
+
+  - sentence_part: mock-state-given
+    keyword:
+      - Given
+      - Background
+    handler: mock-state-given
+    semantic: Seed the in-process mock backend store with persistent state.
+
+  - sentence_part: time-control
+    keyword:
+      - Given
+      - When
+    handler: time-control
+    semantic: Control browser-visible time for time-dependent UI behavior.
+
+  - sentence_part: ui-action
+    keyword:
+      - Given
+      - When
+    handler: ui-action
+    semantic: Drive a UI interaction through the rendered surface — click, fill, select, upload, keyboard, drag, programmatic navigation. Given usage is prerequisite multi-step setup; When usage is the target operation.
+
+  - sentence_part: success-failure
+    keyword:
+      - Then
+    handler: success-failure
+    semantic: Verify the success-or-failure feedback class surfaced to the user (toast, inline error, banner, status pill).
+
+  - sentence_part: ui-readmodel-then
+    keyword:
+      - Then
+    handler: ui-readmodel-then
+    semantic: Verify a rendered UI value, label, role, attribute, or count is observable on the page DOM at assertion time. Includes scalar text, list/table collection items, and computed counts.
+
+  # ─── Tier-2 — opt-in per package ───
+
+  - sentence_part: api-stub
+    keyword:
+      - Given
+    handler: api-stub
+    semantic: Override the in-process mock backend's per-scenario behavior for a specific operationId (next response status, body fixture, latency, response sequence). Distinct from mock-state-given which seeds data; api-stub seeds behavior.
+
+  - sentence_part: url-then
+    keyword:
+      - Then
+    handler: url-then
+    semantic: Verify URL state — pathname, query string parameters, hash fragment — after the operation. Use this when URL is the load-bearing observable; otherwise prefer ui-readmodel-then.
+
+  - sentence_part: api-call-then
+    keyword:
+      - Then
+    handler: api-call-then
+    semantic: Verify that a specific outgoing API call was emitted and its method/path/body/query/headers match expected shape. Schema conformance is enforced by the mock layer (see boundary invariant I2); this handler asserts call presence, count, and content shape.
+
+  - sentence_part: mock-state-then
+    keyword:
+      - Then
+    handler: mock-state-then
+    semantic: Verify the in-process mock backend store was mutated as expected. Use this when the UI does not render the mutation but the scenario must still verify it.
+
+
+handlers:
+  # ─── Tier-1 ───
+
+  route-given:
+    required_source_kinds:
+      - route_map
+    l4_requirements:
+      - "`L4.callable_via` resolves to the route-navigator surface for the target page."
+      - "`L4.param_bindings` and `L4.datatable_bindings` cover route segment values, query parameters, and hash where the sentence parameterizes them."
+      - "`L4.source_refs.route` points to the route map entry for the target page; auth-required pages must declare an explicit precondition (this handler does not silently inject auth)."
+
+  viewport-control:
+    required_source_kinds:
+      - test_strategy
+    l4_requirements:
+      - "`L4.callable_via` resolves to the configured viewport-controller surface."
+      - "`L4.param_bindings` cover width × height OR a named device profile id resolved by the variant."
+      - "`L4.source_refs.test_strategy` points to the responsive-coverage policy that lists named device profiles."
+
+  mock-state-given:
+    required_source_kinds:
+      - mock_implementation
+      - data_model
+    l4_requirements:
+      - "`L4.callable_via` resolves to a fixture builder via the variant-defined mock-control surface."
+      - "`L4.param_bindings + datatable_bindings + default_bindings` cover all required fields of `L4.source_refs.data` (defaults declared in fixture truth, not invented at binding time)."
+      - "`L4.source_refs.data` points to the data-model truth (Zod schema) for the seeded shape."
+
+  time-control:
+    required_source_kinds:
+      - test_strategy
+    l4_requirements:
+      - "`L4.callable_via` resolves to the configured browser test-clock surface (Playwright 1.45+ `page.clock`, sinon fake timers, or variant equivalent)."
+      - "`L4.param_bindings` cover the target instant, duration, timezone, or named clock state."
+      - "`L4.source_refs.test_strategy` points to the test-strategy entry declaring how browser-visible time is controlled."
+
+  ui-action:
+    required_source_kinds:
+      - route_map
+      - component_contract
+    l4_requirements:
+      - "`L4.callable_via` resolves to a UI driver verb on the rendered page (`click | fill | select | upload | press | drag | navigate-history`)."
+      - "`L4.param_bindings` reference roles or labelled targets — `getByRole` / `getByLabel` / `getByTestId` / explicit `name=` — never raw CSS or class selectors."
+      - "`L4.source_refs.component` points to the specific Story export (e.g., `Button.stories.ts::Primary`) capturing the target state; `L4.source_refs.route` points to the route under which this interaction occurs. This handler does not own assertion bindings."
+
+  success-failure:
+    required_source_kinds:
+      - operation_contract_response
+    optional_source_kinds:
+      - component_contract
+    l4_requirements:
+      - "`L4.assertion_bindings` identify the expected feedback class (`success | failure`) and, when applicable, the surface (`toast | inline-error | banner | status-pill`)."
+      - "`L4.source_refs.contract` points to the OpenAPI operation response semantics that defines the success/failure boundary."
+      - "`L4.callable_via` reads the already-rendered UI feedback surface, not a new interaction."
+
+  ui-readmodel-then:
+    required_source_kinds:
+      - route_map
+      - component_contract
+    optional_source_kinds:
+      - operation_contract_response
+    l4_requirements:
+      - "`L4.assertion_bindings` map expected values to UI targets keyed by role, label, test-id, or accessible-name; collection assertions resolve through role semantics (`role=row`, `role=listitem`), not raw nth-child positional CSS."
+      - "`L4.source_refs.component` points to the specific Story export owning the target element (or the list/table component for collection assertions)."
+      - "`L4.callable_via` reads from the already-rendered DOM, not a new operation."
+
+  # ─── Tier-2 ───
+
+  api-stub:
+    required_source_kinds:
+      - test_strategy
+      - mock_implementation
+    optional_source_kinds:
+      - provider_contract
+    l4_requirements:
+      - "`L4.callable_via` resolves to the per-scenario override surface of the mock-implementation table for the target `operationId`."
+      - "`L4.param_bindings` and `L4.datatable_bindings` cover the override shape — response status, body fixture, latency, sequence of responses, or fault profile."
+      - "`L4.source_refs.contract` points to the OpenAPI operation truth when a provider contract exists; per-scenario reset is required (see boundary invariant I3)."
+
+  url-then:
+    required_source_kinds:
+      - route_map
+    l4_requirements:
+      - "`L4.assertion_bindings` identify the URL aspect (`pathname | searchParams.{key} | hash`) and expected value."
+      - "`L4.source_refs.route` points to the route map entry that owns the expected path shape; pathname assertions allow segment-parameterized matching when the route declares dynamic segments."
+      - "`L4.callable_via` reads from `page.url()` or equivalent variant accessor."
+
+  api-call-then:
+    required_source_kinds:
+      - provider_contract
+      - mock_implementation
+    l4_requirements:
+      - "`L4.callable_via` resolves to the variant-defined call-recorder surface."
+      - "`L4.assertion_bindings` identify the call selector (`operationId` + ordinal or predicate) and expected match shape (method, path-params, body, query, headers)."
+      - "`L4.source_refs.contract` points to the OpenAPI operation truth used for binding shape; schema enforcement is layer-level (see boundary invariant I2)."
+
+  mock-state-then:
+    required_source_kinds:
+      - mock_implementation
+      - data_model
+    l4_requirements:
+      - "`L4.callable_via` resolves to a verifier function via the variant-defined mock-control surface."
+      - "`L4.assertion_bindings` map expected values to data field targets defined by the data-model truth; `L4.param_bindings` or `datatable_bindings` cover lookup identity."
+      - "`L4.source_refs.data` points to the data-model truth for the verified shape."

@@ -1,0 +1,219 @@
+entries:
+  - id: shared.route-given.on-page
+    source:
+      rule_id: frontend-shared-route-given-on-page
+      boundary_id: frontend
+      feature_path: null
+    L1:
+      given:
+        - 我在 "{path}"
+    L2:
+      context: Generic frontend route precondition shared by all frontend feature packages. The `{path}` parameter is the application URL pathname (and optional query/hash) the scenario starts on.
+      role: user
+      scope: boundary
+    L3:
+      type: external
+    L4:
+      surface_id: shared.route.on-page
+      surface_kind: route-navigator
+      callable_via: navigation
+      preset:
+        name: web-frontend
+        sentence_part: route-given
+        handler: route-given
+        variant: "<frontend-variant-id>"
+      param_bindings:
+        path:
+          kind: literal
+          target: literal:route.path
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings: {}
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: null
+
+  - id: shared.viewport-control.named-profile
+    source:
+      rule_id: frontend-shared-viewport-control-named-profile
+      boundary_id: frontend
+      feature_path: null
+    L1:
+      given:
+        - 視窗為 "{viewport_profile}"
+      when:
+        - 我將視窗調整為 "{viewport_profile}"
+    L2:
+      context: Generic frontend viewport control shared by all frontend feature packages. The `{viewport_profile}` parameter is a named profile id (e.g., `mobile`, `tablet`, `desktop`) resolved by the variant to a width × height tuple.
+      role: test-environment
+      scope: boundary
+    L3:
+      type: external
+    L4:
+      surface_id: shared.viewport.named
+      surface_kind: viewport-controller
+      callable_via: adapter
+      preset:
+        name: web-frontend
+        sentence_part: viewport-control
+        handler: viewport-control
+        variant: "<frontend-variant-id>"
+      param_bindings:
+        viewport_profile:
+          kind: literal
+          target: literal:viewport.profile
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings: {}
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: test-strategy.yml#viewport_profiles
+
+  - id: shared.success-failure.operation-success
+    source:
+      rule_id: frontend-shared-operation-success
+      boundary_id: frontend
+      feature_path: null
+    L1:
+      then:
+        - 操作成功
+    L2:
+      context: Generic frontend operation success assertion shared by all frontend feature packages. Asserts the SUT surfaced a success-class feedback (toast, inline confirm, status pill) to the user.
+      role: system
+      scope: boundary
+    L3:
+      type: assertion
+    L4:
+      surface_id: shared.feedback.success
+      surface_kind: ui-feedback-verifier
+      callable_via: ui
+      preset:
+        name: web-frontend
+        sentence_part: success-failure
+        handler: success-failure
+        variant: "<frontend-variant-id>"
+      param_bindings: {}
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings:
+        status_class:
+          kind: ui_state
+          target: ui:$.feedback.status_class
+          value: success
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: null
+
+  - id: shared.success-failure.operation-failure
+    source:
+      rule_id: frontend-shared-operation-failure
+      boundary_id: frontend
+      feature_path: null
+    L1:
+      then:
+        - 操作失敗
+    L2:
+      context: Generic frontend operation failure assertion shared by all frontend feature packages. Asserts the SUT surfaced a failure-class feedback (error toast, inline error, alert banner) to the user.
+      role: system
+      scope: boundary
+    L3:
+      type: assertion
+    L4:
+      surface_id: shared.feedback.failure
+      surface_kind: ui-feedback-verifier
+      callable_via: ui
+      preset:
+        name: web-frontend
+        sentence_part: success-failure
+        handler: success-failure
+        variant: "<frontend-variant-id>"
+      param_bindings: {}
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings:
+        status_class:
+          kind: ui_state
+          target: ui:$.feedback.status_class
+          value: failure
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: null
+
+  - id: shared.success-failure.operation-failure-reason
+    source:
+      rule_id: frontend-shared-operation-failure-reason
+      boundary_id: frontend
+      feature_path: null
+    L1:
+      then:
+        - 操作失敗, 原因為 "{reason}"
+    L2:
+      context: Generic frontend operation failure reason assertion shared by all frontend feature packages. Asserts the visible failure feedback contains a specific reason string (matched against the rendered error surface).
+      role: system
+      scope: boundary
+    L3:
+      type: assertion
+    L4:
+      surface_id: shared.feedback.failure-reason
+      surface_kind: ui-feedback-verifier
+      callable_via: ui
+      preset:
+        name: web-frontend
+        sentence_part: success-failure
+        handler: success-failure
+        variant: "<frontend-variant-id>"
+      param_bindings: {}
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings:
+        reason:
+          kind: ui_text
+          target: ui:$.feedback.reason
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: null
+
+  - id: shared.time-control.now
+    source:
+      rule_id: frontend-shared-time-control-now
+      boundary_id: frontend
+      feature_path: null
+    L1:
+      given: 現在時間為 "{now}"
+    L2:
+      context: Generic browser-visible test clock setup shared by all frontend feature packages. Pins the browser clock at `{now}` for time-dependent UI behavior (date inputs, animations, polling, expiry).
+      role: test-environment
+      scope: boundary
+    L3:
+      type: external
+    L4:
+      surface_id: shared.time.now
+      surface_kind: clock
+      callable_via: adapter
+      preset:
+        name: web-frontend
+        sentence_part: time-control
+        handler: time-control
+        variant: "<frontend-variant-id>"
+      param_bindings:
+        now:
+          kind: literal
+          target: literal:time.now
+      datatable_bindings: {}
+      default_bindings: {}
+      assertion_bindings: {}
+      source_refs:
+        contract: null
+        data: null
+        boundary: null
+        test_strategy: test-strategy.yml#time_control

@@ -134,7 +134,7 @@ Prompt: 後端程式碼要放在 repo root 還是子目錄？
 Context:
 - 預設 `repo_root`：backend 與 specs/ 直接掛在 repo root（`BACKEND_SUBDIR=""`，`BACKEND_ROOT == PROJECT_ROOT`）。
 - 選 `subdir`：必須提供子目錄名（kebab-case，例如 `backend`），所有 backend code 與 specs/ 都掛在 `${PROJECT_ROOT}/${BACKEND_SUBDIR}/`。
-- 此決定影響 `arguments.yml` 寫入位置與 `/aibdd-auto-backend-starter` same-repo guard。
+- 此決定影響 `arguments.yml` 寫入位置與 `/aibdd-auto-starter` same-repo guard。
 
 Options:
 | Option | Meaning |

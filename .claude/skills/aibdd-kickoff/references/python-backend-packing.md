@@ -77,7 +77,7 @@ models.
 
 Kickoff may create placeholder files for `shared/dsl.yml` and `test-strategy.yml`; placeholders must be explicit empty skeletons, not accepted DSL / policy content. `/aibdd-plan` owns semantic DSL content. **`packages/NN-*/dsl.yml` 不得在 kickoff 建立**。
 
-Kickoff must not create `.aibdd/dev-constitution.md`, `.aibdd/bdd-stack/*.md`（含 `project-bdd-axes.md`）；此等專案層 runtime／憲法樹檔案由 `/aibdd-auto-backend-starter` 依 `STARTER_VARIANT` 產生。
+Kickoff must not create `.aibdd/dev-constitution.md`, `.aibdd/bdd-stack/*.md`（含 `project-bdd-axes.md`）；此等專案層 runtime／憲法樹檔案由 `/aibdd-auto-starter` 依 `STARTER_VARIANT` 產生。
 
 ## User Confirmation View Requirements
 

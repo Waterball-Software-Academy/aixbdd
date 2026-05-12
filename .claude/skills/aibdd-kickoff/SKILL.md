@@ -1,5 +1,5 @@
 ---
-description: 專案初始化引導；支援 Python E2E 與 Java E2E 兩個 stack，收集唯一後端 TLB 名稱，產出 arguments.yml、boundary.yml、component-diagram.class.mmd 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB 或選用尚未支援的 stack（TypeScript / Frontend Only / Unit Test）。
+description: 專案初始化引導；支援 Python E2E、Java E2E、Next.js + Playwright 三個 stack，收集唯一 TLB 名稱（backend 或 frontend），產出 arguments.yml、boundary.yml、component-diagram.class.mmd 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Vue/Svelte 等其他 frontend 框架、Unit Test only、Mobile，或其他尚未支援的 stack。
 metadata:
   skill-type: planner
   source: project-level
@@ -84,6 +84,8 @@ references:
     purpose: 定義 Python E2E 後端的唯一 TLB packing 與架構落檔（stack=python_e2e 走此路徑）
   - path: references/java-backend-packing.md
     purpose: 定義 Java E2E 後端的唯一 TLB packing 與架構落檔（stack=java_e2e 走此路徑）
+  - path: references/nextjs-frontend-packing.md
+    purpose: 定義 Next.js + Playwright 前端的唯一 TLB packing 與架構落檔（stack=nextjs_playwright 走此路徑；reuse 4-folder boundary skeleton）
   - path: references/kickoff-plan-contract.md
     purpose: "定義 KICKOFF_PLAN.md schema、狀態值、question record、batch reply contract 與 final confirm contract"
   - path: assets/templates/kickoff-plan.template.md
@@ -94,6 +96,8 @@ references:
     purpose: "arguments.yml 的 byte-deterministic 模板（python-e2e）；占位符 {{TLB_ID}}、{{PROJECT_SPEC_LANGUAGE}}、{{BACKEND_SUBDIR}}"
   - path: assets/templates/arguments.template.java-e2e.yml
     purpose: "arguments.yml 的 byte-deterministic 模板（java-e2e）；占位符 {{PROJECT_SPEC_LANGUAGE}}、{{BACKEND_SUBDIR}}、{{GROUP_ID}}、{{ARTIFACT_ID}}、{{BASE_PACKAGE}}、{{JAVA_VERSION}}、{{SPRING_BOOT_VERSION}}、{{CUCUMBER_VERSION}}、{{JJWT_VERSION}}、{{POSTGRES_IMAGE_VERSION}}、{{DB_NAME}}"
+  - path: assets/templates/arguments.template.nextjs-playwright.yml
+    purpose: "arguments.yml 的 byte-deterministic 模板（nextjs-playwright）；占位符 {{PROJECT_SPEC_LANGUAGE}}、{{FRONTEND_SUBDIR}}、{{PROJECT_SLUG}}"
   - path: assets/templates/boundary.template.yml
     purpose: "boundary.yml 的 byte-deterministic 模板；占位符 {{TLB_ID}}"
   - path: assets/templates/component-diagram.class.template.mmd
@@ -160,12 +164,12 @@ Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q3-backend-layo
 
 1. `$template` = READ [`assets/templates/kickoff-plan.template.md`](assets/templates/kickoff-plan.template.md)
 2. `$question_set` = DERIVE backend question records from [`references/question-catalog.md`](references/question-catalog.md) and [`references/kickoff-plan-contract.md`](references/kickoff-plan-contract.md)
-3. ASSERT `q1-tech-stack` has exactly the two selectable options `python_e2e` and `java_e2e`, and no `Other`
+3. ASSERT `q1-tech-stack` has exactly the three selectable options `python_e2e`, `java_e2e`, and `nextjs_playwright`, and no `Other`
    3.1 IF assertion fails:
        3.1.1 `$q1_msg` = RENDER "Q1 tech stack contract violation: must offer python_e2e and java_e2e only"
        3.1.2 EMIT `$q1_msg` to user
        3.1.3 STOP
-4. `$artifact_plan` = DERIVE files and folders from the stack-specific packing reference — `python_e2e` → [`references/python-backend-packing.md`](references/python-backend-packing.md), `java_e2e` → [`references/java-backend-packing.md`](references/java-backend-packing.md) — with unresolved placeholders; ASSERT no plan package path, no boundary root `actors/`, no boundary root `features/`, no `coverage/`, no `entities/`, no `sub-boundaries/`. Stack-specific packing is finalised once Q1 is answered in Phase 3
+4. `$artifact_plan` = DERIVE files and folders from the stack-specific packing reference — `python_e2e` → [`references/python-backend-packing.md`](references/python-backend-packing.md), `java_e2e` → [`references/java-backend-packing.md`](references/java-backend-packing.md), `nextjs_playwright` → [`references/nextjs-frontend-packing.md`](references/nextjs-frontend-packing.md) — with unresolved placeholders; ASSERT no plan package path, no boundary root `actors/`, no boundary root `features/`, no `coverage/`, no `entities/`, no `sub-boundaries/`. Stack-specific packing is finalised once Q1 is answered in Phase 3
 5. `$$plan_doc` = RENDER `$template` with status=`collecting_answers`, `$question_set`, and `$artifact_plan`
 6. WRITE `$$plan_path` ← `$$plan_doc`
    6.1 IF WRITE fails:
@@ -274,14 +278,19 @@ Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q3-backend-layo
         10.B.4 `$java_db_name` = DERIVE `$decisions.db_name` if present else `$java_artifact_id`
         10.B.5 `$yaml` = RENDER `$args_template` substituting `{{PROJECT_SPEC_LANGUAGE}} := $decisions.project_spec_language`, `{{BACKEND_SUBDIR}} := $$backend_subdir`, `{{GROUP_ID}} := $java_group_id`, `{{ARTIFACT_ID}} := $java_artifact_id`, `{{BASE_PACKAGE}} := $java_base_package`, `{{JAVA_VERSION}} := 25`, `{{SPRING_BOOT_VERSION}} := 4.0.6`, `{{CUCUMBER_VERSION}} := 7.34.3`, `{{JJWT_VERSION}} := 0.12.6`, `{{POSTGRES_IMAGE_VERSION}} := 18`, `{{DB_NAME}} := $java_db_name`
         10.B.6 GOTO #4.11
-    10.X `$stack_msg` = RENDER "未知 stack `${$decisions.stack}`；只支援 `python_e2e` 與 `java_e2e`"
+    10.C `$args_template` = READ [`assets/templates/arguments.template.nextjs-playwright.yml`](assets/templates/arguments.template.nextjs-playwright.yml)
+        10.C.1 `$frontend_subdir` = COMPUTE `$decisions.frontend_subdir` (default `""` if absent; mirrors `BACKEND_SUBDIR` semantics)
+        10.C.2 `$project_slug` = COMPUTE `$decisions.tlb_id` (TLB id 同時作為 `PROJECT_SLUG` for `${PROJECT_SLUG}-sb-mcp` MCP tools)
+        10.C.3 `$yaml` = RENDER `$args_template` substituting `{{PROJECT_SPEC_LANGUAGE}} := $decisions.project_spec_language`, `{{FRONTEND_SUBDIR}} := $frontend_subdir`, `{{PROJECT_SLUG}} := $project_slug`
+        10.C.4 GOTO #4.11
+    10.X `$stack_msg` = RENDER "未知 stack `${$decisions.stack}`；只支援 `python_e2e`、`java_e2e`、`nextjs_playwright`"
         10.X.1 EMIT `$stack_msg` to user
         10.X.2 STOP
 11. `$boundary_template` = READ [`assets/templates/boundary.template.yml`](assets/templates/boundary.template.yml)
     11.1 `$boundary_doc` = RENDER `$boundary_template` substituting `{{TLB_ID}} := $decisions.tlb_id`
 12. `$diagram_template` = READ [`assets/templates/component-diagram.class.template.mmd`](assets/templates/component-diagram.class.template.mmd)
     12.1 `$diagram_doc` = RENDER `$diagram_template` substituting `{{TLB_ID}} := $decisions.tlb_id` — output path MUST obey `aibdd-core::diagram-file-naming.md`
-13. `$folder_plan` = DERIVE boundary truth folder skeleton from `$decisions` per the stack-specific packing reference (`python_e2e` → [`references/python-backend-packing.md`](references/python-backend-packing.md), `java_e2e` → [`references/java-backend-packing.md`](references/java-backend-packing.md)) §Boundary Folder Skeleton — MUST be exactly `[specs/${tlb_id}/contracts, specs/${tlb_id}/data, specs/${tlb_id}/shared, specs/${tlb_id}/packages]` (relative to `$$backend_root`)；boundary truth skeleton 與 stack 無關，因此兩個 packing 檔對此節的規範一致
+13. `$folder_plan` = DERIVE boundary truth folder skeleton from `$decisions` per the stack-specific packing reference (`python_e2e` → [`references/python-backend-packing.md`](references/python-backend-packing.md), `java_e2e` → [`references/java-backend-packing.md`](references/java-backend-packing.md), `nextjs_playwright` → [`references/nextjs-frontend-packing.md`](references/nextjs-frontend-packing.md)) §Boundary Folder Skeleton — MUST be exactly `[specs/${tlb_id}/contracts, specs/${tlb_id}/data, specs/${tlb_id}/shared, specs/${tlb_id}/packages]` (relative to `$$backend_root`)；boundary truth skeleton 與 stack 無關，因此三個 packing 檔對此節的規範一致
 14. `$placeholder_file_plan` = DERIVE placeholder files:
     - `${TRUTH_BOUNDARY_ROOT}/shared/dsl.yml`
     - `${TRUTH_BOUNDARY_ROOT}/test-strategy.yml`

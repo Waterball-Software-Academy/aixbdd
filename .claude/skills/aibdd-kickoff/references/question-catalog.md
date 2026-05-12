@@ -8,8 +8,9 @@
 |---|---|---|---|---|
 | A | Python | FastAPI + SQLAlchemy + Alembic | Behave E2E + Testcontainers | selectable |
 | B | Java | Spring Boot 4 + JdbcClient + Flyway | Cucumber 7 + JUnit Platform Suite + Testcontainers | selectable |
+| C | TypeScript / Next.js | Next.js 16 + React 19 + Storybook 10 + Tailwind 4 + Zod 4 | playwright-bdd 8.5+ + Playwright 1.45+ + Storybook addon-vitest / addon-a11y；自寫 in-process mock（不使用 MSW） | selectable |
 
-Kickoff 的 Q1 目前提供 Python 與 Java 兩個可選答案；TypeScript、Frontend Only、Unit Test 只可在說明文字中提到「尚未支援」，不得放進 AskUserQuestion options。Q1 不得提供 `Other` / 自由輸入選項。
+Kickoff 的 Q1 目前提供 Python、Java、Next.js + Playwright 三個可選答案；其他 frontend 框架（Vue / Svelte 等）、Unit Test only、Mobile 只可在說明文字中提到「尚未支援」，不得放進 AskUserQuestion options。Q1 不得提供 `Other` / 自由輸入選項。
 
 ## 測試策略
 
@@ -41,7 +42,7 @@ Kickoff 只問一題 project spec language，用來推導 `PROJECT_SPEC_LANGUAGE
 |---|---|---|---|
 | `BACKEND_SUBDIR` | `""` | `backend` | 空字串 = backend 與 specs 直接放在 repo root；非空 = 都掛在 `${PROJECT_ROOT}/${BACKEND_SUBDIR}/` 下 |
 
-Q4（佈局決定）必須在 Q3（service name）之後、推導確認之前發問。`subdir` 模式須收集自訂目錄名（kebab-case 建議），並更新 `arguments.yml` 的 `BACKEND_SUBDIR` 鍵；下游 `/aibdd-auto-backend-starter` 的 same-repo guard 會以 `${PROJECT_ROOT}/${BACKEND_SUBDIR}/${AIBDD_ARGUMENTS_PATH}` 為合法位置。
+Q4（佈局決定）必須在 Q3（service name）之後、推導確認之前發問。`subdir` 模式須收集自訂目錄名（kebab-case 建議），並更新 `arguments.yml` 的 `BACKEND_SUBDIR` 鍵；下游 `/aibdd-auto-starter` 的 same-repo guard 會以 `${PROJECT_ROOT}/${BACKEND_SUBDIR}/${AIBDD_ARGUMENTS_PATH}` 為合法位置。
 
 ## Prompt Templates
 
@@ -329,5 +330,5 @@ Kickoff 已完成。
 - <backend_root>/specs/architecture/component-diagram.class.mmd
 - <tlb id> 的 boundary truth skeleton（含 `packages/` root，無預建 `packages/NN-*`）
 
-下一步，來建立專案骨架吧，請直接使用 /aibdd-auto-backend-starter，或是告訴我「繼續」。
+下一步，來建立專案骨架吧，請直接使用 /aibdd-auto-starter，或是告訴我「繼續」。
 ```

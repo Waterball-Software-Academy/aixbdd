@@ -77,7 +77,7 @@ plan unresolved and stop instead of silently continuing.
 
 | ID | Purpose | Required option shape |
 |---|---|---|
-| `q1-tech-stack` | Pick backend stack | exactly two selectable options (`python_e2e` / `java_e2e`), no `Other` |
+| `q1-tech-stack` | Pick project stack | exactly three selectable options (`python_e2e` / `java_e2e` / `nextjs_playwright`), no `Other` |
 | `q2-project-spec-language` | Collect project specification language | one BCP 47 option from `zh-hant`, `zh-hans`, `en-us`, `ja-jp`, `ko-kr` |
 | `q3-backend-service-name` | Collect the only TLB id | kebab-case free-text answer or default acceptance（Java stack 同時作為 Maven `<artifactId>`） |
 | `q4-backend-layout` | Decide whether backend lives at `${PROJECT_ROOT}` or `${PROJECT_ROOT}/${BACKEND_SUBDIR}` | two options (`repo_root` / `subdir`); `subdir` requires a kebab-case directory name |

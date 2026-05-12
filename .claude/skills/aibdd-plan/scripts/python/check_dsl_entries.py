@@ -10,6 +10,7 @@ from typing import Any, Callable
 from _common import (
     collect_yaml_files,
     emit,
+    load_profile,
     load_yaml,
     placeholders,
     read_args,
@@ -17,7 +18,41 @@ from _common import (
     violation,
 )
 
-ALLOWED_TARGET_PREFIXES = ("contracts/", "data/", "response", "fixture", "stub_payload", "literal")
+
+def _resolve_allowed_target_prefixes(
+    args_path: Path,
+    args: dict[str, str],
+    violations: list[dict[str, Any]],
+) -> tuple[str, ...] | None:
+    """Read allowed_l4_target_prefixes from the boundary profile.
+
+    Profile chain: BOUNDARY_YML#boundaries[0].type → <type>.profile.yml.
+    Returns None and appends a violation when the profile or field is
+    unresolvable; this is a hard config error, not a fallback case.
+    """
+    profile = load_profile(args_path, args)
+    if not isinstance(profile, dict):
+        violations.append(
+            violation(
+                "DSL_PROFILE_MISSING",
+                str(args_path),
+                "boundary profile not resolvable from BOUNDARY_YML#boundaries[0].type "
+                "(check kickoff and aibdd-core/references/boundary-type-profiles/)",
+            )
+        )
+        return None
+    prefixes = profile.get("allowed_l4_target_prefixes")
+    if not isinstance(prefixes, list) or not prefixes:
+        violations.append(
+            violation(
+                "DSL_PROFILE_FIELD_MISSING",
+                str(args_path),
+                "boundary profile missing required field 'allowed_l4_target_prefixes' "
+                "(see aibdd-core/references/boundary-profile-contract.md)",
+            )
+        )
+        return None
+    return tuple(str(p) for p in prefixes)
 
 _TRANSPORT_HEADERS_EXCLUDED_FROM_EXACT_MATCH = frozenset(
     {
@@ -500,6 +535,10 @@ def main() -> int:
     args = read_args(args_path)
     violations: list[dict[str, Any]] = []
 
+    allowed_target_prefixes = _resolve_allowed_target_prefixes(args_path, args, violations)
+    if allowed_target_prefixes is None:
+        return emit(False, "dsl entry check", violations)
+
     sdk = str(args.get("BOUNDARY_SHARED_DSL", "")).lower()
     pkd = str(args.get("BOUNDARY_PACKAGE_DSL", "")).lower()
     if "dsl.md" in sdk or "dsl.md" in pkd:
@@ -643,7 +682,7 @@ def main() -> int:
             if isinstance(group, dict):
                 for bname, binding in group.items():
                     tgt = binding_target(binding)
-                    if not tgt.startswith(ALLOWED_TARGET_PREFIXES):
+                    if not tgt.startswith(allowed_target_prefixes):
                         violations.append(violation("DSL_BINDING_TARGET_INVALID", str(path), f"{entry_id}.{group_name}.{bname}: {tgt}"))
                     check_contract_data_target(group_name, str(bname), tgt)
                     if is_id_like_target(tgt) and not has_id_word(str(bname)):

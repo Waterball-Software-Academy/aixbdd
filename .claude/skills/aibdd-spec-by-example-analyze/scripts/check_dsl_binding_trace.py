@@ -189,6 +189,9 @@ def main() -> int:
                 or target.startswith("fixture:")
                 or target.startswith("stub_payload:")
                 or target.startswith("literal:")
+                or target.startswith("ui:")
+                or target.startswith("url:")
+                or target.startswith("route:")
             ):
                 violations.append(_violation("DSL_TARGET_PREFIX_INVALID", entry_id, 0, f"binding {key} has invalid target prefix: {target}"))
 

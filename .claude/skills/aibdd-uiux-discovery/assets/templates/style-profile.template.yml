@@ -1,0 +1,51 @@
+# style-profile.yml — design tokens SSOT
+# Phase 5 step 2.2 RENDER 此 template；下游 /aibdd-plan、/aibdd-form-story-spec 可消費
+
+project: {{PROJECT-NAME}}
+visual_direction: {{VISUAL-STYLE}}
+
+tokens:
+  colors:
+    # 建議 OKLCH；hex 為替代格式。語意命名（base / surface / text / accent / state-on / ...）
+    {{COLOR-TOKENS}}
+
+  typography:
+    display: {{FONT-DISPLAY}}     # 用於 hero / page title
+    body:    {{FONT-BODY}}        # 內文
+    mono:    {{FONT-MONO}}        # 程式碼 / 數值 / 計時
+    scale:   {{TYPE-SCALE}}       # e.g. "modular 1.25" 或 "fixed steps"
+
+  spacing:
+    base:  {{SPACING-BASE}}       # e.g. 4px
+    scale: {{SPACING-SCALE}}      # e.g. "1.25" 或 "[4,8,12,16,24,32,48]"
+
+  radius:
+    sharp:  {{RADIUS-SHARP}}      # ≤2px
+    medium: {{RADIUS-MEDIUM}}     # 6-10px
+    pillow: {{RADIUS-PILLOW}}     # ≥16px
+
+  shadow:
+    philosophy: {{SHADOW-PHILOSOPHY}}  # flat / layered / soft / glow
+    tokens:     {{SHADOW-TOKENS}}      # 具體 box-shadow 值或語意命名映射
+
+breakpoints:
+  # 以 px 為單位
+  {{BREAKPOINTS-LIST}}
+
+motion:
+  budget:                    {{MOTION-BUDGET}}              # functional / medium / high
+  default_duration:          {{DEFAULT-DURATION}}           # e.g. 250ms
+  default_easing:            {{DEFAULT-EASING}}             # e.g. cubic-bezier(0.16,1,0.3,1)
+  reduced_motion_strategy:   {{REDUCED-MOTION-STRATEGY}}    # 瞬時 / 單次閃光 / 維持顏色變化
+
+accessibility:
+  wcag_level:      {{WCAG-LEVEL}}       # A / AA / AAA
+  min_contrast:    {{MIN-CONTRAST}}     # 4.5:1 / 7:1
+  keyboard_scope:  {{KEYBOARD-SCOPE}}   # happy-path / full
+  focus_ring:
+    color: {{FOCUS-RING-COLOR}}
+    width: {{FOCUS-RING-WIDTH}}
+
+brand_references:
+  # 參考設計來源（url / Pinterest / Dribbble / 截圖路徑）
+  {{BRAND-REFS-LIST}}

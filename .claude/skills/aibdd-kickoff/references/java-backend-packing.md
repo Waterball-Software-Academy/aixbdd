@@ -2,7 +2,7 @@
 
 本檔定義 `/aibdd-kickoff` 的 **Java E2E** 後端 top-level boundary packing。Kickoff 只初始化 AIBDD **project config 與 boundary truth skeleton**：`.aibdd/arguments.yml`、architecture truth、唯一 backend boundary root、`shared/dsl.yml`、`test-strategy.yml`、**空的** `packages/` root；**不**建立 constitution、`bdd-stack/*.md`、任何 `packages/NN-<功能模組描述>/`，也不設定 active `TRUTH_FUNCTION_PACKAGE` / `FEATURE_SPECS_DIR` / `ACTIVITIES_DIR`（由 plan-cycle `/aibdd-discovery` 在 sourcing 後 late-bind）；不建立 plan package，也不做 feature-specific 設計。
 
-> 與 Python E2E packing 的整體流程對齊；差異只在 **stack-specific output paths** 與 starter（`/aibdd-auto-backend-starter` 看 `STARTER_VARIANT` 分派 `python-e2e` 或 `java-e2e` 模板）。共通 packing rule 仍以 `python-backend-packing.md` 為對照基準。
+> 與 Python E2E packing 的整體流程對齊；差異只在 **stack-specific output paths** 與 starter（`/aibdd-auto-starter` 看 `STARTER_VARIANT` 分派 `python-e2e` 或 `java-e2e` 模板）。共通 packing rule 仍以 `python-backend-packing.md` 為對照基準。
 
 ## Supported Stack
 
@@ -46,7 +46,7 @@ Kickoff **不額外問** Maven groupId / Java base package；由 `tlb_id` 推導
 | `BASE_PACKAGE` | `${GROUP_ID}.${ARTIFACT_ID without hyphens}` | `com.example.courseapi` |
 | `BASE_PACKAGE_PATH` | `${BASE_PACKAGE}` 中 `.` → `/` | `com/example/courseapi` |
 
-> 想自訂 `GROUP_ID` / `BASE_PACKAGE`：kickoff 之後直接編 `arguments.yml`；`/aibdd-auto-backend-starter` 會以該 yml 為 SSOT。
+> 想自訂 `GROUP_ID` / `BASE_PACKAGE`：kickoff 之後直接編 `arguments.yml`；`/aibdd-auto-starter` 會以該 yml 為 SSOT。
 
 ## Artifact Pack
 
@@ -80,7 +80,7 @@ Kickoff creates the `data/` directory but does not create state files in it. For
 
 Kickoff may create placeholder files for `shared/dsl.yml` and `test-strategy.yml`; placeholders must be explicit empty skeletons, not accepted DSL / policy content. `/aibdd-plan` owns semantic DSL content. **`packages/NN-*/dsl.yml` 不得在 kickoff 建立**。
 
-Kickoff must not create `.aibdd/dev-constitution.md`, `.aibdd/bdd-stack/*.md`（含 `project-bdd-axes.md`）；此等專案層 runtime／憲法樹檔案由 `/aibdd-auto-backend-starter` 依 `STARTER_VARIANT` 產生（`java-e2e` 模板對應 Spring Boot 4 + Cucumber + Flyway + JdbcClient stack）。
+Kickoff must not create `.aibdd/dev-constitution.md`, `.aibdd/bdd-stack/*.md`（含 `project-bdd-axes.md`）；此等專案層 runtime／憲法樹檔案由 `/aibdd-auto-starter` 依 `STARTER_VARIANT` 產生（`java-e2e` 模板對應 Spring Boot 4 + Cucumber + Flyway + JdbcClient stack）。
 
 ## User Confirmation View Requirements
 

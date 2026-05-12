@@ -65,7 +65,7 @@ PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}
 # 2. CONSTITUTIONS（相對 BACKEND_ROOT）
 # -----------------------------------------------------------------------------
 
-# DEV_CONSTITUTION_PATH — 開發治理憲法路徑；由 /aibdd-auto-backend-starter 產生，kickoff 只宣告路徑。
+# DEV_CONSTITUTION_PATH — 開發治理憲法路徑；由 /aibdd-auto-starter 產生，kickoff 只宣告路徑。
 DEV_CONSTITUTION_PATH: ${AIBDD_CONFIG_DIR}/dev-constitution.md
 
 # BDD_CONSTITUTION_PATH — Feature 檔名軸（§5.1）錨點；語意上隸屬 bdd-stack 憲法樹，由 starter 產生。
@@ -161,7 +161,7 @@ TEST_STRATEGY_FILE: ${TRUTH_BOUNDARY_ROOT}/test-strategy.yml
 # 7. JAVA_E2E_STARTER_OUTPUT_PATHS — starter 產物路徑綁定
 # 下列 key 宣告 java-e2e walking skeleton 的 Maven coordinates、Java 套件落點與
 # Cucumber／Flyway 路徑。/aibdd-kickoff 不建立 product code，也不擁有架構規則；
-# 實體程式骨架由 /aibdd-auto-backend-starter 依此 yml + java-e2e 模板產生。
+# 實體程式骨架由 /aibdd-auto-starter 依此 yml + java-e2e 模板產生。
 # 想自訂 GROUP_ID／BASE_PACKAGE 請直接編此檔。
 # -----------------------------------------------------------------------------
 
@@ -213,7 +213,7 @@ BACKEND_PRESET_CONTRACT_REF: .claude/skills/aibdd-core/references/preset-contrac
 
 # -----------------------------------------------------------------------------
 # 9. PROJECT_OWNED_BDD_STACK — starter-generated project BDD runtime docs
-# /aibdd-kickoff 只宣告路徑；實體文件由 /aibdd-auto-backend-starter 產生。
+# /aibdd-kickoff 只宣告路徑；實體文件由 /aibdd-auto-starter 產生。
 # bdd-stack 是專案層 BDD runtime 憲法樹；不要把這些路徑誤認為 aibdd-core reference。
 # -----------------------------------------------------------------------------
 
