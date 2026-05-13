@@ -140,10 +140,23 @@ name: aibdd-discovery
            7.4.3.2 STOP
        7.4.4 GOTO #2.7
 
-8. 基於 activity 分析收斂 atomic rule 草稿；如果規則層還有歧義，就先澄清，再回來重跑這一步。（**Seam B 亦適用 §Phase 2 File-first invariant**：fire `/clarify-loop` 前建議先把 atomic-stage 題組落到 `${CURRENT_PLAN_PACKAGE}/.discovery-drafts/atomic-rules.md` 作為錨點；本 patch 暫不強制執行此寫檔。）
-   8.1 LOAD REF `reasoning/discovery/05-atomic-rules.md` — 從 activity 與來源素材收斂 atomic rules
+7.5 推導 frontend axes 草稿（僅 TLB.role=="frontend" 啟動完整推導；其他 role 即時 short-circuit 為 null lens）；若 frontend-stage 仍有歧義（accessible_name 同義改寫 / anchor 自生 / backend verb 入侵 / role 黑名單），就先澄清，再回來重跑這一步。（**Seam C 亦適用 §Phase 2 File-first invariant**：fire `/clarify-loop` 前建議先把 frontend-stage 題組落到 `${CURRENT_PLAN_PACKAGE}/.discovery-drafts/frontend-axes.md` 作為錨點；本 patch 暫不強制執行此寫檔。）
+   7.5.1 LOAD REF `reasoning/discovery/04b-frontend-axes.md` — 從 activity action 推 UI verb binding + anchor candidate + state axes hint
+   7.5.2 LOAD REF `references/rules/frontend-rule-axes.md` — UI verb catalog / role mapping / anchor 命名規則 / boundary role gate
+   7.5.3 `$frontend_lens` = THINK 根據 `$$discovery_bundle.source_material_bundle.target_boundary.role`、`$$discovery_bundle.activity_analyses` 與 `$$discovery_bundle.source_material_bundle.impact_scope` 推 frontend lens；TLB.role != "frontend" 時 SET null
+   7.5.4 IF `$frontend_lens` is non-null AND `$frontend_lens.clarify_payload.questions` 非空:
+       7.5.4.1 [USER INTERACTION] `$frontend_clarify_report` = DELEGATE `/clarify-loop`，附上 `$frontend_lens.clarify_payload`
+       7.5.4.2 WAIT for `$frontend_clarify_report`
+       7.5.4.3 IF `$frontend_clarify_report.status == incomplete`:
+           7.5.4.3.1 EMIT "frontend axes 階段的 clarify-loop 回 incomplete；請先修正再重跑 RP04b" to 使用者
+           7.5.4.3.2 STOP
+       7.5.4.4 GOTO #2.7.5
+   7.5.5 `$$discovery_bundle` = THINK 將 `$frontend_lens` 併入 discovery bundle（即使為 null 也保留欄位以利下游一致檢查）
+
+8. 基於 activity 分析（必要時搭配 `$$discovery_bundle.frontend_lens`）收斂 atomic rule 草稿；如果規則層還有歧義，就先澄清，再回來重跑這一步。（**Seam B 亦適用 §Phase 2 File-first invariant**：fire `/clarify-loop` 前建議先把 atomic-stage 題組落到 `${CURRENT_PLAN_PACKAGE}/.discovery-drafts/atomic-rules.md` 作為錨點；本 patch 暫不強制執行此寫檔。）
+   8.1 LOAD REF `reasoning/discovery/05-atomic-rules.md` — 從 activity 與來源素材（必要時 ⊕ frontend_lens）收斂 atomic rules
    8.2 LOAD REF `aibdd-core::atomic-rule-definition.md` — Atomic Rule 的判斷基準
-   8.3 `$atomic_rule_draft` = THINK 根據 `$$discovery_bundle.activity_analyses` 收斂 atomic rule 草稿
+   8.3 `$atomic_rule_draft` = THINK 根據 `$$discovery_bundle.activity_analyses` ⊕（`$$discovery_bundle.frontend_lens` 非空時）frontend lens 收斂 atomic rule 草稿；frontend lens 非空時每條 rule 必須帶 `ui_verb` 與 `anchor_hint`
    8.4 IF 規則層仍有歧義:
        8.4.1 [USER INTERACTION] `$atomic_clarify_report` = DELEGATE `/clarify-loop`，附上 `$atomic_rule_draft.clarify_payload`
        8.4.2 WAIT for `$atomic_clarify_report`
@@ -297,7 +310,7 @@ script gate 過後，再交給獨立 subagent 做 semantic gate；planner 自己
 
 - 由 `/aibdd-discovery` command 觸發（root entry）；caller 也可為 `/aibdd-reconcile`（透過 DELEGATE 注入 `$$reconcile_context`）
 - DELEGATE `/aibdd-form-activity` + `/aibdd-form-feature-spec`
-- DELEGATE `/clarify-loop`（6 個觸發點：missing-field / filename axes 缺 / Seam 0 sourcing / Seam A activity / Seam B atomic / Phase 5 殘留 sweep；題組沿用既有 schema 不擴充，stage 資訊透過 question.context 傳遞；Seam 0 起所有 Phase 2 內 clarify-loop 呼叫必須先落 draft 檔，遵守 §Phase 2 File-first invariant）
+- DELEGATE `/clarify-loop`（7 個觸發點：missing-field / filename axes 缺 / Seam 0 sourcing / Seam A activity / Seam C frontend axes（僅 TLB.role=="frontend"） / Seam B atomic / Phase 5 殘留 sweep；題組沿用既有 schema 不擴充，stage 資訊透過 question.context 傳遞；Seam 0 起所有 Phase 2 內 clarify-loop 呼叫必須先落 draft 檔，遵守 §Phase 2 File-first invariant）
 - 下游：`/aibdd-plan` 進行 technical plan / DSL proposal planning；`/aibdd-spec-by-example-analyze` 進行 example 層分析
 - 內部 scripts：
   - `scripts/bind_plan_package.py` — Phase 2 §2 new-discovery 路徑回寫 `CURRENT_PLAN_PACKAGE`（reconcile 路徑不呼叫）
