@@ -239,8 +239,8 @@ Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q3-backend-layo
 1. `$execution_plan` = READ `$$plan_path`
 2. `$decisions` = PARSE Resolved Decisions from `$execution_plan`
 3. `$artifact_plan` = PARSE Artifact Plan from `$execution_plan`
-4. `$$backend_subdir` = DERIVE `$decisions.backend_subdir` (default `$decisions.stack_subdir` for backend stacks, else `""`)
-5. `$$frontend_subdir` = DERIVE `$decisions.frontend_subdir` (default `$decisions.stack_subdir` for `nextjs_playwright`, else `""`)
+4. `$$backend_subdir` = DERIVE `$decisions.backend_subdir` for backend stacks (default `$decisions.stack_subdir`), else `""`
+5. `$$frontend_subdir` = DERIVE `$decisions.frontend_subdir` for `nextjs_playwright` (default `$decisions.stack_subdir`), else `""`
 6. `$boundary_role` = DERIVE `$decisions.boundary_role` if present else (`frontend` for `nextjs_playwright`, `backend` otherwise)
 7. `$boundary_type` = DERIVE `$decisions.boundary_type` if present else (`web-app` for `nextjs_playwright`, `web-service` otherwise)
 8. `$boundary_description` = DERIVE `$decisions.boundary_description` if present else (`${$decisions.tlb_id} Next.js + Playwright frontend application` for `nextjs_playwright`, `${$decisions.tlb_id} backend web service` otherwise)
