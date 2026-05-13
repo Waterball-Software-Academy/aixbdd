@@ -167,7 +167,32 @@ export const test = base.extend<{ mockApi: MockApi }>({
 export const { Given, When, Then } = createBdd(test);
 ```
 
-The fixture's closure (`store`, `page.route` registrations) is automatically recreated per test (fixture scope = test). This is the **single** legitimate per-scenario reset hook (boundary invariant I3). Step files MUST NOT invent additional reset paths.
+### Fixture Scope = `test` — Auto-Reset Mechanism (Boundary Invariant I3)
+
+`playwright-bdd` inherits Playwright's default fixture scope `test`. Because `mockApi` is declared via `base.extend<{ mockApi: MockApi }>({ mockApi: async ({ page }, use) => { ... } })`, Playwright re-executes the callback **once per scenario**. Concretely, between scenarios the following are torn down and recreated from scratch:
+
+| What | Lifecycle |
+|---|---|
+| `store: Map<string, RoomState>` | New `Map` instance per scenario; previous-scenario seeds are unreachable |
+| `recorder: RecordedCall[]` | New array per scenario; previous-scenario calls are unreachable |
+| `overrides: Map<string, ...>` | New `Map` per scenario; queued overrides do not leak |
+| `page.route(API_HOST + '/**', ...)` registration | Bound to the new `page`, garbage-collected with the previous one |
+| The `mockApi` object exposed to step defs | Freshly constructed each scenario |
+
+**No mutable state survives the scenario boundary.** This is sufficient because:
+
+1. The fixture has no module-level / file-level mutable state (no `let foo = …` outside the callback).
+2. The closure binds to the per-scenario `page` argument, so `page.route` registrations cannot survive.
+3. `mockApi.reset()` is therefore **redundant** under normal scenarios — its only legitimate use is when a single scenario explicitly wants mid-scenario state clearing (rare; usually a design smell).
+
+**Forbidden reset paths (per I3):**
+
+- `test.beforeEach(() => mockApi.reset())` — auto-reset already handled; explicit hook adds a second reset path that can drift.
+- `test.afterEach(() => store.clear())` — closure is GC'd anyway; the hook accesses a soon-to-be-stale store.
+- Module-level `const store = new Map()` outside the `extend<>` callback — turns the fixture into a worker-scoped singleton and breaks I3.
+- Cucumber-style `Before` / `After` from `playwright-bdd` that mutate fixture state — fixture is the SSOT, not the BDD hook layer.
+
+Step files MUST NOT invent additional reset paths. If a scenario truly needs intra-scenario reset, call `mockApi.reset()` directly inside the step body — never in a hook.
 
 ## Step File Layout
 

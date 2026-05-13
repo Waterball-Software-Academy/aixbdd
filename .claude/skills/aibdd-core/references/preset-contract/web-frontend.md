@@ -98,18 +98,20 @@ A missing component (L1 / L2 / L3) or an alias resolution attempt (L4) is a fail
 
 ### Variant Resolution Branches
 
-- IF `L4.preset.variant` is present:
+V1 resolution order (highest precedence first):
+
+- IF `L4.preset.variant` is present in the DSL entry:
   - RESOLVE `variants/<variant>.md`.
-- IF `L4.preset.variant` is absent and boundary truth declares a supported default:
-  - USE that boundary default.
-- IF `L4.preset.variant` is absent and no boundary default exists:
-  - USE `nextjs-playwright`.
+- ELSE IF `L4.preset.variant` is absent:
+  - USE `nextjs-playwright` (the only v1 variant for `web-frontend`; selected by `/aibdd-plan` SKILL.md Phase 6 step 8 when `PRESET_KIND == web-frontend`).
 - IF the selected variant file is missing:
   - STOP with missing variant.
 - IF the variant does not support the handler or source kind required by routing:
   - STOP with variant incompatibility.
 - IF the variant does not declare a cross-process mechanism for invariant I1, a per-scenario reset hook for I3, OR a Story-export-aware locator rule for I4:
   - STOP with variant invariant gap.
+
+**V1 caveat — boundary-truth variant default is not implemented.** Neither `boundary.yml` nor `arguments.yml` carries a `variant_default` / `preset.variant` key. Per-DSL-entry override via `L4.preset.variant` is the only declaration site; everything else falls through to the hardcoded `nextjs-playwright` default. A future boundary.yml key `boundary.preset.variant_default` is reserved but not parsed. Until then, projects that need a non-default variant MUST set `L4.preset.variant` on every relevant DSL entry.
 
 ### Binding Boundary Branches
 
