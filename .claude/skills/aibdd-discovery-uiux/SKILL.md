@@ -92,7 +92,7 @@ references:
 ### Phase 1 — LOAD runtime context + sibling BE truth
 > produces: `$$runtime_context`, `$$be_truth_bundle`
 
-1. 先綁定目前 skill 目錄、讀本次 Discovery-UIUX 會用到的設定檔與 BDD 憲法檔名軸，整理成本階段共用的執行設定。
+1. `$ctx_init` = MARK "bind skill dir, load runtime config and BDD stack refs"
    1.1 `$$skill_dir` = COMPUTE 目前 skill 目錄路徑
    1.2 LOAD REF [`aibdd-core::spec-package-paths.md`](aibdd-core::spec-package-paths.md) — boundary-aware 路徑規則
    1.3 LOAD REF [`aibdd-discovery::references/turn-discipline.md`](aibdd-discovery::references/turn-discipline.md) — 使用者回合的外顯訊號與狀態
@@ -101,7 +101,7 @@ references:
    1.6 `$args_yaml` = READ `${args_abs}`
    1.7 `$$runtime_context` = PARSE `$args_yaml` 取 `STARTER_VARIANT` / `PROJECT_SPEC_LANGUAGE` / `TLB` / `UIUX_BACKEND_BOUNDARY_ID` / 檔名軸欄位
 
-2. 檢查必要欄位是否齊全；缺則先補再回來重讀。
+2. `$preconditions` = MARK "assert TLB.role==frontend and UIUX_BACKEND_BOUNDARY_ID present"
    2.1 ASSERT `$$runtime_context.TLB.role == "frontend"`
    2.2 IF assertion fails:
        2.2.1 EMIT "目前 TLB.role != frontend，aibdd-discovery-uiux 不適用；frontend TLB 才走本 skill；其他 boundary 請改用 /aibdd-discovery" to user
@@ -115,14 +115,14 @@ references:
              2.4.3.2 STOP
        2.4.4 GOTO #1.6
 
-3. 把 FE 路徑解析展開；如果展開失敗，就直接停止。
+3. `$path_expand` = MARK "run kickoff_path_resolve.py and expand FE paths"
    3.1 `$path_json` = TRIGGER `python3 ${PROJECT_ROOT}/.claude/skills/aibdd-discovery/scripts/kickoff_path_resolve.py "${$args_abs}"`
    3.2 IF 路徑展開失敗:
        3.2.1 EMIT "kickoff 路徑展開失敗" to user
        3.2.2 STOP
    3.3 `$$runtime_context` = DERIVE 由設定、檔名軸與已展開 FE 路徑（`FEATURE_SPECS_DIR` / `ACTIVITIES_DIR` / `SPECS_ROOT_DIR` / `SPECS_DIR`）組成的最終執行設定
 
-4. 解析 sibling BE 路徑並確認 BE artifacts 真的存在。
+4. `$be_path_check` = MARK "derive sibling BE paths and assert boundary directory exists"
    4.1 LOAD REF [`references/backend-input-contract.md`](references/backend-input-contract.md) §1 — BE 路徑解析規則
    4.2 `$be_specs_dir` = COMPUTE `${SPECS_ROOT_DIR}/${UIUX_BACKEND_BOUNDARY_ID}`
    4.3 `$be_features_glob` = COMPUTE `${$be_specs_dir}/packages/**/*.feature`
@@ -133,7 +133,7 @@ references:
        4.7.1 EMIT "sibling BE boundary 目錄不存在：`${$be_specs_dir}`；請先在該 boundary 跑 /aibdd-discovery + /aibdd-plan" to user
        4.7.2 STOP
 
-5. 把 BE artifacts 全讀進 bundle；任一類缺檔就停下，引導使用者先把 BE 端跑完。
+5. `$be_load` = MARK "read all BE artifacts into truth bundle"
    5.1 `$be_features` = READ all paths matching `$be_features_glob`
    5.2 `$be_activities` = READ all paths matching `$be_activities_glob`
    5.3 `$be_contracts` = READ all paths matching `$be_contracts_glob`
@@ -148,7 +148,7 @@ references:
 
 > **File-first invariant**：任何 `/clarify-loop` 呼叫之前，必須先在 plan package 下 WRITE 一份承載該輪題組的 artifact，並在 clarify-loop payload 附 `located_file_path` 指向該檔；待澄清題組同步寫進該檔的 `## Open <Stage> Questions` section。違反此 invariant 視為 SOP 缺陷，呼叫 `/skill-rca`。
 
-1. 決定本輪 Discovery-UIUX 要寫到哪一個 plan package；Seam 0 draft sourcing report 就落在這個 plan package 底下。
+1. `$plan_pkg_init` = MARK "derive plan package slug, run bind_plan_package.py, re-resolve paths"
    1.1 LOAD REF [`aibdd-discovery::references/contracts/discovery-sourcing-report.md`](aibdd-discovery::references/contracts/discovery-sourcing-report.md) — sourcing report 形狀（draft vs final）
    1.2 LOAD REF [`aibdd-discovery::references/relevance.md`](aibdd-discovery::references/relevance.md) — 判斷輸入是否落在 Discovery 軸
    1.3 `$plan_package_slug` = DERIVE 新 plan package slug，命名格式 `NNN-uiux-<slug>`，NNN 為當前 `${SPECS_ROOT_DIR}/${TLB.id}/` 下未占用的最小三位數
@@ -159,14 +159,14 @@ references:
    1.6 `$path_json` = TRIGGER `python3 ${PROJECT_ROOT}/.claude/skills/aibdd-discovery/scripts/kickoff_path_resolve.py "${$args_abs}"`
    1.7 `$$runtime_context` = DERIVE 已重展開 plan-side 路徑後的執行設定（`PLAN_SPEC` / `PLAN_REPORTS_DIR` / `CURRENT_PLAN_PACKAGE` 對齊新 slug）
 
-2. 把 BE truth 整體先機械抽出 operation inventory（每筆含 source + verb + object + actors + activity 對應）。
+2. `$op_extract` = MARK "extract BE operation inventory via RP 01-be-sourcing"
    2.1 `$operation_inventory_draft` = THINK per [`reasoning/discovery-uiux/01-be-sourcing.md`](reasoning/discovery-uiux/01-be-sourcing.md), input=`$$be_truth_bundle`
    2.2 ASSERT length(`$operation_inventory_draft.items`) ≥ 1
    2.3 IF assertion fails:
        2.3.1 EMIT "BE inventory 為空；可能是 BE artifacts 內容退化（feature 全 @ignore / activity 全 stub）" to user
        2.3.2 STOP
 
-3. 落 draft sourcing report 作為 Seam A clarify-loop 的 anchor。
+3. `$draft_sourcing` = MARK "classify operations and write draft sourcing report as Seam A anchor"
    3.1 LOAD REF [`references/be-to-fe-mapping.md`](references/be-to-fe-mapping.md) §1 — has-ui / no-ui 分類 rubric
    3.2 `$classification_draft` = THINK per [`reasoning/discovery-uiux/02-operation-classify.md`](reasoning/discovery-uiux/02-operation-classify.md), input=`$operation_inventory_draft`
    3.3 CREATE `${PLAN_REPORTS_DIR}`
@@ -175,7 +175,7 @@ references:
    3.6 `$plan_summary_draft` = DRAFT Discovery-UIUX Sourcing Summary draft ← pointer `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md`
    3.7 WRITE `${PLAN_SPEC}` ← `$plan_summary_draft`
 
-4. Draft 檔已落地，再 fire Seam A clarify-loop，把 ambiguous classification 拉出來問。
+4. `$seam_a_clarify` = MARK "fire Seam A clarify-loop for ambiguous has-ui classification"
    4.1 IF length(`$classification_draft.ambiguous_items`) == 0：GOTO #2.5.1
    4.2 [USER INTERACTION] `$classify_clarify_report` = DELEGATE `/clarify-loop`，附上 `$classification_draft.clarify_payload` + `located_file_path = ${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md` + `located_anchor_section = "Open Classification Questions"`
    4.3 WAIT for `$classify_clarify_report`
@@ -183,13 +183,13 @@ references:
        4.4.1 EMIT "classification 階段的 clarify-loop 回 incomplete；draft report 留檔，請補完題組後重跑" to user
        4.4.2 STOP
 
-5. 整合 clarify 答案，re-WRITE final sourcing report（含 `## Resolved Classification Decisions` 與 `## GAP — no-ui operations`）。
+5. `$sourcing_finalize` = MARK "integrate clarify answers and re-write final sourcing report"
    5.1 `$classification_final` = THINK 把 `$classify_clarify_report.answers` 整合進 `$classification_draft`
    5.2 `$sourcing_final` = DRAFT final sourcing report ← `$operation_inventory_draft`, `$classification_final`
    5.3 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md` ← `$sourcing_final`
    5.4 WRITE `${PLAN_SPEC}` ← updated Discovery-UIUX Sourcing Summary（pointer 對應 final report）
 
-6. 對 has-ui operation 推 frontend uat_flow 草稿與 frontend_lens；如果結構仍歧義，先澄清再回來重跑這一步。
+6. `$flow_derive` = MARK "derive uat_flows and frontend_lens for has-ui ops via RP 03; fire Seam B clarify-loop if needed"
    6.1 `$has_ui_ops` = DERIVE 由 `$classification_final.items` 過濾出 classification == has-ui 的子集
    6.2 `$uat_flows_draft` = THINK per [`reasoning/discovery-uiux/03-userflow-derive.md`](reasoning/discovery-uiux/03-userflow-derive.md), input={has_ui_ops: `$has_ui_ops`, be_truth: `$$be_truth_bundle`}
    6.3 LOAD REF [`aibdd-discovery::references/rules/frontend-rule-axes.md`](aibdd-discovery::references/rules/frontend-rule-axes.md) — UI verb catalog / role mapping / anchor 命名 / boundary role gate
@@ -205,7 +205,7 @@ references:
              6.6.5.2 STOP
        6.6.6 GOTO #2.6.2
 
-7. 整成 discovery bundle，準備餵給 Phase 3。
+7. `$bundle_assemble` = MARK "assemble discovery bundle struct"
    7.1 `$$discovery_bundle` = DERIVE struct{be_truth: `$$be_truth_bundle`, operation_inventory: `$operation_inventory_draft`, classification: `$classification_final`, uat_flows: `$uat_flows_draft`, frontend_lens: `$frontend_lens`, gap_report_path: `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md`}
    7.2 ASSERT length(`$$discovery_bundle.uat_flows.items`) == length(`$has_ui_ops`)
    7.3 IF assertion fails:
@@ -215,7 +215,7 @@ references:
 ### Phase 3 — DERIVE userflow activity + atomic rule with verification semantics
 > produces: `$$activity_models`, `$$atomic_rule_draft`
 
-1. 對每個 uat_flow 機械生 Activity model（actor=end-user，nodes=UI verb actions + DECISION branches + visual feedback nodes + terminals）。
+1. `$activity_build` = MARK "build Activity models per uat_flow via RP 03 Activity Build"
    1.1 LOAD REF [`aibdd-discovery::references/rules/activity-variation-decomposition.md`](aibdd-discovery::references/rules/activity-variation-decomposition.md) — variation decomposition 規則
    1.2 LOAD REF [`aibdd-discovery::references/rules/actor-legality.md`](aibdd-discovery::references/rules/actor-legality.md) — Activity actor 必須是 external user / third-party
    1.3 LOAD REF [`aibdd-discovery::references/rules/activity-action-granularity.md`](aibdd-discovery::references/rules/activity-action-granularity.md) — activity action 粒度判定
@@ -228,14 +228,14 @@ references:
              1.5.4.1 EMIT "activity model `${$am.id}` 違反 actor / branch / order 規約；停止" to user
              1.5.4.2 STOP
        END LOOP
-   1.6 `$$activity_models` = `$activity_models_draft`
+   1.6 `$$activity_models` = DERIVE `$activity_models_draft`
 
-2. 載入 verification semantics preset 與 coverage matrix。
+2. `$verification_load` = MARK "load verification semantics presets and coverage matrix refs"
    2.1 LOAD REF [`aibdd-core::atomic-rule-definition.md`](aibdd-core::atomic-rule-definition.md) — Atomic Rule semantic 判定
    2.2 LOAD REF [`references/verification-semantics-presets.md`](references/verification-semantics-presets.md) — 4 種 Rule preset（locator / visual-state / route / API-binding）句型樣板
    2.3 LOAD REF [`references/userflow-rule-coverage.md`](references/userflow-rule-coverage.md) — Rule coverage matrix（happy / error / state-transition / a11y / cross-actor）
 
-3. 對每個 UIVerbBinding 推 atomic rule（含 ui_verb + anchor.accessible_name + verification_mode + optional be_operation_binding）；以 coverage matrix 校驗完整性。
+3. `$rule_derive` = MARK "derive atomic rules per UIVerbBinding via RP 04-fe-atomic-rules"
    3.1 `$atomic_rule_draft_raw` = THINK per [`reasoning/discovery-uiux/04-fe-atomic-rules.md`](reasoning/discovery-uiux/04-fe-atomic-rules.md), input={ui_verb_bindings: `$$discovery_bundle.frontend_lens.ui_verb_bindings`, anchors: `$$discovery_bundle.frontend_lens.anchor_candidates`, uat_flows: `$$discovery_bundle.uat_flows`, has_ui_ops: `$has_ui_ops`}
    3.2 LOOP per `$rule` in `$atomic_rule_draft_raw.items`
        3.2.1 ASSERT `$rule.ui_verb` ∈ UI verb catalog enum
@@ -246,7 +246,7 @@ references:
              3.2.4.2 STOP
        END LOOP
 
-4. 用 coverage matrix 檢查每個 has-ui operation 都有對應規則覆蓋；如果 coverage gap 或 verification_mode 模糊就先澄清，再回來重跑。
+4. `$coverage_check` = MARK "check coverage matrix gaps and fire Seam C clarify-loop if needed"
    4.1 `$coverage_matrix` = DERIVE per `$has_ui_ops`：對每筆 op 統計對應到的 rule × {happy / error / state-transition / a11y}
    4.2 LOOP per `$op` in `$has_ui_ops`
        4.2.1 ASSERT `$coverage_matrix[$op.id].happy ≥ 1`
@@ -263,7 +263,7 @@ references:
              4.3.5.2 STOP
        4.3.6 GOTO #3.3.1
 
-5. 整成 atomic rule draft，準備餵給 Phase 4 落檔。
+5. `$rule_bundle` = MARK "assemble atomic rule bundle with features index"
    5.1 `$$atomic_rule_draft` = DERIVE 由 `$atomic_rule_draft_raw.items` + `$coverage_matrix` 組成的 atomic rule bundle，含 features index（每個 has-ui op 一個 feature）
    5.2 ASSERT length(`$$atomic_rule_draft.features`) == length(`$has_ui_ops`)
    5.3 IF assertion fails:
@@ -273,7 +273,7 @@ references:
 ### Phase 4 — FORM .activity + .feature skeleton via DELEGATE
 > produces: `$$artifact_bundle`
 
-1. 先確認 Phase 2 / 3 沒留下未解問題；如果還有 open question 就停下，不寫檔。
+1. `$open_q_gate` = MARK "assert no open questions remain from Phase 2/3 before writing files"
    1.1 ASSERT length(`$$discovery_bundle.uat_flows.clarify_payload.questions`) == 0
    1.2 ASSERT length(`$$discovery_bundle.frontend_lens.clarify_payload.questions`) == 0
    1.3 ASSERT length(`$$atomic_rule_draft.clarify_payload.questions`) == 0
@@ -281,7 +281,7 @@ references:
        1.4.1 EMIT "Phase 2/3 仍有未解 question；禁止落檔" to user
        1.4.2 STOP
 
-2. 逐個 Activity model 落出 `.activity`；同一份連續失敗兩次就停止整輪。
+2. `$activity_form` = MARK "delegate /aibdd-form-activity per Activity model with 2-retry guard"
    2.1 LOOP per `$am` in `$$activity_models.items`
        2.1.1 `$activity_target_path` = COMPUTE `${ACTIVITIES_DIR}/${$am.slug}.activity`
        2.1.2 `$activity_report` = DELEGATE `/aibdd-form-activity`，附上 target_path=`$activity_target_path`, format=".activity", mode="overwrite", reasoning.activity_analysis=`$am`
@@ -292,7 +292,7 @@ references:
                    2.1.3.2.2 STOP
        END LOOP
 
-3. 逐個 feature 落出 rule-only `.feature` 骨架；feature 必須 flat 寫在 `${FEATURE_SPECS_DIR}` 下，不得自行插入 domain 子目錄。
+3. `$feature_form` = MARK "delegate /aibdd-form-feature-spec per has-ui op, enforce flat target path"
    3.1 LOOP per `$feature` in `$$atomic_rule_draft.features`
        3.1.1 ASSERT `$feature.target_path` is flat under `${FEATURE_SPECS_DIR}`
        3.1.2 IF assertion fails:
@@ -304,7 +304,7 @@ references:
              3.1.4.2 STOP
        END LOOP
 
-4. 收尾檢查：所有 has-ui operation 都有對應 `.feature`、所有 modeled uat_flow 都有對應 `.activity`、GAP report 已就位、formulation skill 沒自己補腦缺欄。
+4. `$artifact_check` = MARK "final completeness check: features + activities + gap report presence"
    4.1 ASSERT every has-ui op 在 `${FEATURE_SPECS_DIR}` 下都有對應 `.feature`
    4.2 ASSERT every modeled uat_flow 在 `${ACTIVITIES_DIR}` 下都有對應 `.activity`
    4.3 ASSERT path_exists(`$$discovery_bundle.gap_report_path`)
@@ -356,7 +356,7 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
 
 #### 5.C 合併 verdict 迴圈
 
-1. 用最多 5 輪的補救迴圈跑完 script gate 與 semantic gate；只要其中一輪全數通過，就進殘留 sweep。
+1. `$quality_loop` = MARK "run quality gate remediation loop (max 5 rounds)"
    1.1 LOOP quality gate remediation (max 5)
        1.1.1 `$sticky_out` = TRIGGER `python3 ${PROJECT_ROOT}/.claude/skills/aibdd-discovery/scripts/grep_sticky_notes.py ${SPECS_ROOT_DIR}`
        1.1.2 `$actor_out` = TRIGGER `python3 ${PROJECT_ROOT}/.claude/skills/aibdd-discovery/scripts/check_actor_legality.py ${$args_abs}`
@@ -368,17 +368,17 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
        1.1.8 BRANCH `$$quality_verdict.ok` ? GOTO #5.2.1 : GOTO #4.2.1
        END LOOP
 
-2. 5 輪未過則停下來，不允許靠放鬆 gate 規則硬過。
+2. `$gate_hard_stop` = MARK "hard stop — failure contract: 5 rounds exhausted"
    2.1 EMIT "Quality gate 連續 5 輪仍未通過；違反 Failure contract 禁止弱化 checklist" to user
    2.2 STOP
 
 #### 5.D 殘留 clarify sweep
 
-1. 當 deterministic 與 semantic gate 都先過一輪後，再做一次跨 artifact 的殘留 sweep。
+1. `$residual_sweep` = MARK "run residual clarification sweep after all gates pass"
    1.1 `$$clarify_report` = THINK per [`reasoning/discovery-uiux/05-userflow-clarification-dimensions.md`](reasoning/discovery-uiux/05-userflow-clarification-dimensions.md), input={discovery_bundle: `$$discovery_bundle`, artifact_bundle: `$$artifact_bundle`, quality_verdict: `$$quality_verdict`}
    1.2 BRANCH length(`$$clarify_report.questions`) == 0 ? GOTO #6.1 : GOTO #5.5.2.1
 
-2. 把殘留問題交給 `/clarify-loop`；如果回來後真的改到了檔案，就回 Phase 5 §5.C 重新驗一次。
+2. `$residual_delegate` = MARK "delegate residual questions to /clarify-loop; re-run gates if files changed"
    2.1 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-residual-clarify.md` ← draft residual sweep anchor file
    2.2 [USER INTERACTION] `$residual_clarify` = DELEGATE `/clarify-loop`，附上 `$$clarify_report.questions` + `located_file_path = ${PLAN_REPORTS_DIR}/discovery-uiux-residual-clarify.md`
    2.3 WAIT for `$residual_clarify`
@@ -390,11 +390,11 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
 ### Phase 6 — EMIT REPORT
 > produces: (none)
 
-1. 用使用者看得懂的語氣收斂這輪 Discovery-UIUX 的成果。
+1. `$report_draft` = MARK "draft final Discovery-UIUX summary report"
    1.1 LOAD REF [`aibdd-core::report-contract.md`](aibdd-core::report-contract.md) — 對外報告的語氣與必要欄位
    1.2 `$summary` = DRAFT 最終 Discovery-UIUX 報告 ← `$$artifact_bundle`, `$$discovery_bundle`, `$$quality_verdict`, `$$clarify_report`；訊息包含 has-ui / no-ui 統計、coverage matrix 摘要、GAP report pointer、verification mode 分布、下一步建議跑 `/aibdd-plan`
 
-2. 把報告送給使用者；如果當下送不出去，再寫入 fallback report 並停。
+2. `$emit_report` = MARK "emit report to user with fallback write"
    2.1 EMIT `$summary` to user
    2.2 IF EMIT 失敗:
        2.2.1 WRITE `${SPECS_ROOT_DIR}/.discovery-uiux-report.md` ← `$summary`

@@ -29,9 +29,6 @@ produces:
   - name: classification
     kind: derived_axis
     terminal: false
-  - name: gap_list
-    kind: derived_axis
-    terminal: false
   - name: clarify_payload
     kind: derived_axis
     terminal: false
