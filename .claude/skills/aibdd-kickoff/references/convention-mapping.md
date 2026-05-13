@@ -307,7 +307,6 @@ boundaries:
 |---------------------|---------------|
 | Python + E2E Test | `/aibdd-auto-starter`（變體：`python-e2e`） |
 | Java + E2E Test | `/aibdd-auto-starter`（變體：`java-e2e`） |
-| TypeScript + E2E Test | （尚未建立） |
 
 ### 前端 Starter
 
@@ -316,5 +315,5 @@ boundaries:
 | Next.js 16 + Storybook + Playwright BDD | `/aibdd-auto-starter`（變體：`nextjs-storybook-cucumber-e2e`） |
 | API-first MSW workflow | `/aibdd-auto-frontend-apifirst-msw-starter` |
 
-前端 starter 永遠顯示，不受 Q1 技術堆疊選擇影響。
+Next.js frontend starter 只在 Q1 選 `nextjs_playwright` 時使用；backend stacks 使用同一個 `/aibdd-auto-starter` 的 backend 變體。
 specformula Phase 03（Frontend Engineering）需要前端骨架已就位。

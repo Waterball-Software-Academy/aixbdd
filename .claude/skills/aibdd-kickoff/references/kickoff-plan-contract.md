@@ -65,9 +65,9 @@ Q4: repo_root
 
 Allowed normalized value shapes:
 
-- `Q1`: one of `python_e2e`, `java_e2e`
+- `Q1`: one of `python_e2e`, `java_e2e`, `nextjs_playwright`
 - `Q2`: one of `zh-hant`, `zh-hans`, `en-us`, `ja-jp`, `ko-kr`
-- `Q3`: `backend` or any kebab-case service name（Java stack 同時作為 Maven `<artifactId>`）
+- `Q3`: `backend`, `frontend`, or any kebab-case service/app name（Java stack 同時作為 Maven `<artifactId>`；Next.js stack 同時作為 `PROJECT_SLUG`）
 - `Q4`: `repo_root` or `subdir:<kebab-case-dir>`
 
 If any question is missing, duplicated, or ambiguous, kickoff must mark the
@@ -79,8 +79,23 @@ plan unresolved and stop instead of silently continuing.
 |---|---|---|
 | `q1-tech-stack` | Pick project stack | exactly three selectable options (`python_e2e` / `java_e2e` / `nextjs_playwright`), no `Other` |
 | `q2-project-spec-language` | Collect project specification language | one BCP 47 option from `zh-hant`, `zh-hans`, `en-us`, `ja-jp`, `ko-kr` |
-| `q3-backend-service-name` | Collect the only TLB id | kebab-case free-text answer or default acceptance（Java stack 同時作為 Maven `<artifactId>`） |
-| `q4-backend-layout` | Decide whether backend lives at `${PROJECT_ROOT}` or `${PROJECT_ROOT}/${BACKEND_SUBDIR}` | two options (`repo_root` / `subdir`); `subdir` requires a kebab-case directory name |
+| `q3-backend-service-name` | Collect the only TLB id | kebab-case free-text answer or default acceptance（Java stack 同時作為 Maven `<artifactId>`；Next.js stack 同時作為 `PROJECT_SLUG`） |
+| `q4-backend-layout` | Decide whether selected stack root lives at `${PROJECT_ROOT}` or `${PROJECT_ROOT}/${BACKEND_SUBDIR}` / `${PROJECT_ROOT}/${FRONTEND_SUBDIR}` | two options (`repo_root` / `subdir`); `subdir` requires a kebab-case directory name |
+
+## Derived Decision Rules
+
+| Input | Derived key | Rule |
+|---|---|---|
+| `Q1=python_e2e` | `boundary_role` / `boundary_type` | `backend` / `web-service` |
+| `Q1=java_e2e` | `boundary_role` / `boundary_type` | `backend` / `web-service` |
+| `Q1=nextjs_playwright` | `boundary_role` / `boundary_type` | `frontend` / `web-app` |
+| `Q3=frontend` under `nextjs_playwright` | `tlb_id` | `frontend`; also used as `PROJECT_SLUG` |
+| `Q3=backend` under backend stacks | `tlb_id` | `backend`; Java also uses it as Maven `<artifactId>` |
+| `Q3=<custom-kebab-case>` | `tlb_id` | the custom value; Java also uses it as Maven `<artifactId>`, Next.js also uses it as `PROJECT_SLUG` |
+| `Q4=repo_root` under backend stacks | `stack_subdir` / `backend_subdir` / `frontend_subdir` | `""` / `""` / `""` |
+| `Q4=subdir:<dir>` under backend stacks | `stack_subdir` / `backend_subdir` / `frontend_subdir` | `<dir>` / `<dir>` / `""` |
+| `Q4=repo_root` under `nextjs_playwright` | `stack_subdir` / `backend_subdir` / `frontend_subdir` | `""` / `""` / `""` |
+| `Q4=subdir:<dir>` under `nextjs_playwright` | `stack_subdir` / `backend_subdir` / `frontend_subdir` | `<dir>` / `""` / `<dir>` |
 
 ## Final Confirmation Replies
 
