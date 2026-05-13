@@ -262,7 +262,7 @@ references:
 
 - `/aibdd-uiux-discovery` — 直接上游；產出 `design/uiux-prompt.md` + `design/style-profile.yml` 為本 skill 的 INPUT SSOT
 - `/aibdd-plan` — 下游；讀本 skill 產的 `design.pen` 萃取 I4 anchor / DSL L1 / contract
-- `/aibdd-form-story-spec` / `aibdd-pen-to-storybook` — 下下游；負責 `.pen → <ComponentId>.stories.tsx`
+- `/aibdd-pen-to-storybook` — 下下游 **producer skill**；負責 `.pen → <ComponentId>.tsx + <ComponentId>.stories.tsx` 一條龍翻譯（含完整 Tailwind 4 className 與 variant-conditional 渲染）。`/aibdd-form-story-spec` 為平行路徑（caller-driven，無 `.pen`），本 skill 出來後不走它。
 
 ### Future evolution
 

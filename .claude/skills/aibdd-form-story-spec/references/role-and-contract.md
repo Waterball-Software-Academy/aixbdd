@@ -4,8 +4,8 @@
 
 ## §1 角色定位
 
-Formulation skill。綁定 DSL = Storybook **CSF3**（`*.stories.tsx`）+ React **TSX** component（`*.tsx`）；
-綁定 framework = `@storybook/nextjs-vite`（Storybook 10）。
+Formulation skill — **caller-driven pipeline 專用**。綁定 DSL = Storybook **CSF3**（`*.stories.tsx`）+ React
+**TSX** component（`*.tsx`）；綁定 framework = `@storybook/nextjs-vite`（Storybook 10）。
 
 **做**：
 
@@ -22,6 +22,19 @@ Formulation skill。綁定 DSL = Storybook **CSF3**（`*.stories.tsx`）+ React 
 - 不在 component 寫業務邏輯（hooks / fetch / state machines）— 這屬 `/aibdd-green-execute`
 - 不在 story 裡寫業務邏輯、不替 caller 做 BDD 分析
 - 不替 caller 解析 design tokens 為 Tailwind classes（caller 預先決定 base_class 字串）
+- **不處理設計來源（`.pen` / Figma / Penpot）** — 那是 `/aibdd-pen-to-storybook` 等 producer sibling 的職責。
+  本 skill 收到 `design_source.kind != "none"` 一律 STOP，建議 caller 改走對應 producer skill。
+
+## §1.5 與 `/aibdd-pen-to-storybook` 的邊界
+
+| 場景 | skill |
+|---|---|
+| 已有 `.pen` 設計檔 | `/aibdd-pen-to-storybook`（一條龍：讀 `.pen` → 直接寫 `.tsx` + `.stories.tsx`） |
+| 無 `.pen`，純 caller-driven 推理 | **本 skill** |
+| 後端 boundary widget / 設計不適用的元件 | **本 skill** |
+
+同一 component 不該兩條路徑同時寫；caller 二選一。產物落同一 `target_dir`（`${TRUTH_BOUNDARY_ROOT}/contracts/components/<id>/`）；
+本 skill 為產出檔的 owner，視覺修改應該回上游推理包後重跑（`mode: "overwrite"`），而不是在下游手改。
 
 ## §2 入口契約 — 推理包 schema
 
@@ -37,11 +50,8 @@ target_dir: <string, required>           # 寫兩個檔的目錄（caller 必須
 mode: "create" | "overwrite"             # 預設 "create"；任一檔已存在且非 overwrite → 衝突回退
                                           # overwrite 對兩檔同時生效
 
-design_source:                            # OPTIONAL — design-aware 入口；缺省走純 caller reasoning 流程
-  kind: "pen" | "none"                    # 預設 "none"；未來可加 "figma" / "penpot" 等 sibling adapter
-  path: <string?>                         # kind != "none" 時必填；e.g. "${PACKAGE_ROOT}/design.pen"
-  screen_id: <string?>                    # 選擇 .pen 內哪個 screen（缺則由 adapter Phase 4 由 user 確認）
-  style_profile_path: <string?>           # 補充 token 來源（e.g. design/style-profile.yml；目前僅入 Story `parameters.designTokens`）
+design_source:                            # OPTIONAL — 僅接受 kind: "none"；其他值一律 STOP（design pipeline 改走 /aibdd-pen-to-storybook）
+  kind: "none"                            # 唯一合法值；任何 "pen" / "figma" / "penpot" 等請改呼對應 producer skill
 
 reasoning:
   component_modeling:

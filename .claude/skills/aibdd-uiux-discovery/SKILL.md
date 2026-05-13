@@ -231,7 +231,7 @@ references:
        - **路徑 A（推薦，自動）**：跑 `/aibdd-uiux-draw`；該 skill 讀 `${$$prompt_path}` + `${$$profile_path}`，透過 Pencil MCP 自動逐 component scene + frame composition scene 繪製並 export `.pen` 到 `${$pen_target_path}`
        - **路徑 B（手動，fallback）**：把 `${$$prompt_path}` 整段內容貼進 Pencil app 自己畫；完成後 export 為 `design.pen` 存到 `${$pen_target_path}`（**package root**，與 `spec.md` / `plan.md` 同層；不進 `design/` 目錄內）
        - 不論走 A 或 B，下一步都跑 `/aibdd-plan` — plan 階段從 package root 讀 `design.pen` 萃取 I4 anchor / DSL L1 / contract
-       - 註記：`.pen` 為**過渡轉換檔**；下游 `aibdd-pen-to-storybook` 翻成 `<ComponentId>.stories.tsx` 後，**Story 才是 boundary I4 binding anchor 的 SSOT**，`.pen` 不保證長期保留
+       - 註記：`.pen` 為**過渡轉換檔**；下游 `aibdd-pen-to-storybook` 一條龍翻成 `<ComponentId>.tsx` + `<ComponentId>.stories.tsx` 後，**Story 才是 boundary I4 binding anchor 的 SSOT**，`.pen` 不保證長期保留
    2.3 EMIT `$handoff_msg` to user
 
 ## §3 CROSS-REFERENCES
@@ -240,8 +240,8 @@ references:
 - `/clarify-loop` — DELEGATE 對象；本 skill 不自寫 UX 文案，所有澄清題目都丟它
 - `/aibdd-uiux-draw` — 直接下游（推薦路徑 A）；讀本 skill 產出的 `design/uiux-prompt.md` + `design/style-profile.yml`，透過 Pencil MCP 自動繪 `.pen`
 - `/aibdd-plan` — 後續下游；plan 階段會吃 `.pen` 萃取 I4 anchor / DSL L1 / contract
-- `/aibdd-form-story-spec` — 下下游；負責 `.pen → <ComponentId>.stories.tsx` 翻譯（合約定型；每個 component 對一個 stories 檔，每個 state 一個 export）
-- `aibdd-pen-to-storybook` — `.pen → React + Storybook` 橋樑（form-story 內部可委派）
+- `/aibdd-pen-to-storybook` — 下下游；**producer skill**，負責 `.pen → <ComponentId>.tsx + <ComponentId>.stories.tsx` 一條龍翻譯（合約定型；每個 component 對一份雙產出，每個 state 一個 story export）
+- `/aibdd-form-story-spec` — 平行路徑（caller-driven，無 `.pen`）；本 discovery 流程不會走到 — 設計來源既然是 `.pen`，下游就走 pen-to-storybook
 
 ### Future evolution
 

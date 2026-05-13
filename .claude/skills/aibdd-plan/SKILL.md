@@ -142,9 +142,9 @@ references:
 | R15 | `assets/templates/dsl-entry.template.yml` | Phase 6 | DSL entry skeleton used when rendering local/shared DSL truth. |
 | R16 | `aibdd-core::diagram-file-naming.md` | Phase 5 | Mermaid compound extensions for sequence/class diagram filenames. |
 | R17 | `aibdd-core::boundary-profile-contract.md` | Phase 2 + Phase 3 | Boundary type profile, state specifier, operation contract specifier, and component contract specifier dispatch. |
-| R17S | `.claude/skills/aibdd-form-story-spec/references/role-and-contract.md` | Phase 3 (step 15.5) | Caller payload schema for `/aibdd-form-story-spec` DELEGATE (used when component_contract_specifier.skill = /aibdd-form-story-spec). v2 schema：`target_dir` 取代 `target_path`；`component.props` + `component.render_hints` 為新必填欄位。 |
-| R20  | `reasoning/aibdd-plan/07-component-design-merge.md` | Phase 3 (step 15.3) | Component design × spec merge reasoning artifact；frontend boundary 跑此 RP 把 features × activities × design.pen (adapter) × uiux-prompt 合成 enriched `$$boundary_delta.components`，供 step 15.5 DELEGATE form-story-spec 使用。 |
-| R21  | `aibdd-pen-to-storybook` (adapter skill) | Phase 3 (step 15.3) | Read-only Pencil .pen adapter；step 15.3.5 透過 DELEGATE 取 `component_table + tokens` 作 reasoning/07 的 design 來源輸入。 |
+| R17S | `.claude/skills/aibdd-form-story-spec/references/role-and-contract.md` | Phase 3 (step 15.5) | Caller payload schema for `/aibdd-form-story-spec` DELEGATE — **caller-driven pipeline 專用**（`design_source.kind == "none"`）。當 boundary 有 `design.pen` 時改走 R21（producer 一條龍），不再走 form-story-spec。 |
+| R20  | `reasoning/aibdd-plan/07-component-design-merge.md` | Phase 3 (step 15.3) | Component design × spec merge reasoning artifact；用於 caller-driven 路徑（無 `.pen`），把 features × activities × uiux-prompt 合成 `$$boundary_delta.components`。`.pen` 路徑下 producer skill 直接寫檔，不經此 reasoning。 |
+| R21  | `.claude/skills/aibdd-pen-to-storybook/references/role-and-contract.md` | Phase 3 (step 15.3) | **Producer skill** payload schema — 當 boundary 有 `design.pen` 時，step 15.3.5 直接 DELEGATE 一條龍寫出 `<id>.tsx` + `<id>.stories.tsx`；payload 含 `pen_path` / `screen_id` / `target_dir` / `mode`。 |
 | R18 | `.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml` | Phase 6 | Boundary preset routing SSOT（routes keyword → sentence_part/handler，`handlers.*` L4 binding 要求）；DSL 合成前必讀。 |
 | R18F | `.claude/skills/aibdd-core/assets/boundaries/web-frontend/handler-routing.yml` | Phase 6 | Boundary preset routing SSOT（frontend 對偶；含 4 條 boundary-level invariants I1–I4）；DSL 合成前必讀。 |
 | R19 | `.claude/skills/aibdd-reconcile/references/planner-handoff-contract.md` | Phase 1 + Phase 3 | Optional reconcile caller payload schema for `plan.md` narrative injection. |
@@ -257,12 +257,24 @@ references:
        ELSE:
          `{ kind: "none" }`
    15.3.5 BRANCH path_exists(`$design_pen_path`)
-       true:
-           15.3.5.1 `$adapter_payload` = DRAFT `{ pen_path: $design_pen_path, screen_id: null }`
-           15.3.5.2 `$design_adapter` = DELEGATE `/aibdd-pen-to-storybook` with `$adapter_payload`
-           15.3.5.3 ASSERT `$design_adapter.status == "completed"` AND `$design_adapter.mode == "adapter"`
-       false:
-           15.3.5.4 `$design_adapter` = COMPUTE `{ component_table: { rows: [] }, tokens: [] }`
+       true:   # design pipeline — producer skill 一條龍寫檔，跳過 form-story-spec
+           15.3.5.1 `$components_root` = RENDER `${TRUTH_BOUNDARY_ROOT}/contracts/components/`
+           15.3.5.2 `$producer_payload` = DRAFT `{
+                      pen_path: $design_pen_path,
+                      screen_id: null,
+                      target_dir: $components_root,
+                      mode: "create"
+                    }`
+                    # producer 寫雙檔（<id>.tsx + <id>.stories.tsx）到 target_dir/<id>/；mode=create 防誤覆寫
+           15.3.5.3 `$producer_report` = DELEGATE `/aibdd-pen-to-storybook` with `$producer_payload`
+           15.3.5.4 ASSERT `$producer_report.status == "completed"` AND `$producer_report.mode == "producer"`
+           15.3.5.5 ASSERT count(`$producer_report.files_written`) == 2 * `$producer_report.component_count`
+           15.3.5.6 `$$boundary_delta.components` = DERIVE informational summary from `$producer_report.component_table`
+                    # 注意：design pipeline 下 boundary_delta.components 僅作為 plan.md 記錄；實際視覺檔已由 producer 寫出。
+                    # 不再 DELEGATE form-story-spec（合約已由 producer 一次寫完）。
+           15.3.5.7 GOTO #16   # 跳過 15.5 — design pipeline 已完成
+       false:  # caller-driven pipeline — 走 reasoning/07 + form-story-spec
+           15.3.5.8 `$design_adapter` = COMPUTE `{ component_table: { rows: [] }, tokens: [] }`
    15.3.6 BRANCH path_exists(`$design_uiux_prompt_path`)
        true:  `$uiux_prompt` = READ `$design_uiux_prompt_path`
        false: `$uiux_prompt` = COMPUTE empty
@@ -271,6 +283,7 @@ references:
    15.3.9 IF reasoning/07 returns `cross_validation_warnings` non-empty: log warnings to plan.md research section（不 block）
 15.5 BRANCH `$$boundary_profile.component_contract_specifier.skill`
     `/aibdd-form-story-spec` → GOTO #15.5.1
+    `/aibdd-pen-to-storybook` → GOTO #15.5.5   # design pipeline 已在 15.3.5 處理；此處只 assert
     empty/none                → GOTO #15.5.5
     other                     → STOP with unsupported component contract specifier message
    15.5.1 LOOP per `$component` in `$$boundary_delta.components`
@@ -279,13 +292,13 @@ references:
                 # tsconfig path alias `@/components/* → specs/<TLB>/contracts/components/*` 由 aibdd-auto-starter template 設定
        15.5.1.2 `$story_payload` = DERIVE form-story-spec caller payload from `$component` per [`.claude/skills/aibdd-form-story-spec/references/role-and-contract.md`](.claude/skills/aibdd-form-story-spec/references/role-and-contract.md) §2
                 # payload 必含 component.props (list) + component.render_hints (object)；由 reasoning/07 enrich 進 `$$boundary_delta.components` 後直接取用
-       15.5.1.3 DELEGATE `/aibdd-form-story-spec` with target_dir=`$story_target_dir`, mode="create", design_source=`$design_source`, reasoning.component_modeling=`$story_payload`
-                # 注意：target_path / format 已被 target_dir 取代；form-story-spec 寫雙檔（<id>.tsx + <id>.stories.tsx）到該目錄
+       15.5.1.3 DELEGATE `/aibdd-form-story-spec` with target_dir=`$story_target_dir`, mode="create", design_source=`{ kind: "none" }`, reasoning.component_modeling=`$story_payload`
+                # caller-driven pipeline 專用；form-story-spec 不再接受 design_source.kind == "pen"（design 路徑改走 producer 一條龍）
        15.5.1.4 IF DELEGATE returns `incomplete`:
            15.5.1.4.1 EMIT "component modeling 推理包不完整：${$component.identifier}" to user
            15.5.1.4.2 STOP
        END LOOP
-   15.5.5 ASSERT `$$boundary_delta.components` is empty OR every entry is marked `deferred: true`; on violation STOP with "component_contract_specifier=none but boundary_delta.components non-empty"
+   15.5.5 ASSERT `$$boundary_delta.components` is empty OR every entry is marked `deferred: true` OR design pipeline 已在 15.3.5 處理; on violation STOP with "component_contract_specifier mismatch with boundary_delta.components state"
 16. WRITE `${TEST_STRATEGY_FILE}` ← rendered strategy from `$$strategy_delta`
 17. `$plan_template` = READ [`assets/templates/plan-md.template.md`](assets/templates/plan-md.template.md)
 18. `$research_template` = READ [`assets/templates/research-md.template.md`](assets/templates/research-md.template.md)

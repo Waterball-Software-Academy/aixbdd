@@ -16,6 +16,10 @@
 | `screen-id-missing` | Phase 4: `$$screen_id` 未指定 | _特殊：列 top-level 候選回 caller，等補後重啟 Phase 4，不視為 hard fail_ |
 | `no-component-candidates` | Phase 5: `$$component_table.rows` 為空 | `偵測不到任何 component candidate；該 screen 可能無重複結構，建議下游改 page-level scaffold 後手動切` |
 | `component-name-collision` | Phase 5: 兩個 candidate 推導出同 PascalCase 名 | `component name 衝突；caller 需在 .pen 改名後重跑` |
+| `accessible-name-prop-missing` | Phase 6: render plan 找不到對應 accessible-name 來源 prop | `偵測到的 component 缺可見文字 prop；boundary I4 binding anchor 無法成立。caller 需在 .pen 內補可見文字節點，或改走 form-story-spec caller-driven 路徑` |
+| `target-dir-invalid` | Phase 1: `$$target_dir` 缺項 / 非絕對路徑 / parent 不存在 | `target_dir 無效；請給絕對路徑，且 parent 必須先存在（例 ${TRUTH_BOUNDARY_ROOT}/contracts/components/）` |
+| `target-dir-conflict` | Phase 9: `mode == "create"` 但檔案已存在 | `target 內已有同名 component / story 檔；若確認要覆寫請改 mode=overwrite，否則先清空對應 <ComponentId>/ 目錄` |
+| `write-io-failed` | Phase 9: WRITE 或 CREATE dir 失敗 | `寫檔失敗（權限 / 磁碟 / fs error）；請 caller 確認 target_dir 可寫後重試` |
 
 ## §2 對齊原則
 
@@ -23,16 +27,20 @@
 2. `failure_kind` 全為 kebab-case；message 為單行白話文，禁夾 stack trace（stderr 由 caller 自取）。
 3. caller 收到 message 後決定上游修復推理包 / 指引 user 修 `.pen` / 視為 hard error；本 skill 在 message 內**不**提供修復步驟（修復 SOP 屬 caller 的事，避免重複 source of truth）。
 4. `screen-id-missing` 為非 hard-fail 例外：列候選給 caller、等補後重啟 Phase 4。
-5. 本 skill 為 read-only adapter，**不寫任何檔**；因此沒有 `write-io-failed` / `target-dir-conflict` / `npm-install-failed` / `tsc-error` / `storybook-build-failed` / `return-unreachable` 等寫檔 / build / sidecar 報告相關 fail kind（這些已在從 scaffold 模式移除時一併砍除）。
+5. 本 skill 為 **producer**：寫 `<id>.tsx` + `<id>.stories.tsx` 兩檔到 `target_dir/<id>/`；因此有 `target-dir-invalid` / `target-dir-conflict` / `write-io-failed` 三條寫檔失敗 kind。Build / sidecar / npm 等動作仍**不在 scope**內（那是 `/aibdd-auto-starter` 的事）。
 
 ## §3 Phase × 主要 fail kind
 
 | Phase | 主要 fail kind |
 |---|---|
-| 1 ASSERT intake | `pen-path-invalid` |
+| 1 ASSERT intake | `pen-path-invalid` / `target-dir-invalid` |
 | 2 VERIFY .pen | `pen-not-parseable` / `pen-version-unsupported` / `pen-no-children` |
 | 3 EXTRACT tokens | `pen-no-tokens` |
 | 4 MAP screen | `screen-id-not-found` / `screen-id-missing` |
 | 5 DETECT components | `no-component-candidates` / `component-name-collision` |
-| 6 REPORT adapter | _no fail kind — pure RETURN_ |
-| 7 HANDLE dispatch | _internal CLASSIFY only_ |
+| 6 DERIVE render plan | `accessible-name-prop-missing` |
+| 7 RENDER component | _internal RENDER only — assertion failures bubble as `accessible-name-prop-missing` or pattern violations_ |
+| 8 RENDER stories | _internal RENDER only — I4 hard gate failures bubble as `accessible-name-prop-missing`_ |
+| 9 WRITE | `target-dir-conflict` / `write-io-failed` |
+| 10 REPORT producer | _no fail kind — pure EMIT_ |
+| 11 HANDLE dispatch | _internal CLASSIFY only_ |

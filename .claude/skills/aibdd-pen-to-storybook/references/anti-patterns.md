@@ -49,20 +49,22 @@
 | `as Meta<typeof Component>` | 吞掉 TS 型別檢查 | `satisfies Meta<typeof Component>` |
 | `import { storiesOf }` (CSF2) | Storybook 10 不再支援 | 用 CSF3 named export |
 | 在 module scope 初始化 fetch / mock store | 渲染順序不可預期 | 用 args 表達狀態；mock 屬 `features/steps/fixtures.ts` SSOT |
-| Story 用 CSS class / nth-child 當 locator | 違反「story 是純視覺合約」 | 視覺由 Tailwind utility 表達；BDD locator 屬下游 `aibdd-form-story-spec` |
+| Story 用 CSS class / nth-child 當 locator | 違反 boundary I4（locator 須由 role + accessible name 派生） | 視覺由 Tailwind utility 表達；locator 由下游 `/aibdd-red-execute` 從 `args` 派生 |
 | `play` 內寫業務驗收 assertion | story play 用於視覺 / docs | 業務驗收歸 Cucumber `.feature` + step-def |
 
-## §5 觀察：本 skill 與 `aibdd-form-story-spec` 的職責邊界
+## §5 觀察：本 skill 與 `aibdd-form-story-spec` 的職責邊界（**互斥的平行路徑**）
 
 | 議題 | aibdd-pen-to-storybook | aibdd-form-story-spec |
 |---|---|---|
-| 輸入 | `.pen` 設計檔 | Planner 推理包 |
+| Pipeline | **design-source** (有 `.pen`) | **caller-driven** (無 `.pen`) |
+| 輸入 | `.pen` 設計檔 + `target_dir` | Planner 推理包 + `target_dir` |
 | 抽 component / 數量 | YES（heuristics） | NO（caller 已決定） |
-| 寫 component 檔 | YES | NO |
-| 寫 story 檔 | YES（視覺骨架） | YES（BDD-aware，含 `accessible_name_arg`） |
-| 綁 `getByRole(role, { name })` locator | NO | YES |
+| 寫 `<id>.tsx` | YES（完整 Tailwind + variant conditional） | YES（依 caller `render_hints`） |
+| 寫 `<id>.stories.tsx` | YES（含 boundary I4 `accessible_name_arg`） | YES（含 boundary I4 `accessible_name_arg`） |
+| 綁 `getByRole(role, { name })` locator | 由下游 red-execute 從 `args` 派生 | 由下游 red-execute 從 `args` 派生 |
 | Storybook 版本 | 10 | 10 |
 | Story import path | `@storybook/nextjs-vite` | `@storybook/nextjs-vite` |
+| Frozen visual contract | 是（green 不得編輯）| 是（green 不得編輯）|
 
-兩者不互斥：本 skill 寫完 component + 視覺 story 後，下游可由 `aibdd-form-story-spec` 重寫 story 加上
-BDD binding anchor。
+**兩者互斥**：同一 component 不該兩條路徑同時寫。`/aibdd-plan` Phase 3 step 15.3.5 偵測 `.pen` 存在與否
+分流：有 `.pen` 走本 skill；沒有 `.pen` 走 `/aibdd-form-story-spec`。

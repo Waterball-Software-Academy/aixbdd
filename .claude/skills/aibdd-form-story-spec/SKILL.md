@@ -1,12 +1,12 @@
 ---
 name: aibdd-form-story-spec
 description: >
-  從推理包翻譯為「Storybook CSF3 stories + React component implementation 雙產出」。
-  對 caller 指定的 `target_dir` 寫兩個檔：`<identifier>.tsx`（React component 實作）與
-  `<identifier>.stories.tsx`（CSF3 stories；boundary I4 binding anchor SSOT）。
-  目標目錄、props、stories、render hints 由 Planner 透過 DELEGATE 參數指定，本 skill 不自決。
-  綁定 Storybook 10 + `@storybook/nextjs-vite`；步驟定義從 Story `args` 派生
-  `getByRole(role, { name })` locator。
+  **Caller-driven pipeline**（無 `.pen`）— 從 Planner 推理包翻譯為 Storybook CSF3 stories + React
+  component implementation 雙產出。對 caller 指定的 `target_dir` 寫兩個檔：`<identifier>.tsx` +
+  `<identifier>.stories.tsx`。目標目錄、props、stories、render hints 全由 Planner 透過 DELEGATE
+  參數指定。**Design-source pipeline（有 `.pen`）改走 `/aibdd-pen-to-storybook` 一條龍**；本 skill
+  不再接受 `design_source.kind == "pen"`。綁定 Storybook 10 + `@storybook/nextjs-vite`；步驟定義從
+  Story `args` 派生 `getByRole(role, { name })` locator。
 metadata:
   user-invocable: false
   source: project-level dogfooding
@@ -14,9 +14,9 @@ metadata:
 
 # aibdd-form-story-spec
 
-Formulation skill。綁定 DSL = Storybook CSF3（`*.stories.tsx`）+ React TSX component（`*.tsx`）。
-被 `/aibdd-plan` Phase 3 step 15.5 DELEGATE（當 boundary profile 之
-`component_contract_specifier.skill == /aibdd-form-story-spec`）。
+Formulation skill — **caller-driven pipeline**。綁定 DSL = Storybook CSF3（`*.stories.tsx`）+ React
+TSX component（`*.tsx`）。被 `/aibdd-plan` Phase 3 step 15.5 DELEGATE（當 boundary profile 之
+`component_contract_specifier.skill == /aibdd-form-story-spec`，**且該 boundary 沒有 `.pen` 設計來源**）。
 
 對 caller 指定的 `target_dir` 寫兩個共生檔：
 
@@ -25,7 +25,18 @@ Formulation skill。綁定 DSL = Storybook CSF3（`*.stories.tsx`）+ React TSX 
 
 兩個檔互為合約：Story `args` 必須對齊 component `Props` interface；component file 由 story file `import` 進來。
 Story 檔為 boundary contract truth（per web-frontend invariant I4），component 檔為其視覺實作；兩者均由 plan
-階段擁有，**不**留到 `/aibdd-green-execute` Wave 1 才產出。
+階段擁有，**不**留到 `/aibdd-green-execute` Wave 1 才產出。本 skill 為兩檔的 **owner**：視覺修改應該回上游
+Planner 推理包後重跑本 skill（`mode: "overwrite"`），而不是在下游手改。
+
+## Boundary：本 skill vs `/aibdd-pen-to-storybook`
+
+| 場景 | 該走的 skill |
+|---|---|
+| 已有 `.pen`，設計師 freeze 過 | `/aibdd-pen-to-storybook`（一條龍，直接從 `.pen` 推 JSX + Tailwind） |
+| 純從 BDD reasoning 推 utility component | **本 skill** |
+| 後端 boundary widget / 設計不適用的元件 | **本 skill** |
+
+同一 component 不該兩條路徑同時寫；caller 二選一。
 
 只負責「把 Planner 推理包翻成 React TSX + CSF3 並寫兩個檔」；不重新判斷 component 顆粒度、不發明 props、不挑選
 component file、不創造 design system 元件、不挑 Story 數量、不寫業務邏輯（component 為純視覺實作；data fetching
@@ -124,8 +135,8 @@ references:
 
 ## §2 SOP
 
-### Phase 1 — ASSERT intake｜驗證 caller payload + 解析 design source
-> produces: `$$payload`, `$$target_dir`, `$$component`, `$$component_props`, `$$render_hints`, `$$stories`, `$$story_target_path`, `$$component_target_path`, `$$design_source`, `$$design_component_table?`, `$$design_tokens?`
+### Phase 1 — ASSERT intake｜驗證 caller payload（caller-driven pipeline）
+> produces: `$$payload`, `$$target_dir`, `$$component`, `$$component_props`, `$$render_hints`, `$$stories`, `$$story_target_path`, `$$component_target_path`
 
 1. `$contract` = READ [`references/role-and-contract.md`](references/role-and-contract.md)
 2. `$$payload` = READ caller payload
@@ -165,35 +176,13 @@ references:
 22. ASSERT `$framework == "@storybook/nextjs-vite"` OR `$framework` matches caller-allowed list
 23. ASSERT `$exit_status == "complete"`
 24. `$$design_source` = PARSE `$$payload.design_source`（optional；缺省 `{ kind: "none" }`）
-25. BRANCH `$$design_source.kind`
-    `"none"` → `$$design_component_table` = `$$design_tokens` = null; GOTO #2.1
-    `"pen"`  → GOTO #1.26
-    other    → ASSERT false; STOP with "unsupported design_source.kind: ${$$design_source.kind}"
-26. ASSERT path_exists(`$$design_source.path`)
-27. ASSERT `$$design_source.path` 副檔名 == `.pen`
-28. `$adapter_payload` = DRAFT {
-      pen_path: `$$design_source.path`,
-      screen_id: `$$design_source.screen_id`
-    }
-    # 注意：`aibdd-pen-to-storybook` 已簡化為 adapter-only，payload 不再接受 `output_mode` / `target_dir` / `mode` 等舊 scaffold 欄位。
-29. `$adapter_report` = DELEGATE `aibdd-pen-to-storybook` with `$adapter_payload`
-30. ASSERT `$adapter_report.status == "completed"` AND `$adapter_report.mode == "adapter"`  # mode 由 adapter 端固定回 "adapter"，此處 sanity check
-31. `$$design_component_table` = PARSE `$adapter_report.component_table`
-32. `$$design_tokens` = PARSE `$adapter_report.tokens`
-33. `$design_row` = MATCH `$$design_component_table.rows[]` where `Component == $$component.identifier`
-34. BRANCH `$design_row` is null
-    true:
-      34.1 EMIT "warn: component '${$$component.identifier}' 未在 .pen 派生 component table 中找到（caller reasoning 仍 authoritative，僅 cross-check 提示）" to user
-    false:
-      34.2 `$design_variants` = DERIVE `$design_row.Stories[]`
-      34.3 LOOP per `$story` in `$$stories`
-           34.3.1 BRANCH `$story.export_name` ∈ `$design_variants`
-               true:  continue
-               false: EMIT "warn: story '${$story.export_name}' 不在 .pen variants [${$design_variants}]（caller reasoning 仍 authoritative）" to user
-           END LOOP
+25. ASSERT `$$design_source.kind ∈ {"none"}`；其他值（含 `"pen"`）一律 STOP with
+    `"unsupported design_source.kind: ${$$design_source.kind}; design-source pipeline 改走 /aibdd-pen-to-storybook 一條龍"`
+    # 本 skill 為 caller-driven pipeline 專用。Design-source pipeline 已遷移至 /aibdd-pen-to-storybook,
+    # 由該 skill 從 .pen 直接寫 .tsx + .stories.tsx。同一 component 不該兩條路徑同時寫。
 
-> 角色界線：步驟 24–34 只做 **design-source cross-check + warn**，**不** override `$$component` / `$$stories` / `$$component_props`。
-> caller reasoning（從 Planner 推理包來）是 authoritative。`$$design_tokens` 可由 caller 在 `$$render_hints.tailwind_classes` 顯式攜帶進入 Phase 2 component RENDER；本 skill 不替 caller 注入 token。
+> 角色界線：本 skill 只走 **caller-driven pipeline**；`$$component` / `$$stories` / `$$component_props` 全由 Planner 推理包提供,本 skill 不從外部設計來源 cross-check / override。
+> Tailwind class 字串由 caller 在 `$$render_hints.base_class` 預先解析後攜入；本 skill 不解析 token。
 
 ### Phase 2 — RENDER React component .tsx + CSF3 stories.tsx
 > produces: `$$component_doc`, `$$story_doc`
@@ -354,13 +343,17 @@ references:
 
 ## §3 CROSS-REFERENCES
 
-- `/aibdd-discovery` — upstream UI flow 收斂；留下 component / state hint 給前端 component-modeling planner（目前 chain 為 aspirational，尚無單一 producer 直接餵本 skill）。
-- `/aibdd-uiux-discovery` — upstream design brief；emit `design/uiux-prompt.md` + `design/style-profile.yml`，引導 user 在 Pencil 落 `design.pen`。本 skill 於 Phase 1 後段透過 `design_source.path` 接這個 `.pen` 做 cross-check。
-- `aibdd-pen-to-storybook`（adapter-only skill）— DELEGATE 對象；當 `design_source.kind == "pen"` 時 Phase 1 步驟 24–34 呼叫之取 `component_table` + `tokens` 做 cross-check。adapter skill 已簡化為 read-only：payload 只接受 `pen_path` + 可選 `screen_id`，回傳 fixed shape `{ status, mode, schema_version, token_count, tokens, component_count, component_table }`。**未來 sibling**：`aibdd-figma-to-storybook` / `aibdd-penpot-to-storybook` 等其他 design-source adapter 將遵循同一 return shape contract 並列。
-- `/aibdd-plan` — upstream caller；Phase 3 step 15.5 偵測 `${CURRENT_PLAN_PACKAGE}/design.pen` 存在時，自動把 `design_source` 注入本 skill 的 caller payload，並把 `target_dir` 推導為 `${TRUTH_BOUNDARY_ROOT}/contracts/components/<ComponentId>/`。
-- `/aibdd-spec-by-example-analyze` — downstream consumer；其 `web-frontend` preset 將本 skill 產出之 Story export 寫進 `L4.source_refs.component`，路徑形如 `${CONTRACTS_DIR}/components/<ComponentId>/<ComponentId>.stories.tsx::<ExportName>`。
+- `/aibdd-discovery` — upstream UI flow 收斂；留下 component / state hint 給前端 component-modeling planner。
+- `/aibdd-uiux-discovery` — **非本 skill 的上游**；該 skill emit `design/uiux-prompt.md` + `design/style-profile.yml` 引導 user 在 Pencil 落 `design.pen` 後，design pipeline 改走 `/aibdd-pen-to-storybook` 一條龍，不走本 skill。
+- `/aibdd-pen-to-storybook`（**producer skill** — design pipeline 兄弟）— 與本 skill **互斥的平行路徑**：
+  - 該 skill 處理「有 `.pen`」的場景（design-source pipeline），直接從 `.pen` 寫 `<id>.tsx` + `<id>.stories.tsx`
+  - 本 skill 處理「無 `.pen`」的場景（caller-driven pipeline），從 Planner 推理包寫雙產出
+  - 兩 skill 落的檔案結構 / target_dir 慣例 / boundary I4 contract 一致；下游消費端不耦合來源
+  - 同一 component 不該兩條路徑同時寫；caller 二選一
+- `/aibdd-plan` — upstream caller；Phase 3 偵測 `${CURRENT_PLAN_PACKAGE}/design.pen` 存在時走 `/aibdd-pen-to-storybook`，不存在時才 DELEGATE 本 skill 並傳 `design_source: { kind: "none" }`。
+- `/aibdd-spec-by-example-analyze` — downstream consumer；其 `web-frontend` preset 將本 skill / pen-to-storybook 產出之 Story export 寫進 `L4.source_refs.component`，路徑形如 `${CONTRACTS_DIR}/components/<ComponentId>/<ComponentId>.stories.tsx::<ExportName>`。
 - `/aibdd-red-execute` — `nextjs-playwright` variant 從 Story `args` 派生 `getByRole(role, { name })` locator；boundary I4 在此被執行。
-- `/aibdd-green-execute` — downstream extender；在本 skill 寫出的 component .tsx 上補業務邏輯（hooks、effects、API calls、conditional rendering）。本 skill 不寫這些，只給 caller 一個可 import 的純視覺 scaffold + 完整 stories。
+- `/aibdd-green-execute` — downstream consumer；推薦只在 page-level / hooks / API client / store / fixtures 補業務邏輯，把行為透過 props callback 注入本 skill 寫出的 component。視覺修改建議回上游 Planner 推理包後重跑本 skill，而不是在 green 階段手改。
 - `aibdd-core::preset-contract/web-frontend.md` — boundary I4 SSOT，本 skill 對齊其 Story-export-as-binding-anchor 規定。
 - `aibdd-core::assets/boundaries/web-frontend/variants/nextjs-playwright.md` — Storybook 10 / `@storybook/nextjs-vite` runtime contract；變更 framework 必同步更新此 variant 文件。
 - 不做：新增 model element、改 component file（在第二次 invoke 時 mode=overwrite 由 caller 顯式授權才覆蓋）、挑 design system 元件、繞過 boundary I4 anchor、override caller reasoning（Phase 1 後段只 cross-check + warn）、寫業務邏輯、引入 hooks、做 IO。
