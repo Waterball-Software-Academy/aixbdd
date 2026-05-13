@@ -16,7 +16,7 @@ Machine checks should validate `aibdd-core/assets/boundaries/web-frontend/handle
 | Path | Role |
 |------|------|
 | `handler-routing.yml` | SSOT: `routes` (`sentence_part` + `keyword` + `handler`) and `handlers` (`required_source_kinds`, `optional_source_kinds`, `l4_requirements`). Top-of-file comment block declares 4 boundary-level invariants (I1–I4). |
-| `handlers/*.md` | Handler narrative and rendering guidance; does not override `handler-routing.yml` *(future expansion — not in v1)* |
+| `handlers/*.md` | Handler narrative and rendering guidance; does not override `handler-routing.yml`. One file per handler in `handler-routing.yml` — fixed sections: Role / belongs-to / Trigger Contract / Context Contract / invariant projection (I1–I4 where applicable) / Playwright Surface / Forbidden. |
 | `variants/*.md` | Stack-specific rendering contracts such as `nextjs-playwright` *(future expansion — not in v1)* |
 | `shared-dsl-template.yml` | Boundary-wide canonical shared DSL entries |
 | `test-strategy-schema.md` | Schema for project-owned `${TEST_STRATEGY_FILE}` (`tier2_handlers`, `viewport_profiles`, `coverage_gates`, `policies`); consumed by `prehandling-before-red-phase.md` §3.6 / §3.7 and `check_frontend_preset_refs.py` |

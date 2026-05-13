@@ -124,19 +124,35 @@ One generated step pattern maps to one `.ts` file unless an existing shared comm
 
 ## Per-Handler Playwright API Mapping
 
-| Handler | Primary surface | Notes |
+Each handler's full Playwright surface — allowed verbs, assertion APIs, locator derivation rules, and Forbidden patterns — lives in `../handlers/<handler>.md` § Playwright Surface. This variant section only declares **stack-level constraints** that apply across all handlers; handler-local mapping MUST NOT be duplicated here.
+
+### Stack-level constraints (apply to every handler below)
+
+| Constraint | Authority |
+|---|---|
+| Playwright ≥ 1.45 (required for `page.clock`) | Runtime Contract (top of this file) |
+| `baseURL` resolution via `playwright.config.ts` | Playwright config |
+| Named viewport profiles resolved from `test-strategy.yml#viewport_profiles` | Project test strategy |
+| `Given` / `When` / `Then` imported from `./fixtures` only (never directly from `playwright-bdd`) | §Playwright-BDD Matcher Contract |
+| `mockApi.*` fixture API is the sole cross-process surface (I1) | §Mock Control Surface |
+| Zod-validated fulfillment / response bodies (I2) | §Schema Auto-Gate |
+| Story export as locator source (I4) | §Storybook Binding |
+
+### Handler narrative index (cross-link only)
+
+| Tier | Handler | Narrative |
 |---|---|---|
-| `route-given` | `page.goto(url)` | Resolved against `baseURL` (Next.js dev host) from `playwright.config.ts` |
-| `viewport-control` | `page.setViewportSize({width, height})` or `test.use({ viewport })` | Named profiles resolve via `test-strategy.yml#viewport_profiles` |
-| `mock-state-given` | `mockApi.seed<Entity>(input)` (synchronous closure mutation) | Records Zod-validated by fixture's `page.route` handler on next dispatch |
-| `time-control` | `page.clock.install({ time })` / `page.clock.fastForward(ms)` / `page.clock.setFixedTime(d)` | Requires Playwright ≥ 1.45 |
-| `ui-action` | `page.getByRole / getByLabel / getByTestId(...).click() / .fill() / .selectOption() / .setInputFiles() / page.keyboard.press() / page.goBack() / page.goForward() / page.reload()` | Locator query MUST come from `L4.source_refs.component` Story export's argTypes / accessible name |
-| `success-failure` | `await expect(page.getByRole('alert' \| 'status'))...toBeVisible()` and `.toContainText(reason)` | Surface (toast / inline / banner) declared in `L4.assertion_bindings.surface` |
-| `ui-readmodel-then` | `await expect(...).toHaveText \| toBeVisible \| toHaveCount \| toHaveAttribute(...)` | Collection assertions use `getByRole('row' \| 'listitem')` + `.toHaveCount(n)` |
-| `api-stub` | `mockApi.override(operationId, response, sequence?)` (synchronous closure mutation) | Active until per-scenario reset (fixture scope) |
-| `url-then` | `await expect(page).toHaveURL(re)` and/or `new URL(page.url()).searchParams.get(k)` | Pathname dynamic segments matched by regex from route map |
-| `api-call-then` | `mockApi.calls(operationId)` then assert on returned tuples | Schema validity already enforced (I2); handler asserts presence/count/shape only |
-| `mock-state-then` | `mockApi.inspect<Store>(where?)` then assert | Reads closure store directly; never via DOM |
+| T1 | `route-given` | [`../handlers/route-given.md`](../handlers/route-given.md) |
+| T1 | `viewport-control` | [`../handlers/viewport-control.md`](../handlers/viewport-control.md) |
+| T1 | `mock-state-given` | [`../handlers/mock-state-given.md`](../handlers/mock-state-given.md) |
+| T1 | `time-control` | [`../handlers/time-control.md`](../handlers/time-control.md) |
+| T1 | `ui-action` | [`../handlers/ui-action.md`](../handlers/ui-action.md) |
+| T1 | `success-failure` | [`../handlers/success-failure.md`](../handlers/success-failure.md) |
+| T1 | `ui-readmodel-then` | [`../handlers/ui-readmodel-then.md`](../handlers/ui-readmodel-then.md) |
+| T2 | `api-stub` | [`../handlers/api-stub.md`](../handlers/api-stub.md) |
+| T2 | `url-then` | [`../handlers/url-then.md`](../handlers/url-then.md) |
+| T2 | `api-call-then` | [`../handlers/api-call-then.md`](../handlers/api-call-then.md) |
+| T2 | `mock-state-then` | [`../handlers/mock-state-then.md`](../handlers/mock-state-then.md) |
 
 ## Schema Auto-Gate (Boundary Invariant I2 — Concrete Impl)
 
@@ -179,20 +195,16 @@ Locator derivation rule:
 
 Stories without explicit accessible-name args MUST NOT be bind targets — the Story author must add the args first; otherwise the binding fails legally (missing truth, not legal red).
 
-## Forbidden
+## Forbidden (stack-level only)
 
-- Do not invent route paths outside the project route map.
-- Do not infer request or response field names outside L4 bindings.
-- Do not call production internals from step definitions (no `import` from `src/app/**` or component file directly; only via rendered DOM or `mockApi`).
-- Do not place mock layer code inside the app under test (`src/mocks/**` MUST NOT exist).
-- Do not add `/__test__/*` Route Handlers to the Next.js dev server (deprecated v0 path).
-- Do not import the fixture's mock store from product code (the store is test-process-only).
-- Do not assert UI state in `mock-state-then` (use `ui-readmodel-then` for visible state).
-- Do not assert mock-store state in `ui-readmodel-then` (use `mock-state-then` for non-visible mutation).
-- Do not sleep or read wall-clock time in `time-control` (must go through `page.clock`).
-- Do not register additional `Before` hooks that mutate closure state — closure recreation per test fixture scope is the only legal reset.
-- Do not use raw CSS class selectors or nth-child positional selectors when role / label / test-id is available.
-- Do not configure `NEXT_PUBLIC_API_BASE_URL` to the Next.js dev host (would cause `page.route` to intercept page navigations).
+Handler-level Forbidden items (route invention, field inference, CSS / nth-child selector bans, `time-control` wall-clock ban, `mock-state-then` ↔ `ui-readmodel-then` confusion, extra `Before` hooks, etc.) live in `../handlers/<handler>.md` § Forbidden and MUST NOT be redeclared here. This section keeps only constraints that span the whole `nextjs-playwright` stack:
+
+- Mock layer location — `src/mocks/**` MUST NOT exist; `src/app/__test__/**` MUST NOT exist (deprecated v0 path). The fixture closure is the sole mock SSOT.
+- Mock store import boundary — the fixture's mock store is test-process-only; product code under `src/**` MUST NOT import it.
+- Production internals import boundary — step definitions MUST NOT `import` from `src/app/**` or any component file directly; the only legal channels are the rendered DOM (via `page`) and the fixture API (via `mockApi`).
+- API host separation — `NEXT_PUBLIC_API_BASE_URL` MUST resolve to a host distinct from the Next.js dev server host; otherwise `page.route` glob can intercept page navigations.
+- Fixture re-instantiation — `Given` / `When` / `Then` MUST be imported from `./fixtures`, never directly from `playwright-bdd` (a direct import re-instantiates `createBdd(test)` and breaks fixture sharing).
+- Reset hook ownership — the fixture's per-test closure recreation is the sole legal per-scenario reset (I3); the variant MUST NOT ship additional reset entry points and step files MUST NOT register `Before` / `After` hooks that mutate closure state.
 
 ## Legal Red Expectation
 
