@@ -32,6 +32,19 @@
 - `check_backend_preset_refs.py` SHOULD validate every DSL entry using `web-backend` against the core routing file.
 - Missing `name`, `handler`, or `variant` assets MUST be fail-stop errors in `/aibdd-plan` and `/aibdd-red`.
 
+## Layout SSOT
+
+`aibdd-core/assets/boundaries/web-backend/` MUST contain the following layout. Both `/aibdd-plan` and `/aibdd-red-execute` enforce this; no consumer may relax or extend it.
+
+| # | Component | Path | Cardinality |
+|---|---|---|---|
+| L1 | Routing SSOT | `handler-routing.yml` at preset root | exactly 1 |
+| L2 | Handler narrative | `handlers/<handler>.md` per handler id referenced by any DSL `L4.preset.handler` | 1 per referenced handler |
+| L3 | Variant rendering contract | `variants/<variant>.md` per variant id referenced by any DSL `L4.preset.variant` | 1 per referenced variant |
+| L4 | Alias resolution | none — preset name MUST resolve to the directory name verbatim | n/a |
+
+A missing component (L1 / L2 / L3) or an alias resolution attempt (L4) is a fail-stop error. Consumers MUST cite this section when enforcing layout.
+
 ### Preset Name Resolution Branches
 
 - IF `L4.preset.name == web-backend`:

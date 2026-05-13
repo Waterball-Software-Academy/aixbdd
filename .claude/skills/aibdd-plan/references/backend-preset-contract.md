@@ -13,6 +13,10 @@ or package-local sentence-parts catalog. The backend preset already owns the
 supported sentence part ids, handler ids, keyword positions, and L4 source-kind
 policy through `handler-routing.yml`.
 
+## Layout SSOT (cross-ref)
+
+The boundary directory layout (routing yml + handler narrative + variant contract + no alias) is normatively declared in [`aibdd-core::preset-contract/web-backend.md`](aibdd-core::preset-contract/web-backend.md) § Layout SSOT. `/aibdd-plan` MUST enforce that section before emitting any `L4.preset` block referencing this preset; `/aibdd-red-execute` Phase 3 § preset registry assertion cites the same SSOT.
+
 ## Primary Stack
 
 Backend DSL entries target the `web-backend` preset first. The default variant is `python-e2e` unless the boundary truth explicitly declares another supported variant.
