@@ -22,6 +22,14 @@ viewport_profiles:                   # map<ProfileName, Viewport>
   tablet:   { width: 768,  height: 1024 }
   desktop:  { width: 1440, height: 900  }
 
+time_control:                        # optional — required only if any scenario uses time-control handler
+  mode: freeze                       # 'freeze' | 'tick'
+  epoch_iso: "2024-01-15T10:00:00Z"  # ISO 8601; required when mode is set
+  tick_rate_ms: 1                    # mode=tick only; ms advanced per real ms; default 1
+  named_instants:                    # map<InstantName, ISO8601>
+    base: "2024-01-15T10:00:00Z"
+    expiry: "2024-01-22T10:00:00Z"
+
 coverage_gates:                      # map<GateName, GateConfig>
   operation_coverage:
     required: true
@@ -36,7 +44,7 @@ coverage_gates:                      # map<GateName, GateConfig>
 policies: {}                         # map<PolicyId, PolicyEntry> — owned by Spec-by-Example
 ```
 
-`version`、`tier2_handlers`、`policies` 為**必填**鍵；`viewport_profiles` 與 `coverage_gates` 為**選填**鍵但建議起始值就帶上（缺 → 對應檢查視為未啟用）。
+`version`、`tier2_handlers`、`policies` 為**必填**鍵；`viewport_profiles`、`time_control`、`coverage_gates` 為**選填**鍵但建議起始值就帶上（缺 → 對應檢查視為未啟用；scenario 若使用對應 handler 但鍵缺漏，會在 `prehandling-before-red-phase.md` §3.7 被阻擋）。
 
 ---
 
@@ -82,7 +90,35 @@ viewport_profiles:
 
 ---
 
-## §4 `coverage_gates`
+## §4 `time_control`
+
+供 `time-control` handler 引用 browser-visible time 控制配置的 SSOT。為選填鍵；缺 → `time-control` handler 不可使用（DSL 若引用會被 `prehandling-before-red-phase.md` §3.7 阻擋）。
+
+```yaml
+time_control:
+  mode: <freeze | tick>              # 必填
+  epoch_iso: <ISO8601>               # 必填; 固定時間錨點
+  tick_rate_ms: <int>?               # mode=tick only; 每真實 ms 推進 N ms; default 1
+  named_instants:                    # optional; map<InstantName, ISO8601>
+    <name>: <ISO8601>
+```
+
+| Mode | Playwright API | 說明 |
+|---|---|---|
+| `freeze` | `page.clock.install({ time: epoch_iso })` | 時間靜止於 `epoch_iso`；scenario 內時間不自動推進 |
+| `tick` | `page.clock.install({ time: epoch_iso })` + `page.clock.runFor(tick_rate_ms)` | 自 `epoch_iso` 開始，每真實 ms 推進 `tick_rate_ms` ms |
+
+**綁定規則**：
+
+- DSL 中 `time-control` 的 `L4.source_refs.test_strategy` 解析至本檔 `time_control` 區塊。
+- `named_instants.<name>` → step param binding target `test_strategy:time_control.named_instants.<name>`。
+- `named_instants` 為空但 scenario step 引用具名 instant → `prehandling-before-red-phase.md` §3.7 阻擋。
+- step body 不得計算時間（`now + offset` 形態必須先在 `named_instants` 宣告）。
+- Playwright 版本 < 1.45 → STOP；`page.clock` 不可用，需升級或改 `none`-profile。
+
+---
+
+## §5 `coverage_gates`
 
 Refactor 階段是否 enforce 三條 coverage gate。預設未啟用，避免 walking skeleton 階段就被卡。
 
@@ -116,13 +152,13 @@ coverage_gates:
 
 ---
 
-## §5 `policies`
+## §6 `policies`
 
 Spec-by-Example 動態填入；非 boundary preset 範圍。Schema 定義在 `aibdd-spec-by-example-analyze` 自身的 references。本檔不重抄；`policies: {}` 為 kickoff 起始值。
 
 ---
 
-## §6 完整範例
+## §7 完整範例
 
 最小可用版本（首個 feature package 落地時）：
 
@@ -164,10 +200,11 @@ policies:
 
 ---
 
-## §7 Forbidden
+## §8 Forbidden
 
 - 重抄 Tier-1 handler 到 `tier2_handlers`（Tier-1 永遠 enabled，列出來會誤導 enablement 檢查）。
 - 在 `viewport_profiles` 內寫入非 `width` / `height` / `deviceScaleFactor` / `isMobile` / `hasTouch` 之外的鍵（會被 Playwright `viewport` 型別 reject）。
 - `coverage_gates.<gate>.report` 寫絕對路徑（破壞 `${PLAN_COVERAGE_REPORT_DIR}` 抽象）。
 - 在 `policies` 內手寫 Spec-by-Example clause 結構（必須由 `/aibdd-spec-by-example-analyze` 產出）。
 - 把 `version` 升到 `2` 而本檔還停在 `1` 規約 —— schema bump 須先修訂本檔再升版。
+- 在 `time_control` 內寫入 `mode` 以外的計算性欄位（如 `offset_ms`、`relative_to`）—— 所有計算必須先在 `named_instants` 宣告靜態錨點。

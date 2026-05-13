@@ -29,14 +29,61 @@ Schema conformance is enforced by the mock layer when the call dispatches — `r
 
 ## Playwright Surface
 
-Primary call: `const calls = mockApi.calls(operationId, since?)` then standard `expect(...)` against the returned `RecordedCall[]` tuples (method, path-params, body, query, headers).
+Primary call: `const calls = mockApi.calls(operationId, since?)` then standard `expect(...)` against the returned `RecordedCall[]`.
 
-Typical shape:
+### `RecordedCall` shape
 
 ```ts
+interface RecordedCall {
+  operationId: string;
+  method: string;                       // 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  path: string;                         // resolved path, e.g. '/rooms/R-001/actions'
+  pathParams: Record<string, string>;  // path template segments
+  query: Record<string, string>;
+  body: unknown;                        // parsed JSON; null for GET / DELETE
+  headers: Record<string, string>;
+  timestamp: number;                    // 0-based call ordinal within this scenario
+}
+```
+
+### `since` semantics
+
+`mockApi.calls(op, since?)` returns calls **at or after** index `since` within the per-operation call list:
+
+- `calls('op')` → all calls (equivalent to `calls('op', 0)`).
+- `calls('op', 1)` → second call onwards (skip the first).
+- Use this to assert only the most-recent batch after a triggering UI action.
+
+### Call selector
+
+`L4.assertion_bindings` MUST resolve to one of:
+
+| Selector kind | Form | Example |
+|---|---|---|
+| **Ordinal** | `{ kind: ordinal, index: <int> }` | First call: `calls[0]` |
+| **Predicate** | `{ kind: predicate, where: <ShallowMatchObject> }` | Match `where.body.roomCode == 'R-001'` |
+| **All-then-assert-count** | `{ kind: count, expected: <int> }` | `expect(calls).toHaveLength(2)` |
+
+Predicate matches use shallow `toMatchObject` semantics on `body`, `pathParams`, `query`, or `headers`. Multiple matches → renderer MUST emit the assertion against the **first** match (predicate is a uniqueness assertion, not a filter) — failing this is `AMBIGUOUS_CALL_PREDICATE`.
+
+### Typical shape
+
+```ts
+// Ordinal: assert the first createBorrowRequest call had specific body
 const calls = mockApi.calls('createBorrowRequest');
 expect(calls).toHaveLength(1);
 expect(calls[0].body).toMatchObject({ roomCode: 'R-001' });
+
+// Path-params: assert a POST /rooms/{roomCode}/actions call landed on the right room
+const actions = mockApi.calls('postRoomAction');
+expect(actions[0].pathParams).toEqual({ roomCode: 'R-001' });
+expect(actions[0].body).toMatchObject({ action: 'join' });
+
+// Since: assert only the call emitted after the latest UI click
+const before = mockApi.calls('refreshRoom').length;
+await page.getByRole('button', { name: 'Refresh' }).click();
+const after = mockApi.calls('refreshRoom', before);
+expect(after).toHaveLength(1);
 ```
 
 ## Forbidden

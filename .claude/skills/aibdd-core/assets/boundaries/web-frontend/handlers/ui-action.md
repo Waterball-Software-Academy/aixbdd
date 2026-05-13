@@ -31,6 +31,47 @@ Stories without explicit accessible-name args MUST NOT be bind targets; this is 
 
 When the Story uses a design-system library component, the AI MUST verify the resulting role and accessible-name match library docs via `${PROJECT_SLUG}-sb-mcp` MCP tools BEFORE writing the locator.
 
+### Locator Derivation — Concrete Example
+
+Given Story export:
+
+```ts
+// src/components/room-lobby/RoomLobby.stories.ts
+export const ReadyToJoin: Story = {
+  args: {
+    primaryAction: { label: 'Join Room', role: 'button' },
+    inputs: [{ name: 'roomCode', label: 'Room Code', role: 'textbox' }],
+  },
+};
+```
+
+DSL binding:
+
+```yaml
+L4:
+  callable_via: ui-action:click
+  source_refs:
+    component: src/components/room-lobby/RoomLobby.stories.ts::ReadyToJoin
+  param_bindings:
+    target: { kind: story_arg, target: "args.primaryAction" }
+```
+
+Rendered step:
+
+```ts
+When('the user joins the room', async ({ page }) => {
+  await page.getByRole('button', { name: 'Join Room' }).click();
+});
+```
+
+**Error path** — Story has no accessible-name args:
+
+```ts
+export const Idle: Story = { args: { variant: 'idle' } };  // NO role / name / label
+```
+
+Renderer MUST STOP with `STORY_MISSING_ACCESSIBLE_NAME` and require Story author to add args. Inferring `getByRole('button')` (no name) is forbidden — it is non-deterministic across re-renders.
+
 ## Playwright Surface
 
 Allowed verbs (one per step body):

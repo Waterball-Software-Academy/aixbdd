@@ -3,6 +3,15 @@
 # v1 — 11 handlers, split into Tier-1 (always-required) and Tier-2 (opt-in per package).
 # Tier-3 / future expansion lives in README.md (browser-storage-given/then, a11y-then, etc.).
 #
+# ── L4 binding target grammar SSOT ──
+#
+# The `target:` field syntax used inside L4.param_bindings / datatable_bindings /
+# default_bindings / assertion_bindings entries is defined in
+# `binding-target-grammar.md` (sibling file). Any target string in dsl.yml that
+# does not parse against that grammar MUST be rejected at plan time.
+# Allowed namespaces: story_arg, route, schema, test_strategy, contract, calls,
+# store, ui, literal — see binding-target-grammar.md §2 for resolution rules.
+#
 # ── Boundary-level invariants (apply to all handlers below; not repeated per-handler) ──
 #
 #  (I1) Cross-process surfaces — All mock-* and api-* handlers' callable_via MUST

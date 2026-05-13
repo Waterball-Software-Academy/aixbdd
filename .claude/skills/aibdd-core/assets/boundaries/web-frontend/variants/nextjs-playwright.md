@@ -34,30 +34,46 @@ The app under test (`src/**`) MUST NOT contain mock layer code. `src/lib/api-cli
 
 All operations are synchronous closure mutations (no async HTTP). Per-scenario reset is automatic via fixture scope.
 
-| API | Backs handler | Input shape | Output shape |
-|---|---|---|---|
-| `mockApi.seed<Entity>(input)` | `mock-state-given` | entity-specific seed shape (record values validated by data-model Zod schema) | `void` (mutates closure store) |
-| `mockApi.inspect<Store>(where?)` | `mock-state-then` | optional `where` predicate object | `<Entity> \| <Entity>[]` from closure store |
-| `mockApi.override(operationId, response, sequence?)` | `api-stub` | `(operationId, { status, body, headers? }, sequence?)` | `void` (queues per-scenario response override) |
-| `mockApi.calls(operationId, since?)` | `api-call-then` | `(operationId, since?)` | `RecordedCall[]` from closure call recorder |
-| `mockApi.reset()` | per-scenario reset (I3) | – | `void` (clears closure store; usually unnecessary — fixture scope handles it) |
+| Method | Backs handler | Signature |
+|---|---|---|
+| `mockApi.seed<E>(input)` | `mock-state-given` | `input: EntityShape` — all NOT-NULL Zod fields required; `z.optional()` fields may be omitted; `z.nullable()` fields accept `null`. Returns `void`. |
+| `mockApi.inspect<E>(where?)` | `mock-state-then` | `where?: Partial<E>` — shallow-equality filter on the closure store; omit to return all entries. Returns `E \| E[]`. |
+| `mockApi.override(op, response, sequence?)` | `api-stub` | `op: string` operationId; `response: { status: number; body: unknown; headers?: Record<string,string> }`; `sequence?: number` — 0-based call ordinal: this override applies when `mockApi.calls(op).length == sequence`; omit = applies on the next call only. Returns `void`. |
+| `mockApi.calls(op, since?)` | `api-call-then` | `op: string` operationId; `since?: number` — 0-based call ordinal; returns calls at index ≥ `since`; omit = all calls in this scenario. Returns `RecordedCall[]`. |
+| `mockApi.reset()` | per-scenario reset (I3) | No args. Clears closure store and call recorder. Usually unnecessary — fixture scope handles it automatically. Returns `void`. |
 
-The fixture itself registers `page.route(API_HOST + '/<path>', handler)` for every operation. Handlers parse `req.method()` + path, mutate closure store, and call `route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(...) })`. Each handler MUST validate its outgoing payload against the operation's response Zod schema (boundary invariant I2).
+`RecordedCall` type:
+
+```ts
+interface RecordedCall {
+  operationId: string;
+  method: string;                       // 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  path: string;                         // resolved path, e.g. '/rooms/R-001/actions'
+  pathParams: Record<string, string>;  // path template segments, e.g. { roomCode: 'R-001' }
+  query: Record<string, string>;
+  body: unknown;                        // parsed JSON or null (GET / DELETE)
+  headers: Record<string, string>;
+  timestamp: number;                    // 0-based call ordinal within this scenario
+}
+```
+
+The fixture registers a single `page.route(API_HOST + '/**', handler)` that dispatches all operations by `method × path` regex. Each dispatch branch Zod-validates outgoing responses (boundary invariant I2).
 
 ## Required Test Fixture Shape (`features/steps/fixtures.ts`)
 
 ```ts
 /* eslint-disable react-hooks/rules-of-hooks -- Playwright fixture `use` callback is not a React Hook */
 import { test as base, createBdd } from 'playwright-bdd';
+import { CreateRoomBodySchema, CreateRoomResponseSchema, GetRoomResponseSchema } from '@/lib/schemas/room';
 
 interface MockApi {
   reset(): void;
-  // domain-specific seed/inspect methods, e.g.:
+  // domain-specific seed/inspect methods — one method per entity, camelCase entity name:
   seedRoom(input: { roomCode: string; seatsTaken: number; capacity?: number }): void;
   inspectRoom(code: string): RoomState | undefined;
   // tier-2 only:
-  // override(operationId: string, response: Override, sequence?: number): void;
-  // calls(operationId: string, since?: string): RecordedCall[];
+  override(operationId: string, response: { status: number; body: unknown; headers?: Record<string, string> }, sequence?: number): void;
+  calls(operationId: string, since?: number): RecordedCall[];
 }
 
 const API_HOST = 'http://localhost:4000'; // distinct from Next.js dev (localhost:3000)
@@ -65,20 +81,84 @@ const API_HOST = 'http://localhost:4000'; // distinct from Next.js dev (localhos
 export const test = base.extend<{ mockApi: MockApi }>({
   mockApi: async ({ page }, use) => {
     const store = new Map<string, RoomState>();
+    const recorder: RecordedCall[] = [];
+    const overrides = new Map<string, Array<{ sequence?: number; response: OverrideResponse }>>();
 
-    await page.route(`${API_HOST}/<resource>/**`, async (route) => {
+    // Helper: pop a matching override for (op, callIndex) if one is queued
+    const popOverride = (op: string, callIndex: number) => {
+      const queue = overrides.get(op);
+      if (!queue) return undefined;
+      const idx = queue.findIndex(o => o.sequence === undefined || o.sequence === callIndex);
+      return idx >= 0 ? queue.splice(idx, 1)[0].response : undefined;
+    };
+
+    // Single page.route covers every API operation; dispatch is by method × path regex.
+    await page.route(`${API_HOST}/**`, async (route) => {
       const req = route.request();
-      const url = new URL(req.url());
       const method = req.method();
-      // dispatch by method × path
-      // mutate `store` and call route.fulfill({ status, contentType, body })
-      // every fulfilled body must conform to its responseSchema (Zod)
+      const url = new URL(req.url());
+      const path = url.pathname;
+      const query = Object.fromEntries(url.searchParams);
+      const headers = req.headers();
+
+      // ── POST /rooms ─────────────────────────────────────────
+      if (method === 'POST' && path === '/rooms') {
+        const op = 'createRoom';
+        const body = req.postDataJSON() as unknown;
+        CreateRoomBodySchema.parse(body);                                              // I2 request gate
+        const callIndex = recorder.filter(c => c.operationId === op).length;
+        recorder.push({ operationId: op, method, path, pathParams: {}, query, body, headers, timestamp: recorder.length });
+
+        const override = popOverride(op, callIndex);
+        if (override) {
+          await route.fulfill({ status: override.status, contentType: 'application/json', body: JSON.stringify(override.body), headers: override.headers });
+          return;
+        }
+        const parsed = body as { roomCode: string };
+        const room: RoomState = { roomCode: parsed.roomCode, seatsTaken: 0 };
+        store.set(room.roomCode, room);
+        const resp = { roomCode: room.roomCode };
+        CreateRoomResponseSchema.parse(resp);                                          // I2 response gate
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(resp) });
+        return;
+      }
+
+      // ── GET /rooms/:roomCode ────────────────────────────────
+      const getRoomMatch = path.match(/^\/rooms\/([^/]+)$/);
+      if (method === 'GET' && getRoomMatch) {
+        const op = 'getRoom';
+        const roomCode = getRoomMatch[1];
+        const callIndex = recorder.filter(c => c.operationId === op).length;
+        recorder.push({ operationId: op, method, path, pathParams: { roomCode }, query, body: null, headers, timestamp: recorder.length });
+
+        const override = popOverride(op, callIndex);
+        if (override) {
+          await route.fulfill({ status: override.status, contentType: 'application/json', body: JSON.stringify(override.body), headers: override.headers });
+          return;
+        }
+        const room = store.get(roomCode);
+        if (!room) {
+          await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'room not found' }) });
+          return;
+        }
+        GetRoomResponseSchema.parse(room);                                             // I2 response gate
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(room) });
+        return;
+      }
+
+      // Unknown operation — fail explicitly rather than passing through to the real API.
+      await route.abort('failed');
     });
 
     const api: MockApi = {
-      reset: () => store.clear(),
-      seedRoom: (input) => store.set(input.roomCode, /* build entity */),
+      reset: () => { store.clear(); recorder.length = 0; overrides.clear(); },
+      seedRoom: (input) => store.set(input.roomCode, { roomCode: input.roomCode, seatsTaken: input.seatsTaken, capacity: input.capacity ?? 4 }),
       inspectRoom: (code) => store.get(code),
+      override: (op, response, sequence) => {
+        if (!overrides.has(op)) overrides.set(op, []);
+        overrides.get(op)!.push({ sequence, response });
+      },
+      calls: (op, since) => recorder.filter(c => c.operationId === op).slice(since ?? 0),
     };
     await use(api);
   },
