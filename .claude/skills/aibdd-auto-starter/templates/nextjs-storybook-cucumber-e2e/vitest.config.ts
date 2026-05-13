@@ -12,6 +12,20 @@ const dirname =
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
+  resolve: {
+    // 對齊 tsconfig.json `paths`：component contracts 走 specs/<TLB>/contracts/components/，src/ 走 ./src/
+    // 順序重要：較具體的 alias 必須先列，否則 `@/...` 會吃掉 `@/components/...`
+    alias: [
+      {
+        find: '@/components',
+        replacement: path.resolve(dirname, './specs/$TLB_ID/contracts/components'),
+      },
+      {
+        find: '@',
+        replacement: path.resolve(dirname, './src'),
+      },
+    ],
+  },
   test: {
     projects: [
       {

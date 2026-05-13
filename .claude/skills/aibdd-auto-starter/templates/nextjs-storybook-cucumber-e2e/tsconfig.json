@@ -19,6 +19,7 @@
       }
     ],
     "paths": {
+      "@/components/*": ["./specs/$TLB_ID/contracts/components/*"],
       "@/*": ["./src/*"]
     }
   },
