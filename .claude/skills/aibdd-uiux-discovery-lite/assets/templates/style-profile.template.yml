@@ -1,0 +1,43 @@
+# style-profile.yml — lite design tokens SSOT
+project: {{PROJECT-NAME}}
+mode: lite-happy-path
+visual_direction: {{VISUAL-STYLE}}
+
+tokens:
+  colors:
+    {{COLOR-TOKENS}}
+  typography:
+    display: {{FONT-DISPLAY}}
+    body: {{FONT-BODY}}
+    mono: {{FONT-MONO}}
+    scale: {{TYPE-SCALE}}
+  spacing:
+    base: {{SPACING-BASE}}
+    scale: {{SPACING-SCALE}}
+  radius:
+    sharp: {{RADIUS-SHARP}}
+    medium: {{RADIUS-MEDIUM}}
+    pillow: {{RADIUS-PILLOW}}
+  shadow:
+    philosophy: {{SHADOW-PHILOSOPHY}}
+    tokens: {{SHADOW-TOKENS}}
+
+breakpoints:
+  {{BREAKPOINTS-LIST}}
+
+motion:
+  budget: {{MOTION-BUDGET}}
+  default_duration: {{DEFAULT-DURATION}}
+  default_easing: {{DEFAULT-EASING}}
+  reduced_motion_strategy: {{REDUCED-MOTION-STRATEGY}}
+
+accessibility:
+  wcag_level: {{WCAG-LEVEL}}
+  min_contrast: {{MIN-CONTRAST}}
+  keyboard_scope: happy-path
+  focus_ring:
+    color: {{FOCUS-RING-COLOR}}
+    width: {{FOCUS-RING-WIDTH}}
+
+brand_references:
+  {{BRAND-REFS-LIST}}
