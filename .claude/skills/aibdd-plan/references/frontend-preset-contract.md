@@ -12,6 +12,10 @@ Reusable routing, handler docs, variants, and schemas for the frontend preset ar
 
 `/aibdd-plan` must not materialize a boundary-local `sentence-parts/inventory.yml` or package-local sentence-parts catalog. The frontend preset already owns the supported sentence part ids, handler ids, keyword positions, and L4 source-kind policy through `handler-routing.yml`.
 
+## Layout SSOT (cross-ref)
+
+The boundary directory layout (routing yml + handler narrative + variant contract + no alias) is normatively declared in [`aibdd-core::preset-contract/web-frontend.md`](aibdd-core::preset-contract/web-frontend.md) § Layout SSOT. `/aibdd-plan` MUST enforce that section before emitting any `L4.preset` block referencing this preset; `/aibdd-red-execute` Phase 3 § preset registry assertion cites the same SSOT.
+
 ## Primary Stack
 
 Frontend DSL entries target the `web-frontend` preset first. The default variant is `nextjs-playwright` unless the boundary truth explicitly declares another supported variant.

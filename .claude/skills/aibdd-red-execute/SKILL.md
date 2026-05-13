@@ -122,8 +122,13 @@ references:
 4. `$$dsl_index` = DERIVE merged package-over-shared index with entry-id and placeholder-aware L1 pattern indexes.
 5. ASSERT no same-tier duplicate ids and every entry has `id`, `L1`, `L4`, `L4.preset`, and `L4.source_refs`.
 6. `$$preset_registry` = DERIVE each `L4.preset.name` to `.claude/skills/aibdd-core/assets/boundaries/<preset-name>/`.
-7. ASSERT each preset has `handler-routing.yml`, handler doc, variant doc, and no `backend` alias resolution.
+7. ASSERT preset layout per `${$preset_contract_ref_key}` § Layout SSOT (resolved via `$$core_refs` in Phase 2 step 2) for every preset in `$$preset_registry`. The four assertions below mirror that SSOT verbatim; if the SSOT changes, this step changes with it.
+   7.1 ASSERT `handler-routing.yml` exists at preset root (Layout SSOT L1).
+   7.2 ASSERT `handlers/<handler>.md` exists for every handler id referenced by `L4.preset.handler` in `$$dsl_index` (Layout SSOT L2).
+   7.3 ASSERT `variants/<variant>.md` exists for every variant id referenced by `L4.preset.variant` in `$$dsl_index` (Layout SSOT L3).
+   7.4 ASSERT preset name resolves directly to the directory name; no alias resolution is allowed (Layout SSOT L4).
 8. ASSERT `web-backend` entries have `sentence_part == handler`.
+9. ASSERT `web-frontend` entries have `sentence_part == handler`.
 
 ### Phase 4 — ARCHIVE runtime features
 > produces: `$$runtime_feature_files`
