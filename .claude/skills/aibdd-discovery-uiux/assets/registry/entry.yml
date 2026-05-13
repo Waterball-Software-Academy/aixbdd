@@ -1,0 +1,22 @@
+# aibdd-discovery-uiux — planner-registry entry
+
+- phase: "<TBD>"                       # aggregator 於 aibdd-core::planner-registry.yml 填入
+  id: "discovery-uiux"
+  skill: "aibdd-discovery-uiux"
+  axis: "動詞 + UI verb binding"
+  core-decision: "frontend userflow（Activity）+ atomic rules with verification semantics（per has-ui BE operation feature） + no-ui GAP report"
+  writes:
+    - "${ACTIVITIES_DIR}/*${ACTIVITY_EXT}"
+    - "${FEATURE_SPECS_DIR}/**/*.feature"
+    - "${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md"
+  reads:
+    - "${SPECS_ROOT_DIR}/${UIUX_BACKEND_BOUNDARY_ID}/**"
+    - "${SPECS_ROOT_DIR}/**"
+  delegates:
+    - "aibdd-form-activity"
+    - "aibdd-form-feature-spec"
+    - "clarify-loop"
+  user-invocable: true
+  applicable-when:
+    tlb-role: "frontend"
+    sibling-be-boundary-required: true
