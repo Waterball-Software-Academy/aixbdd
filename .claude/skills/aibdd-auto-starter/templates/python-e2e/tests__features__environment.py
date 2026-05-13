@@ -81,9 +81,10 @@ def after_scenario(context, scenario):
         table_names = ", ".join(
             f'"{table.name}"' for table in reversed(Base.metadata.sorted_tables)
         )
-        context.db_session.execute(
-            text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY CASCADE")
-        )
+        if table_names:
+            context.db_session.execute(
+                text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY CASCADE")
+            )
         context.db_session.commit()
         context.db_session.close()
 
