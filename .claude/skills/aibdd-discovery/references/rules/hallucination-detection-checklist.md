@@ -127,44 +127,6 @@ CRM fixture：
 
 ---
 
-## Pattern 4 — Frontend Lens（Seam C 主用；Seam B 後驗）
-
-**目的**：當 TLB.role == "frontend" 時，偵測 atomic rule / activity action 中冒出 backend command verb、anchor 自生、accessible_name 同義改寫、或 role 屬黑名單。本 pattern 與 Pattern 1-3 互相獨立：Pattern 2/3 防「raw 沒說卻寫進規則」，Pattern 4 防「規則寫出來但不符 frontend SSOT 鏈」。
-
-### 4.1 啟動條件
-
-僅在 `source_material_bundle.target_boundary.role == "frontend"` 啟動。其他 boundary role 不執行本 pattern（純後端 boundary 出現 POST 是合法的）。
-
-### 4.2 觸發條件
-
-對 `frontend_lens` 與後續 `atomic_rule_draft` 內每個 anchor / verb 執行：
-
-| 觸發子類型 | 規則 |
-|---|---|
-| Backend verb 入侵 | atomic rule 動詞屬 `references/rules/frontend-rule-axes.md` §2.1 黑名單（POST / GET / PUT / DELETE / persist / save to database / return 200 / commit transaction / publish event 等）→ 觸發 |
-| Anchor 自生 | `rule.anchor_hint.anchor_id` 在 `frontend_lens.anchor_candidates` 中找不到（即沒對應到任何 modeled activity action）→ 觸發 |
-| accessible_name 同義改寫 | `rule.anchor_hint.accessible_name` 與 `frontend_lens` 中對應 anchor 的 `source_quote` 在動詞 lemma 上不一致（正規化規則見 frontend-rule-axes §4.2，僅允許大小寫／全半形／空白／中文動賓順序的標準化，禁止動詞替換、名詞替換、補充修飾語、縮寫展開）→ 觸發 |
-| Role 黑名單 | `rule.anchor_hint.role` ∈ {generic, div, span, presentation, none}（見 frontend-rule-axes §4.4）→ 觸發 |
-| Viewport 自生 | rule 中提及 viewport / breakpoint / screen size，但對應 activity 與 raw idea 皆未提及 → 觸發；推至 `aibdd-uiux-discovery` 處理 |
-
-### 4.3 觸發後輸出
-
-題目格式：`(A) catalog 擴充（罕用，需 PR） / (B) 重寫 activity action 對齊 catalog 或修正 anchor 命名 / (OTHER)`，default = B。
-
-由 04b 在 Seam C 階段以 `fea-Q<n>` 形式輸出；殘留至 atomic-rules 階段者，由 Seam B（06-atomic-clarify）以 `atm-Q<n>` 補抓。
-
-### 4.4 Anti-Pattern
-
-- ❌ 對 `target_boundary.role != "frontend"` 的 boundary 套用本 pattern
-- ❌ 對 activity 中明確標記為「跨 boundary hand-off」的 action 觸發（該 action 已不屬本 boundary 行為）
-- ❌ 把 Pattern 4 結果重複跑 Pattern 2（Pattern 2 防 raw 失讀；Pattern 4 防 SSOT 鏈斷裂；兩者偵測軸不同）
-
-### 4.5 對應 fixture 案例
-
-待 Next.js Storybook BDD fixture 落地後補。
-
----
-
 ## 整體流程
 
 ```
@@ -182,18 +144,11 @@ Seam A（04-activity-clarify）
     跑 Pattern 2（流程結構 traceback）
     │
     ▼
-RP04b frontend-axes produced（僅 TLB.role=="frontend"；否則 short-circuit lens=null）
-    │
-    ▼
-Seam C（SKILL.md Phase 2 直接觸發 /clarify-loop；無獨立 clarify RP file）
-    跑 Pattern 4（frontend lens 預擋：backend verb 入侵 / anchor 自生 / accessible_name 同義改寫 / role 黑名單）
-    │
-    ▼
-RP03 atomic-rules produced（frontend_lens 非空時繫結 ui_verb + anchor_hint）
+RP03 atomic-rules produced
     │
     ▼
 Seam B（06-atomic-clarify）
-    跑 Pattern 2（規則 traceback）+ Pattern 3（規則內 range/tier）+ Pattern 4（frontend boundary 殘留後驗）
+    跑 Pattern 2（規則 traceback）+ Pattern 3（規則內 range/tier）
     │
     ▼
 formulation → Phase 4 quality gate → P5 sweep（Class 3，獨立工具）
