@@ -2,6 +2,8 @@ import type { StorybookConfig } from '@storybook/nextjs-vite';
 
 const config: StorybookConfig = {
   "stories": [
+    "../specs/$TLB_ID/contracts/components/**/*.stories.@(ts|tsx)",
+    "../specs/$TLB_ID/contracts/components/**/*.mdx",
     "../src/components/**/*.mdx",
     "../src/components/**/*.stories.@(js|jsx|mjs|ts|tsx)"
   ],

@@ -1,45 +1,105 @@
 ---
 name: aibdd-pen-to-storybook
 description: >
-  Convert Pencil `.pen` design files into a Next.js + React + Tailwind + Storybook component library
-  — without MCP, without the Pencil desktop app. One-way `freeze-and-implement` pipeline.
-  Two modes: scaffold (full Next.js + Storybook project) and adapter (DELEGATE from
-  /aibdd-form-story-spec; return component_table + tokens only, no files written).
-  Trigger phrases: `.pen 變 storybook`, `generate components from .pen`, `把 .pen 轉成 React`,
-  `pencil to storybook`. Use when user has a frozen `.pen` and needs React-based component code
-  (Next.js / Remix / plain React; headless / CI; Pencil desktop + MCP not running). Skip when user
-  is still exploring visuals, the `.pen` is incomplete, or target stack has no component framework.
+  Adapter for Pencil `.pen` design files. Reads `.pen` → returns normalized
+  `component_table` + Tailwind 4 `tokens`. Pure read-only — does NOT write files.
+  Pencil-side adapter implementation of the cross-source design adapter contract;
+  future siblings (`aibdd-figma-to-storybook`, `aibdd-penpot-to-storybook`) follow
+  the same `component_table + tokens` return shape so downstream consumers
+  (`/aibdd-form-story-spec`, `/aibdd-plan` Phase 3 component-design merge,
+  `/aibdd-green-execute` Wave 1) stay design-source-agnostic.
 metadata:
-  user-invocable: true
+  user-invocable: false
   source: project-level dogfooding
 ---
 
 # aibdd-pen-to-storybook
 
-One-way pipeline skill。輸入 `.pen` 設計檔，輸出可 build 的 Next.js 16 + React 19 + Tailwind 4 + Storybook 10
-（`@storybook/nextjs-vite`）component 庫。不依賴 Pencil desktop app、不依賴 MCP server，只用 `jq` + Node toolchain。
+Pencil `.pen` adapter skill。**read-only**：讀 `.pen` JSON，抽 design tokens、挑 single screen、做 component
+candidate detection，回 `component_table` + `tokens` 給 caller。**不寫任何檔**、不建專案、不 npm install、不
+build storybook。
 
-Stack 鎖定與 `aibdd-auto-starter` 的 `nextjs-storybook-cucumber-e2e` template + `aibdd-form-story-spec` 對齊。
+被 `/aibdd-form-story-spec` Phase 1 的 design-source cross-check 與（未來）`/aibdd-plan` Phase 3 component-design
+merge sub-phase DELEGATE。
 
-只負責「把已 freeze 的 .pen 翻成 storybook scaffold + components + stories」；不重新做設計、不替設計者做
-顆粒度判斷、不對非 React 框架輸出。
+只負責「把已 freeze 的 .pen 解析成 component_table + tokens 推理包」；不重新做設計、不替設計者做顆粒度判斷、
+不對非 React 框架輸出、不寫 component / story / project files（那些是 form-story-spec 與 green-execute 的職責）。
+
+<!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
+> **Program-like SKILL.md — self-contained notation**
+>
+> **3 verb classes** (type auto-derived from verb name):
+> - **D** = Deterministic — no LLM judgment required; future scripting candidate
+> - **S** = Semantic — LLM reasoning required
+> - **I** = Interactive — yields turn to user
+>
+> **Yield discipline** (executor 鐵律): **ONLY** `I` verbs yield turn to the user. `D` and `S` verbs MUST NOT pause for user reaction. In particular:
+> - `EMIT $x to user` is **fire-and-forget** — continue immediately to the next step; do not wait for acknowledgment.
+> - `WRITE` / `CREATE` / `DELETE` are side effects, **not** phase boundaries — execution continues to the next sub-step.
+> - Phase transitions (Phase N → Phase N+1) and sub-step transitions are **non-yielding**.
+> - Mid-SOP messages of the form 「要繼續嗎？」/「先 review 一下？」/「先 checkpoint？」/「先停下來確認？」/「want me to proceed?」/「should I continue?」are **FORBIDDEN**. The ONLY way to ask the user is an `[USER INTERACTION] $reply = ASK ...` step.
+> - `STOP` / `RETURN` are terminations, not yields — no next step follows.
+>
+> **SSA bindings**: `$x = VERB args` (productive steps name their output);
+> `$x` is phase-local; `$$x` crosses phases (declared in phase header's `> produces:` line).
+>
+> **Side effect**: `VERB target ← $payload` — `←` arrow = "write into target".
+>
+> **Control flow**: `BRANCH $check ? then : else` (binary) or indented arms (multi);
+> `GOTO #N.M` = jump to Phase N step M (literal `#phase.step`).
+>
+> **Canonical verb table** (T = D / S / I):
+>
+> | Verb | T | Meaning |
+> |---|---|---|
+> | READ | D | 讀檔 → bytes / text |
+> | WRITE | D | 寫檔（內容已備好） |
+> | CREATE | D | 建立目錄 / 空檔 |
+> | DELETE | D | 刪檔（rollback） |
+> | COMPUTE | D | 純運算 |
+> | DERIVE | D | 從既定規則推算 |
+> | PARSE | D | 字串 → in-memory 結構 |
+> | RENDER | D | template + vars → string |
+> | ASSERT | D | 斷言 invariant；fail-stop |
+> | MATCH | D | regex / pattern 比對 |
+> | TRIGGER | D | 啟動 process / subagent / tool / script；output 可 bind |
+> | DELEGATE | D | 呼叫其他 skill |
+> | MARK | D | 紀錄狀態（譬如 TodoWrite） |
+> | BRANCH | D | 分支（吃 `$check` / `$kind` binding） |
+> | GOTO | D | 跳 `#phase.step` literal |
+> | IF / ELSE / END IF | D | 條件 sub-step |
+> | LOOP / END LOOP | D | 迴圈（必標 budget + exit） |
+> | RETURN | D | 提前結束 phase |
+> | STOP | D | 終止整個 skill |
+> | EMIT | D | 輸出已生成資料（fire-and-forget；**不 yield**，continue 下一 step） |
+> | WAIT | D | 等待已 spawn 的 process |
+> | THINK | S | 內部判斷（不印 user） |
+> | CLASSIFY | S | 多類別分類 → enum 之一 |
+> | JUDGE | S | 二元語意判斷 |
+> | DECIDE | S | 從 user reply / context 推結論 |
+> | DRAFT | S | 生成 prose / 訊息 |
+> | EDIT | S | LLM 推 patch 改既有檔 |
+> | PARAPHRASE | S | 改寫 / 翻譯 prose |
+> | CRITIQUE | S | 批評 / 建議 |
+> | SUMMARIZE | S | 抽取重點 |
+> | EXPLAIN | S | 對 user 解釋 why |
+> | ASK | I | 問 user 等回應（仍配 `[USER INTERACTION]` tag）；**唯一允許 yield turn 給 user 的 verb**。**Planner-level skill** 對 user 的提問**必須 `DELEGATE /clarify-loop`**，不得直接 `ASK`（其他角色的 skill 自決）。 |
+<!-- VERB-GLOSSARY:END -->
 
 ## §1 REFERENCES
 
 ```yaml
 references:
   - path: references/role-and-contract.md
-    purpose: caller / user 入口契約 + 角色定位 + 不做事項
+    purpose: caller 入口契約 + 角色定位 + 不做事項（adapter-only）
   - path: references/format-reference.md
-    purpose: '.pen v2.x JSON schema verbatim + framework versions (Next 16 / React 19 / Tailwind 4 / Storybook 10 nextjs-vite)'
+    purpose: '.pen v2.x JSON schema verbatim + Tailwind 4 token namespace 對照（component_table 給 caller 直接用）'
   - path: references/dsl-best-practice.md
-    purpose: 'Tailwind 4 @theme / CSF3 / Next.js 16 慣例'
+    purpose: 'component_table 命名 / variant enum / Tailwind 4 token 慣例（caller 渲染 .tsx 時參考）'
   - path: references/patterns/tokens-mapping.md
     purpose: '.pen Document.variables → Tailwind 4 @theme namespace 對照'
   - path: references/patterns/component-detection.md
     purpose: '6 條 component candidate heuristics + 表格輸出契約'
-  - path: references/patterns/project-scaffold.md
-    purpose: 'package.json / tsconfig / .storybook / app/* 標準骨架'
   - path: references/anti-patterns.md
     purpose: '常見錯誤：framework 拼錯、Tailwind 4 syntax 走 v3、@layer 用錯等'
   - path: references/fail-codes.md
@@ -49,21 +109,15 @@ references:
 ## §2 SOP
 
 ### Phase 1 — ASSERT intake｜驗證入口
-> produces: `$$pen_path`, `$$target_dir?`, `$$screen_id?`, `$$output_mode`
+> produces: `$$pen_path`, `$$screen_id?`
 
 1. `$contract` = READ [`references/role-and-contract.md`](references/role-and-contract.md)
-2. `$$pen_path` = PARSE user/caller-provided `.pen` 檔絕對路徑
-3. `$$target_dir` = PARSE 預期輸出根目錄（e.g. `pencil-ui/`；adapter 模式可省略）
-4. `$$screen_id` = PARSE optional 指定 screen ID（缺項則 Phase 4 由 user 確認）
-5. `$$output_mode` = PARSE caller-provided `output_mode`（預設 `"scaffold"`；允許值 `"scaffold" | "adapter"`）
-6. `$payload_ok` = JUDGE `$$pen_path` against `$contract`
-7. ASSERT `$payload_ok`
-8. ASSERT path_exists(`$$pen_path`)
-9. ASSERT `$$pen_path` 副檔名 == `.pen`
-10. ASSERT `$$output_mode` ∈ {`"scaffold"`, `"adapter"`}
-11. BRANCH `$$output_mode`
-    `"scaffold"` → ASSERT `$$target_dir` non-empty AND (NOT path_exists(`$$target_dir`) OR caller 指定 `mode == "overwrite"`)
-    `"adapter"`  → `$$target_dir` / `mode` 在 adapter 模式忽略（不寫任何檔；只回推理包）
+2. `$$pen_path` = PARSE caller-provided `.pen` 檔絕對路徑
+3. `$$screen_id` = PARSE optional 指定 screen ID（缺項則 Phase 4 由 caller 確認）
+4. `$payload_ok` = JUDGE `$$pen_path` against `$contract`
+5. ASSERT `$payload_ok`
+6. ASSERT path_exists(`$$pen_path`)
+7. ASSERT `$$pen_path` 副檔名 == `.pen`
 
 ### Phase 2 — VERIFY .pen 可解析
 > produces: `$$pen_doc`, `$$schema_version`
@@ -109,8 +163,8 @@ references:
 4. `$$node_tree_pretty` = RENDER pretty-print of `$$screen_node`（縮排樹；節點顯示 type / id / name / size / fill / layout）
 5. 用 `$$node_tree_pretty` 作為 Phase 5 的 input；不要在多個 screen 上同時跑 component detection（會混淆抽象）
 
-### Phase 5 — DETECT component candidates｜套用 heuristics + adapter early-return
-> produces: `$$component_table`, `$$adapter_report?`
+### Phase 5 — DETECT component candidates｜套用 heuristics
+> produces: `$$component_table`
 
 1. `$rules` = READ [`references/patterns/component-detection.md`](references/patterns/component-detection.md)
 2. `$skip_list` = PARSE `$rules.always_inline`（topBar / bottomBar / sidebar / hero…）
@@ -130,121 +184,44 @@ references:
    6.4 `$$component_table` = DERIVE append row
    END LOOP
 7. ASSERT count(`$$component_table.rows`) >= 1
-8. BRANCH `$$output_mode` == `"adapter"`
-   true:
-     8.1 `$$adapter_report` = DRAFT {
-           status: "completed",
-           mode: "adapter",
-           pen_path: `$$pen_path`,
-           screen_id: `$$screen_id`,
-           schema_version: `$$schema_version`,
-           token_count: count(`$$tokens`),
-           tokens: `$$tokens`,
-           component_count: count(`$$component_table.rows`),
-           component_table: `$$component_table`
-         }
-     8.2 RETURN `$$adapter_report`                # adapter mode skip Phase 6-9（不寫檔、不 npm install、不 build）
-   false:
-     # scaffold mode：自然 fall-through 進入 Phase 6（Phase transition 非 yielding）
 
-### Phase 6 — SCAFFOLD project｜建檔
-> produces: `$$scaffold_paths`
-
-1. `$layout` = READ [`references/patterns/project-scaffold.md`](references/patterns/project-scaffold.md)
-2. WRITE `$$target_dir/package.json` ← `$layout.package_json`（Next 16 + React 19 + Tailwind 4 + Storybook 10 nextjs-vite）
-3. WRITE `$$target_dir/tsconfig.json` ← `$layout.tsconfig`
-4. WRITE `$$target_dir/next.config.ts` ← `$layout.next_config`
-5. WRITE `$$target_dir/postcss.config.mjs` ← `$layout.postcss_config`
-6. WRITE `$$target_dir/next-env.d.ts` ← `$layout.next_env`
-7. WRITE `$$target_dir/.storybook/main.ts` ← `$layout.storybook_main`
-8. WRITE `$$target_dir/.storybook/preview.ts` ← `$layout.storybook_preview`
-9. WRITE `$$target_dir/app/layout.tsx` ← `$layout.app_layout`
-10. WRITE `$$target_dir/app/page.tsx` ← `$layout.app_page`
-11. `$globals_css` = RENDER `app/globals.css`：
-    - L1: font `@import url(...)`（必須最前）
-    - L2: `@import "tailwindcss";`
-    - L3: `@theme { ... }` 內 LOOP 寫入 `$$tokens` 每一筆 `--<namespace>-<name>: <value>;`
-    - L4: `@layer base { body { ... } }`
-    - L5: 自訂 `@utility name { ... }`（Tailwind 4 syntax，禁用 v3 的 `@layer utilities`）
-12. WRITE `$$target_dir/app/globals.css` ← `$globals_css`
-13. `$$scaffold_paths` = DERIVE all written paths above
-14. ASSERT 所有檔案 IO 成功；任一失敗 → Phase 10 dispatch `write-io-failed`
-
-### Phase 7 — RENDER components & stories｜逐 row 翻譯
-> produces: `$$component_files`, `$$story_files`
-
-1. `$best_practice` = READ [`references/dsl-best-practice.md`](references/dsl-best-practice.md)
-2. `$$component_files` = DERIVE empty list
-3. `$$story_files` = DERIVE empty list
-4. LOOP per `$row` in `$$component_table.rows`
-   4.1 `$tsx` = RENDER component file：
-       - `export type ${$row.Component}Props = { ... };` 一欄一 prop
-       - `export function ${$row.Component}(props): JSX { return <div className="...">…</div> }`
-       - className 只走 Tailwind utilities（從 `$$tokens` 派生：`text-<color>` / `bg-<color>` / `rounded-<radius>` / `font-<role>`）
-       - 不 `import React`（Next 16 + React 19 自動 JSX runtime）
-       - 不引入 `clsx` / `cn`（除非 caller 已加 deps）
-   4.2 WRITE `$$target_dir/components/${$row.Component}.tsx` ← `$tsx`
-   4.3 `$$component_files` = DERIVE append path
-   4.4 `$story` = RENDER `${$row.Component}.stories.tsx`：
-       - `import type { Meta, StoryObj } from "@storybook/nextjs-vite";`
-       - `import { ${$row.Component} } from "../components/${$row.Component}";`
-       - `const meta = { title: "...", component: ${$row.Component} } satisfies Meta<typeof ${$row.Component}>;`
-       - `export default meta;` + `type Story = StoryObj<typeof meta>;`
-       - LOOP per `$state` in `$row.Stories`：`export const ${$state}: Story = { args: { ... } };`
-       - 群組構圖（如 Roster）走 `render: () => <...>` 而非展開 args
-   4.5 WRITE `$$target_dir/stories/${$row.Component}.stories.tsx` ← `$story`
-   4.6 `$$story_files` = DERIVE append path
-   END LOOP
-5. ASSERT count(`$$component_files`) == count(`$$component_table.rows`)
-6. ASSERT count(`$$story_files`) == count(`$$component_table.rows`)
-
-### Phase 8 — VERIFY｜build 自檢
-> produces: `$$verify_report`
-
-1. RUN `cd $$target_dir && npm install`（背景跑；等候完成）
-2. ASSERT exit_code == 0；否則 Phase 10 dispatch `npm-install-failed`
-3. RUN `cd $$target_dir && npx tsc --noEmit`
-4. ASSERT exit_code == 0；否則 Phase 10 dispatch `tsc-error`（先修 TS 錯誤再進 storybook build；storybook 錯誤難 debug）
-5. RUN `cd $$target_dir && npm run build-storybook`（30–90s）
-6. ASSERT exit_code == 0；否則 Phase 10 dispatch `storybook-build-failed`
-7. `$$verify_report` = DRAFT { tsc_ok: true, storybook_build_ok: true, scaffold_paths: `$$scaffold_paths`, component_files: `$$component_files`, story_files: `$$story_files` }
-
-### Phase 9 — REPORT｜回 caller / user
+### Phase 6 — REPORT adapter
 > produces: `$$report`
 
 1. `$$report` = DRAFT {
      status: "completed",
+     mode: "adapter",
      pen_path: `$$pen_path`,
      screen_id: `$$screen_id`,
-     target_dir: `$$target_dir`,
+     schema_version: `$$schema_version`,
      token_count: count(`$$tokens`),
-     component_count: count(`$$component_files`),
-     story_count: count(`$$story_files`),
-     verify: `$$verify_report`
+     tokens: `$$tokens`,
+     component_count: count(`$$component_table.rows`),
+     component_table: `$$component_table`
    }
-2. RETURN `$$report`
+2. RETURN `$$report` to caller
 
-### Phase 10 — HANDLE dispatch
+### Phase 7 — HANDLE dispatch
 > produces: `$$caller_msg`
 
 1. `$failure_kind` = CLASSIFY runtime failure into one of the kinds enumerated in [`references/fail-codes.md`](references/fail-codes.md)
-2. BRANCH `$failure_kind` == "return-unreachable"
-   true:
-     2.1 WRITE `${$$target_dir}/.aibdd-pen-to-storybook.report` ← `$$report`
-     2.2 STOP
-   false:
-     2.3 `$$caller_msg` = DERIVE caller-return message from `$failure_kind` per [`references/fail-codes.md`](references/fail-codes.md)
-     2.4 RETURN `$$caller_msg`
+2. `$$caller_msg` = DERIVE caller-return message from `$failure_kind` per [`references/fail-codes.md`](references/fail-codes.md)
+3. RETURN `$$caller_msg`
 
 ## §3 CROSS-REFERENCES
 
-- 上游：Pencil GUI + MCP（探索期）— 設計者 freeze 後產出 `.pen`，再交給本 skill。
-- 下游 / 觸發者（依 `$$output_mode` 分流）：
-  - **scaffold mode**（user-invocable）— 直接被 user 呼叫；產整個 Next.js + Storybook scaffold（components / stories / project files），跑完 Phase 6-9。
-  - **adapter mode**（DELEGATE）— 被 `/aibdd-form-story-spec` Phase 1.5 委派；只跑 Phase 1-5 後在 Phase 5.5 提早 RETURN `$$component_table` + `$$tokens`，**不**寫檔、**不** npm install、**不** build。Form-story-spec 拿這個推理包灌進 CSF3 RENDER。
-- Sibling 對照：本 skill 與 `aibdd-form-story-spec` + `aibdd-auto-starter` (`nextjs-storybook-cucumber-e2e` template) 同步鎖 **Storybook 10 + `@storybook/nextjs-vite`**。版本鎖 SSOT 在 [`references/format-reference.md`](references/format-reference.md) §7；package.json 模板在 [`references/patterns/project-scaffold.md`](references/patterns/project-scaffold.md) §2。升級任一 lock 前讀 [`references/anti-patterns.md`](references/anti-patterns.md) §2。
-- 未來 Sibling：`aibdd-figma-to-storybook` / `aibdd-penpot-to-storybook` 等其他 design-source adapter 將遵循同一 `output_mode=adapter` contract（回 `component_table` + `tokens`），讓 `/aibdd-form-story-spec` 不耦合任一設計來源。
-- 不做：寫回 .pen、做視覺探索、選 design system 元件、做業務 BDD step 綁定。
-- 視覺回歸 baseline（optional companion，非本 skill SOP 內步驟）：若 `@pencil.dev/cli` 已安裝且已認證，user 可在 Phase 9 RETURN 之後外部執行 `pencil interactive -i <pen_path> -o /dev/null <<< 'export_nodes({ nodeIds: ["SCREEN_ID"], outputDir: "./baseline" }); exit()'` 自行產 baseline 圖。本 skill 不主動觸發。
+- 上游：Pencil GUI + MCP（探索期）— 設計者 freeze 後產出 `.pen`，再交給 caller skill 把本 adapter 的 `pen_path` 拼進 caller payload。
+- 直接下游（DELEGATE caller）：
+  - `/aibdd-form-story-spec` Phase 1 design-source cross-check — 比對 caller reasoning 之 `component.identifier` / `stories[].export_name` 是否在本 adapter 的 `component_table` 內，不一致時 warn（不 override）。
+  - `/aibdd-plan` Phase 3（未來 component-design merge sub-phase）— 把本 adapter 的 `component_table + tokens` 與 features × activities 合成 enriched `boundary_delta.components`，下游分流到 form-story-spec（寫 component + story）與 green-execute（補業務邏輯）。
+- Sibling adapters（同 contract，不同設計來源）：未來 `aibdd-figma-to-storybook` / `aibdd-penpot-to-storybook` 等遵循同一 return shape（`status / mode / token_count / tokens / component_count / component_table`），讓下游不耦合任一設計來源。
+- 不做：寫回 .pen、做視覺探索、選 design system 元件、做業務 BDD step 綁定、scaffold Next.js 專案、跑 npm install / tsc / build-storybook（這些已在歷史版本砍除；scaffold 屬 `/aibdd-auto-starter`，component / story 寫檔屬 `/aibdd-form-story-spec`，業務邏輯屬 `/aibdd-green-execute`）。
+- 視覺回歸 baseline（optional companion，非本 skill SOP 內步驟）：若 `@pencil.dev/cli` 已安裝且已認證，user 可在 caller 流程結束後外部執行 `pencil interactive -i <pen_path> -o /dev/null <<< 'export_nodes({ nodeIds: ["SCREEN_ID"], outputDir: "./baseline" }); exit()'` 自行產 baseline 圖。本 skill 不主動觸發。
 
-接著跑 `npm run storybook` 截同 component 比對。CI regression 可用。本 SOP 預設不跑這步。
+## §4 ORPHANED REFERENCES (已棄用，未來清掃)
+
+下列檔案是舊版 scaffold mode 殘留，**SOP 已不再 LOAD**，保留實體檔以利 git history / 未來考古：
+
+- `references/patterns/project-scaffold.md` — 舊版 Phase 6 scaffold project 用的 package.json / tsconfig / .storybook / app/ 模板。新流程下 scaffold 屬 `/aibdd-auto-starter` 的 template 職責。
+
+未來清掃時整批刪除即可，不影響本 skill 行為。

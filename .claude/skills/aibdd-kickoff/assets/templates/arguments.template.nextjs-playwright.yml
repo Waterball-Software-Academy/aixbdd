@@ -42,6 +42,12 @@ PROJECT_SPEC_LANGUAGE: {{PROJECT_SPEC_LANGUAGE}}
 # 值域：kebab-case（例：course-ui、credit-portal）
 PROJECT_SLUG: '{{PROJECT_SLUG}}'
 
+# TLB_ID — Top-Level Boundary id；nextjs-playwright stack 下與 PROJECT_SLUG 等值。
+# 用於展開 contract-as-SSOT 路徑（${SPECS_ROOT_DIR}/${TLB_ID}/contracts/components/...）。
+# starter template（tsconfig paths / storybook stories glob / vitest resolve.alias）依此鍵將
+# `@/components/*` alias 指向 specs/<TLB_ID>/contracts/components/*。
+TLB_ID: ${PROJECT_SLUG}
+
 # FRONTEND_SUBDIR — 前端根目錄相對 repo 的路徑段；空字串表示前端即 repo 根。
 # 值域：
 #   - "" — 前端在 repo 根
