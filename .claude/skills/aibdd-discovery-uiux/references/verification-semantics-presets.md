@@ -95,18 +95,43 @@ Rule: 觸發 {{ ui_verb }} [{{ accessible_name }}] 時，必須對應呼叫 BE o
 
 ---
 
-## §3 verification mode → step-def binding 暗示
+## §3 verification_mode → sentence_part binding（規約）
 
-下表給 `/aibdd-red-execute` 與 `/aibdd-form-story-spec` 的下游 step-def 推導參考：
+每條 atomic Rule 標的 `verification_mode` 必須對應到 [`aibdd-core::assets/boundaries/web-frontend/handler-routing.yml`](aibdd-core::assets/boundaries/web-frontend/handler-routing.yml) 既有 `sentence_part` 之一。下表為單一 routing source — `/aibdd-red-execute` Phase 2 依 `handler-routing.yml` 走，不另建對應表。
 
-| verification_mode | step-def 慣例（Playwright + playwright-bdd） |
-|---|---|
-| `locator` | `getByRole(role, { name })` + `.click() / .fill() / .selectOption() / .check()` |
-| `visual-state` | `getByRole(role, { name }).waitFor({ state: 'visible' \| 'hidden' })` 或 `expect(getByText(...)).toBeVisible()` |
-| `route` | `expect(page).toHaveURL(routePattern)` 或 dialog open assertion |
-| `api-binding` | `page.route(beOpPath, mock)` 配 fixture；assertion 在 mock fulfillment 或 record-replay log |
+| verification_mode | Gherkin 位置 | sentence_part | handler 檔 |
+|---|---|---|---|
+| `locator` | Given / When（互動前置或目標操作） | `ui-action` | [`handlers/ui-action.md`](aibdd-core::assets/boundaries/web-frontend/handlers/ui-action.md) |
+| `locator` | Then（可達 / 可見 / 可聚焦） | `ui-readmodel-then` | [`handlers/ui-readmodel-then.md`](aibdd-core::assets/boundaries/web-frontend/handlers/ui-readmodel-then.md) |
+| `visual-state` | Then（render / hide / spinner / skeleton / empty-state / error-visual / disabled / value） | `ui-readmodel-then` | [`handlers/ui-readmodel-then.md`](aibdd-core::assets/boundaries/web-frontend/handlers/ui-readmodel-then.md) |
+| `visual-state` | Then（toast / inline-error / banner / status-pill — 成功失敗反饋類） | `success-failure` | [`handlers/success-failure.md`](aibdd-core::assets/boundaries/web-frontend/handlers/success-failure.md) |
+| `route` | Given / Background（落點到指定路由） | `route-given` | [`handlers/route-given.md`](aibdd-core::assets/boundaries/web-frontend/handlers/route-given.md) |
+| `route` | Then（URL pathname / query / hash 斷言） | `url-then` | [`handlers/url-then.md`](aibdd-core::assets/boundaries/web-frontend/handlers/url-then.md) |
+| `api-binding` | Given（per-scenario 行為 override — 回應 status / body / latency） | `api-stub` | [`handlers/api-stub.md`](aibdd-core::assets/boundaries/web-frontend/handlers/api-stub.md) |
+| `api-binding` | Then（驗證 outgoing call 的 method / path / body / query 形狀） | `api-call-then` | [`handlers/api-call-then.md`](aibdd-core::assets/boundaries/web-frontend/handlers/api-call-then.md) |
 
-> **本表為 hint，非規約**：實際 step-def code 由 `/aibdd-red-execute` 在 Phase 2 mapping 階段決定。本檔只規範 Rule body 句型。
+### §3.1 對應規約
+
+- 每條 Rule 標一個 `verification_mode` + 一個 Gherkin keyword（Given / When / Then），二者組合**唯一**決定 `sentence_part`。同一個 `verification_mode` 在不同 Gherkin 位置會路由到不同 handler，這是預期行為，不是衝突。
+- 同一個 UI verb binding 衍生多條 Rule 時（per §1 可組合規則），每條 Rule 各自選一格走自己的 routing。
+- discovery-uiux 階段**不**渲染 step-def 程式碼；本表只決定下游 routing 落點。Playwright API surface / forbidden / Storybook I4 binding 一律由各 handler 檔自身規約。
+
+### §3.2 routing 之外的物理對應
+
+| verification_mode | 必須 carry 的額外輸入 | 物理對應解析者 |
+|---|---|---|
+| `api-binding` | `be_operation_binding`（sibling BE `openapi.yml` 的 `operationId`） | `/aibdd-red-execute` Phase 2 讀 sibling BE `contracts/openapi.yml` 解析為 method + path |
+| `route` | `route_pattern`（相對於 frontend variant 的 route map） | `route-given` / `url-then` 的 `L4.source_refs.route` 解析 |
+| `locator` / `visual-state` | `anchor`（role + accessible name） | `ui-action` / `ui-readmodel-then` 依 Storybook I4 binding 從 Story export args 對齊（per [`handler-routing.yml`](aibdd-core::assets/boundaries/web-frontend/handler-routing.yml) 邊界不變式 I4） |
+
+### §3.3 失敗條件
+
+下列情況 fail Phase 5 gate（與 §4 並列）：
+
+- Rule 標的 `verification_mode` 無法在 §3 表查到對應 `sentence_part`（例如錯字、用了未支援的 mode）。
+- `api-binding` Rule 缺 `be_operation_binding`，或 `be_operation_binding` 在 sibling BE `openapi.yml` 找不到對應 `operationId`。
+- `route` Rule 缺 `route_pattern`，或 `route_pattern` 在 frontend variant 的 route map 找不到對應 entry。
+- `locator` / `visual-state` Rule 的 `anchor` 不是 `role=... , name="..."` 形狀，或 Storybook 對應 Story export 缺 accessible-name args（per I4 missing-truth stop）。
 
 ---
 
