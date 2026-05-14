@@ -9,7 +9,7 @@
 | `TypeError: swc.isWasm is not a function` | 用了 `@storybook/nextjs`（webpack/SWC 路徑），與 Next 16 SWC 不相容 | 改用 `@storybook/nextjs-vite` + 加 `vite` dep；framework 名同步改 |
 | Tailwind utility 找不到（如 `bg-accent-cyan` unknown） | `globals.css` 缺 `@import "tailwindcss";` 或 token 沒寫進 `@theme` | 兩者都確認；`@theme { --color-accent-cyan: ... }` 必在 `@import "tailwindcss"` 之後 |
 | `@layer utilities { ... }` 內自訂 utility 完全沒生效 | Tailwind 4 改用 `@utility name { ... }` 語法 | 改成 `@utility scanlines { ... }` 等 |
-| Build 通過但設計與 .pen 不符 | hex code 拷貝錯字、token 大小寫不一 | 重跑 `jq '.variables' design.pen`，逐字 verbatim 寫進 `@theme` |
+| Build 通過但設計與 .pen 不符 | hex code 拷貝錯字、token 大小寫不一 | 重跑 `python3 scripts/python/pen_query.py design.pen --variables`，逐字 verbatim 寫進 `@theme` |
 | `clsx is not defined` | component 用了 `clsx(...)` 但 `package.json` 無此 dep | 兩擇一：加 `clsx` dep、或改回模板字串拼接 |
 | 字型完全沒載入 | Google Font `@import url(...)` 放在 `@import "tailwindcss";` 之後 | 字型 `@import url(...)` 必須在 globals.css **最前** |
 | `swc.isWasm` 但 framework 寫對了 | node_modules 殘留舊 framework；快取沒清 | `rm -rf node_modules .next && npm install` 後重 build |

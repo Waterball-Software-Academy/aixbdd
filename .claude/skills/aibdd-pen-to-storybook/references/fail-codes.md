@@ -8,7 +8,7 @@
 | failure_kind | trigger condition (Phase) | caller-return message |
 |---|---|---|
 | `pen-path-invalid` | Phase 1: `$$pen_path` 缺項 / 不存在 / 副檔名非 `.pen` | `pen_path 無效；確認絕對路徑且副檔名為 .pen` |
-| `pen-not-parseable` | Phase 2: `file` 結果非 UTF-8 / `jq` 解析失敗 | `.pen 解析失敗（可能是 binary 或舊版 schema）；建議用最新 Pencil 重存後重試` |
+| `pen-not-parseable` | Phase 2: `file` 結果非 UTF-8 / `pen_query.py` 解析失敗（exit 1） | `.pen 解析失敗（可能是 binary 或舊版 schema）；建議用最新 Pencil 重存後重試` |
 | `pen-version-unsupported` | Phase 2: `$$schema_version` 非 `^2\.\d+$` | `不支援的 .pen schema version；本 skill 只接受 v2.x` |
 | `pen-no-children` | Phase 2: `$$pen_doc.children` 為空陣列 | `.pen 無 top-level frame；無內容可轉換` |
 | `pen-no-tokens` | Phase 3: `Document.variables` 全空或全為 boolean | `.pen 沒有任何 design token；通常代表設計尚未做完，建議回 Pencil 補變數` |

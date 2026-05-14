@@ -122,7 +122,7 @@ references:
 ## §2 SOP
 
 ### Phase 1 — ASSERT intake｜驗證入口
-> produces: `$$pen_path`, `$$screen_id?`, `$$target_dir`, `$$mode`
+> produces: `$$pen_path`, `$$screen_id?`, `$$target_dir`, `$$mode`, `$$skill_dir`
 
 1. `$contract` = READ [`references/role-and-contract.md`](references/role-and-contract.md)
 2. `$$pen_path` = PARSE caller-provided `.pen` 檔絕對路徑
@@ -135,6 +135,8 @@ references:
 9. ASSERT `$$pen_path` 副檔名 == `.pen`
 10. ASSERT `$$mode` ∈ {`create`, `overwrite`}
 11. ASSERT `$$target_dir` 為絕對路徑；若 parent 不存在，dispatch `target-dir-invalid`
+12. `$$skill_dir` = COMPUTE current skill directory path
+    # Phase 2-4 的 .pen query 透過 `${$$skill_dir}/scripts/python/pen_query.py` 執行，stdlib-only 不依賴 jq
 
 ### Phase 2 — VERIFY .pen 可解析
 > produces: `$$pen_doc`, `$$schema_version`
@@ -142,7 +144,8 @@ references:
 1. `$schema` = READ [`references/format-reference.md`](references/format-reference.md)
 2. `$file_kind` = MATCH `file $$pen_path` 結果
 3. ASSERT `$file_kind` 含 `UTF-8` / `ASCII text`（拒收 binary、舊版 .pen）
-4. `$$pen_doc` = PARSE `jq '.' $$pen_path`
+4. `$$pen_doc` = TRIGGER `python3 "${$$skill_dir}/scripts/python/pen_query.py" "${$$pen_path}" --all`
+   # 取代 `jq '.' $$pen_path`；script stdlib-only，exit 1 = parse/encoding error
 5. `$$schema_version` = PARSE `$$pen_doc.version`
 6. ASSERT `$$schema_version` matches `^2\.\d+$`
 7. ASSERT `$$pen_doc.children` is array && length > 0
@@ -151,7 +154,8 @@ references:
 > produces: `$$tokens`
 
 1. `$mapping` = READ [`references/patterns/tokens-mapping.md`](references/patterns/tokens-mapping.md)
-2. `$variables` = PARSE `jq '.variables' $$pen_path`
+2. `$variables` = TRIGGER `python3 "${$$skill_dir}/scripts/python/pen_query.py" "${$$pen_path}" --variables`
+   # 取代 `jq '.variables' $$pen_path`
 3. `$$tokens` = DERIVE empty list
 4. LOOP per `$var_name, $var` in `$variables`
    4.1 `$ns` = MATCH `$var.type` against `$mapping` namespace table
@@ -169,14 +173,16 @@ references:
 ### Phase 4 — MAP screen tree｜挑選並讀取單一 screen
 > produces: `$$screen_node`, `$$node_tree_pretty`
 
-1. `$top_level` = PARSE `jq '[.children[] | {id, name, type, w: .width, h: .height}]' $$pen_path`
+1. `$top_level` = TRIGGER `python3 "${$$skill_dir}/scripts/python/pen_query.py" "${$$pen_path}" --top-level`
+   # 取代 `jq '[.children[] | {id, name, type, w: .width, h: .height}]' $$pen_path`
 2. BRANCH `$$screen_id` is set
    true:
      2.1 ASSERT `$$screen_id ∈ $top_level[].id`
    false:
      2.2 RETURN `$top_level` to caller，請 caller 指定 `$$screen_id` 後重啟 Phase 4
      2.3 STOP
-3. `$$screen_node` = PARSE `jq '.children[] | select(.id=="$$screen_id")' $$pen_path`
+3. `$$screen_node` = TRIGGER `python3 "${$$skill_dir}/scripts/python/pen_query.py" "${$$pen_path}" --screen-node "${$$screen_id}"`
+   # 取代 `jq '.children[] | select(.id=="$$screen_id")' $$pen_path`；exit 2 = screen_id 不存在
 4. `$$node_tree_pretty` = RENDER pretty-print of `$$screen_node`（縮排樹；節點顯示 type / id / name / size / fill / layout）
 5. 用 `$$node_tree_pretty` 作為 Phase 5 的 input；不要在多個 screen 上同時跑 component detection（會混淆抽象）
 

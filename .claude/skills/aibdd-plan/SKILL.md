@@ -286,17 +286,36 @@ references:
     `/aibdd-pen-to-storybook` → GOTO #15.5.5   # design pipeline 已在 15.3.5 處理；此處只 assert
     empty/none                → GOTO #15.5.5
     other                     → STOP with unsupported component contract specifier message
-   15.5.1 LOOP per `$component` in `$$boundary_delta.components`
-       15.5.1.1 `$story_target_dir` = RENDER `${TRUTH_BOUNDARY_ROOT}/contracts/components/${$component.identifier}/`
-                # 對齊 contract-as-SSOT 慣例：component .tsx 與 stories.tsx 都落到 boundary contracts/components/<id>/
-                # tsconfig path alias `@/components/* → specs/<TLB>/contracts/components/*` 由 aibdd-auto-starter template 設定
-       15.5.1.2 `$story_payload` = DERIVE form-story-spec caller payload from `$component` per [`.claude/skills/aibdd-form-story-spec/references/role-and-contract.md`](.claude/skills/aibdd-form-story-spec/references/role-and-contract.md) §2
-                # payload 必含 component.props (list) + component.render_hints (object)；由 reasoning/07 enrich 進 `$$boundary_delta.components` 後直接取用
-       15.5.1.3 DELEGATE `/aibdd-form-story-spec` with target_dir=`$story_target_dir`, mode="create", design_source=`{ kind: "none" }`, reasoning.component_modeling=`$story_payload`
+   15.5.1 `$story_jobs` = LOOP-COLLECT per `$component` in `$$boundary_delta.components`:
+              `{ identifier:  $component.identifier,
+                 target_dir:  RENDER ${TRUTH_BOUNDARY_ROOT}/contracts/components/${$component.identifier}/,
+                 payload:     DERIVE form-story-spec caller payload from $component per
+                              [`.claude/skills/aibdd-form-story-spec/references/role-and-contract.md`](.claude/skills/aibdd-form-story-spec/references/role-and-contract.md) §2 }`
+              # 對齊 contract-as-SSOT 慣例：component .tsx 與 stories.tsx 都落到 boundary contracts/components/<id>/
+              # tsconfig path alias `@/components/* → specs/<TLB>/contracts/components/*` 由 aibdd-auto-starter template 設定
+              # payload 必含 component.props (list) + component.render_hints (object)；由 reasoning/07 enrich 進 `$$boundary_delta.components` 後直接取用
+   15.5.2 `$story_batches` = COMPUTE partition(`$story_jobs`, 8)
+              # ≤8 concurrent subagents per batch；超過自動切批序列 dispatch，避免一次 spawn 過多打到 rate limit
+   15.5.3 `$story_reports` = COMPUTE []
+   15.5.4 LOOP per `$batch` in `$story_batches` (budget: ≤ ceil(count(`$story_jobs`)/8) batches, exit: all batches drained 或 fail-fast STOP)
+       15.5.4.1 `$batch_reports` = TRIGGER parallel Agent fan-out:
+                spawn one Agent(subagent_type="general-purpose") per `$job` in `$batch` in a SINGLE message (multi tool-use);
+                each subagent prompt:
+                  "DELEGATE /aibdd-form-story-spec with
+                     target_dir=${$job.target_dir},
+                     mode=\"create\",
+                     design_source={ kind: \"none\" },
+                     reasoning.component_modeling=${$job.payload};
+                   return JSON {identifier, status, files_written[]} on success
+                   or {identifier, status: \"incomplete\", reason} on failure."
                 # caller-driven pipeline 專用；form-story-spec 不再接受 design_source.kind == "pen"（design 路徑改走 producer 一條龍）
-       15.5.1.4 IF DELEGATE returns `incomplete`:
-           15.5.1.4.1 EMIT "component modeling 推理包不完整：${$component.identifier}" to user
-           15.5.1.4.2 STOP
+                # 主 context 只收每個 subagent 的 JSON report (~200 bytes)；component-level props 推導 / CSF3 渲染 全部留在 subagent
+       15.5.4.2 `$story_reports` = COMPUTE `$story_reports` ++ `$batch_reports`
+       15.5.4.3 LOOP per `$report` in `$batch_reports`
+           15.5.4.3.1 IF `$report.status` ≠ "completed":
+               15.5.4.3.1.1 EMIT "component modeling 推理包不完整：${$report.identifier} (${$report.reason})" to user
+               15.5.4.3.1.2 STOP   # fail-fast：當前 batch 內任一 component 失敗即 STOP，不再 dispatch 下一 batch
+           END LOOP
        END LOOP
    15.5.5 ASSERT `$$boundary_delta.components` is empty OR every entry is marked `deferred: true` OR design pipeline 已在 15.3.5 處理; on violation STOP with "component_contract_specifier mismatch with boundary_delta.components state"
 16. WRITE `${TEST_STRATEGY_FILE}` ← rendered strategy from `$$strategy_delta`
