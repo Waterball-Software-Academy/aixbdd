@@ -99,7 +99,8 @@ references:
    1.4 LOAD REF [`aibdd-discovery::references/contracts/io.md`](aibdd-discovery::references/contracts/io.md) — skill IO contract（必填欄位 / 綁定時點）
    1.5 `$args_abs` = COMPUTE `${arguments_yml_path}` 的絕對路徑（預設 `${workspace_root}/.aibdd/arguments.yml`）
    1.6 `$args_yaml` = READ `${args_abs}`
-   1.7 `$$runtime_context` = PARSE `$args_yaml` 取 `STARTER_VARIANT` / `PROJECT_SPEC_LANGUAGE` / `TLB` / `UIUX_BACKEND_BOUNDARY_ID` / 檔名軸欄位
+   1.7 `$$runtime_context` = PARSE `$args_yaml` 取 `STARTER_VARIANT` / `PRESET_KIND` / `PROJECT_SPEC_LANGUAGE` / `PROJECT_SLUG` / `TLB_ID` / `BACKEND_SUBDIR` / `FRONTEND_SUBDIR` / `SPECS_ROOT_DIR` / `UIUX_BACKEND_BOUNDARY_ID` / 檔名軸欄位
+   1.8 `$$runtime_context.TLB` = DERIVE struct{id: `${TLB_ID}` (展開為 PROJECT_SLUG 值；fallback PROJECT_SLUG 本身), role: `PRESET_KIND == "web-frontend" ? "frontend" : (PRESET_KIND == "web-backend" ? "backend" : "unknown")`}
 
 2. `$preconditions` = MARK "assert TLB.role==frontend and UIUX_BACKEND_BOUNDARY_ID present"
    2.1 ASSERT `$$runtime_context.TLB.role == "frontend"`
