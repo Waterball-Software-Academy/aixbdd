@@ -28,6 +28,11 @@ consumes:
     source: reference
     required: true
     path: ../../references/backend-input-contract.md
+  - name: be_gap_handling_ref
+    kind: reference
+    source: reference
+    required: true
+    path: ../../references/be-gap-handling.md
 produces:
   - name: be_truth_bundle
     kind: material_bundle
@@ -35,13 +40,22 @@ produces:
   - name: operation_inventory
     kind: derived_axis
     terminal: false
+  - name: be_gap_findings
+    kind: derived_axis
+    terminal: false
+    note: BE truth 對 FE 用途不足時偵測到的缺口 + 每筆候選 FE-side supplement options
+  - name: clarify_payload
+    kind: derived_axis
+    terminal: false
+    note: BG-002..BG-008 偵測命中時觸發 Seam 0' clarify-loop；題型必為 FE-side supplementation，禁 BE-mutation
 downstream:
+  - discovery-uiux.00-fe-intent-sourcing
   - discovery-uiux.02-operation-classify
 ---
 
 # Backend Truth Sourcing
 
-從 sibling backend boundary 已讀入的 `.feature` / `.activity` / contracts artifacts 機械抽取 BE operation inventory（每筆含 source / verb / object / actors / uat_flow attribution），不做 has-ui 分類（屬下游 02）。
+從 sibling backend boundary 已讀入的 `.feature` / `.activity` / contracts artifacts 機械抽取 BE operation inventory（每筆含 source / verb / object / actors / uat_flow attribution），不做 has-ui 分類（屬下游 02）。同時偵測 BE truth 對 FE 用途的缺口（BG-001..BG-008，per [`be-gap-handling.md`](../../references/be-gap-handling.md) §2），命中項輸出 FE-side supplement clarify_payload（禁 BE-mutation 選項）。
 
 ---
 
@@ -142,6 +156,35 @@ modeling_element_definition:
         message: string
       invariants:
         - "type 必為 enum 四值之一"
+    BEGapFinding:
+      role: "BE truth 對 FE 用途的缺口 + 候選 FE-side supplement options；下游 02/03/04 必須消費 chosen_option_id 而非自決"
+      fields:
+        detect_id: enum              # BG-001..BG-008 per be-gap-handling.md §2
+        be_pointer: string           # 對應 BE artifact path + locator（e.g. activity step id / openapi path:method）
+        op_id: string | null         # 影響的 BE operation；BG-006 / BG-004 跨多 op 可為 null
+        fe_impact: string            # 一句話：FE 因此 gap 會在哪裡卡住
+        candidate_options: list<BEGapOption>
+        chosen_option_id: string | null  # Seam 0' 回答前為 null；終稿必填
+      invariants:
+        - "detect_id ∈ BG-001..BG-008 enum"
+        - "candidate_options 至少 2 項；每項 label 不得含 be-gap-handling.md §3 forbidden phrase"
+        - "chosen_option_id == null → 對應 SupplementClarifyQuestion 必存在於 clarify_payload"
+      nested_fields:
+        BEGapOption:
+          id: string                 # A | B | C | OTHER
+          label: string              # FE-side supplement 說明；禁 BE-mutation 字樣
+          fe_assumption: string      # FE 採此 option 時的明示 assumption verbatim
+    SupplementClarifyQuestion:
+      role: "Seam 0' 待澄清題目；下游 SKILL.md Phase 2 fire /clarify-loop 時消費；題型必為 FE-side supplementation"
+      fields:
+        id: string                   # sup-Q<n>
+        detect_id: enum              # BG-002..BG-008
+        concern: string
+        options: list<BEGapOption>   # 同 BEGapFinding.candidate_options
+        recommendation: string
+        rationale: string
+      invariants:
+        - "options 不得含 be-gap-handling.md §3 forbidden phrase（rubric UIUX_NO_BE_MUTATION_LEAK 驗）"
 ```
 
 ---
@@ -157,16 +200,32 @@ modeling_element_definition:
    - 缺 actor / security → CiC(GAP)
    - openapi 與 activity 對應不上 → CiC(BDY)
    - 多 source 同一 op_id 但 verb 不一致 → CiC(CON)
+7. `$gap_detect` = MATCH `$bundle` against [`../../references/be-gap-handling.md`](../../references/be-gap-handling.md) §2 detect rules（BG-001..BG-008）：
+   - `BG-001`：OpenAPI 缺 operationId — 走 fallback 不入 BEGapFinding
+   - `BG-002`：feature 全 happy-path ∧ OpenAPI 有 4xx 回應 → BEGapFinding(detect_id=BG-002)
+   - `BG-003`：activity 缺 DECISION ∧ OpenAPI 有 4xx → BEGapFinding(BG-003)
+   - `BG-004`：Background actor ≠ activity header actor → BEGapFinding(BG-004)
+   - `BG-005`：OpenAPI response 缺 schema → BEGapFinding(BG-005)
+   - `BG-006`：shared DSL 缺 actor catalog → BEGapFinding(BG-006)
+   - `BG-007`：多 source 同 op_id 但 verb 不一致 → BEGapFinding(BG-007)，同時保留 §3.6 的 CiC(CON)
+   - `BG-008`：OpenAPI x-uat-flow 缺 ∧ activity / feature tag 皆無對應 → BEGapFinding(BG-008)
+8. `$gap_findings` = DERIVE BEGapFinding list ← `$gap_detect`；每筆從 be-gap-handling.md §2 同列 options 欄取 candidate_options（verbatim）
+9. `$supplement_questions` = DERIVE SupplementClarifyQuestion list ← `$gap_findings` 每筆未指定 chosen_option_id 者一道題；id 形如 `sup-Q<n>`；recommendation 取 candidate_options[0]
+10. ASSERT 每筆 `$supplement_questions` 的 options.label 不含 [`../../references/be-gap-handling.md`](../../references/be-gap-handling.md) §3 forbidden phrase
 
 ---
 
 ## 4. Material Reducer SOP
 
-1. `$reducer_output` = DERIVE be_truth_bundle + operation_inventory：
+1. `$reducer_output` = DERIVE be_truth_bundle + operation_inventory + be_gap_findings + clarify_payload：
    - `be_truth_bundle = {features: $be_features_parsed, activities: $be_activities_parsed, contracts: $be_contracts_parsed, boundary_id: runtime_context.UIUX_BACKEND_BOUNDARY_ID}`
    - `operation_inventory = {items: $inventory_raw, cic_marks: $cic_marks}`
+   - `be_gap_findings = {items: $gap_findings}`
+   - `clarify_payload = {questions: $supplement_questions}`
 2. ASSERT length(`$reducer_output.operation_inventory.items`) ≥ 1
 3. ASSERT 每筆 BEOperation invariants 成立（unique op_id / source enum / verbatim verb-object）
+4. ASSERT 每筆 BEGapFinding invariants 成立（detect_id enum / candidate_options ≥ 2 / no forbidden phrase）
+5. ASSERT 每筆 SupplementClarifyQuestion 都能在 `be_gap_findings.items` 找到對應 detect_id（trace-back）
 
 Return:
 
@@ -181,13 +240,21 @@ produces:
   operation_inventory:
     items: []        # BEOperation[]
     cic_marks: []    # BEOperationCiC[]
+  be_gap_findings:
+    items: []        # BEGapFinding[]
+  clarify_payload:
+    questions: []    # SupplementClarifyQuestion[] — SKILL.md Phase 2 §3 觸發 Seam 0' clarify-loop
 traceability:
   inputs:
     - be_truth_files
     - runtime_context
+    - backend_input_contract_ref
+    - be_gap_handling_ref
   derived:
     - BEOperation
     - BEOperationCiC
+    - BEGapFinding
+    - SupplementClarifyQuestion
 clarifications:
-  - none             # 此 RP 不直接 ASK；ambiguous 都標 CiC 給 02 處理
+  - clarify_payload  # 非空 → SKILL.md Phase 2 §3 觸發 Seam 0' clarify-loop
 ```

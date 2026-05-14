@@ -83,6 +83,10 @@ references:
     purpose: 4 種 Rule preset（locator / visual-state / route / API-binding）句型樣板 + 互斥/可組合規則
   - path: references/userflow-rule-coverage.md
     purpose: frontend Rule coverage matrix — happy / error / state-transition / a11y / cross-actor 必填項
+  - path: references/fe-intent-contract.md
+    purpose: raw idea 收斂 SSOT — fe_intent_bundle schema / 7 類 Seam 0 題型 / 下游消費規約 / intent ↔ BE alignment matrix shape
+  - path: references/be-gap-handling.md
+    purpose: BE truth 對 FE 用途不足時的 FE-side 補位契約 — BG-001..BG-008 偵測規則 / 候選 supplement options / NO_BE_MUTATION_LEAK invariant
 ```
 
 ## §2 SOP
@@ -99,7 +103,7 @@ references:
    1.4 LOAD REF [`aibdd-discovery::references/contracts/io.md`](aibdd-discovery::references/contracts/io.md) — skill IO contract（必填欄位 / 綁定時點）
    1.5 `$args_abs` = COMPUTE `${arguments_yml_path}` 的絕對路徑（預設 `${workspace_root}/.aibdd/arguments.yml`）
    1.6 `$args_yaml` = READ `${args_abs}`
-   1.7 `$$runtime_context` = PARSE `$args_yaml` 取 `STARTER_VARIANT` / `PRESET_KIND` / `PROJECT_SPEC_LANGUAGE` / `PROJECT_SLUG` / `TLB_ID` / `BACKEND_SUBDIR` / `FRONTEND_SUBDIR` / `SPECS_ROOT_DIR` / `UIUX_BACKEND_BOUNDARY_ID` / 檔名軸欄位
+   1.7 `$$runtime_context` = PARSE `$args_yaml` 取 `STARTER_VARIANT` / `PRESET_KIND` / `PROJECT_SPEC_LANGUAGE` / `PROJECT_SLUG` / `TLB_ID` / `BACKEND_SUBDIR` / `FRONTEND_SUBDIR` / `SPECS_ROOT_DIR` / `UIUX_BACKEND_BOUNDARY_ID` / `LAST_USER_PROMPT` / 檔名軸欄位（`LAST_USER_PROMPT` 缺欄視為空字串）
    1.8 `$$runtime_context.TLB` = DERIVE struct{id: `${TLB_ID}` (展開為 PROJECT_SLUG 值；fallback PROJECT_SLUG 本身), role: `PRESET_KIND == "web-frontend" ? "frontend" : (PRESET_KIND == "web-backend" ? "backend" : "unknown")`}
 
 2. `$preconditions` = MARK "assert TLB.role==frontend and UIUX_BACKEND_BOUNDARY_ID present"
@@ -169,8 +173,8 @@ references:
    6.12 `$$be_truth_bundle.fe_api_yml_path` = DERIVE `$fe_api_yml_dst`
    6.13 `$$be_truth_bundle.fe_api_yml_source_hash` = DERIVE `$be_api_sha256`
 
-### Phase 2 — SOURCE backend operations + classify has-ui vs no-ui
-> produces: `$$discovery_bundle`
+### Phase 2 — SOURCE backend operations + FE intent + BE gaps + classify has-ui vs no-ui
+> produces: `$$discovery_bundle`, `$$fe_intent_bundle`, `$$be_gap_findings`
 
 > **File-first invariant**：任何 `/clarify-loop` 呼叫之前，必須先在 plan package 下 WRITE 一份承載該輪題組的 artifact，並在 clarify-loop payload 附 `located_file_path` 指向該檔；待澄清題組同步寫進該檔的 `## Open <Stage> Questions` section。違反此 invariant 視為 SOP 缺陷，呼叫 `/skill-rca`。
 
@@ -185,58 +189,93 @@ references:
    1.6 `$path_json` = TRIGGER `python3 ${PROJECT_ROOT}/.claude/skills/aibdd-discovery/scripts/kickoff_path_resolve.py "${$args_abs}"`
    1.7 `$$runtime_context` = DERIVE 已重展開 plan-side 路徑後的執行設定（`PLAN_SPEC` / `PLAN_REPORTS_DIR` / `CURRENT_PLAN_PACKAGE` 對齊新 slug）
 
-2. `$op_extract` = MARK "extract BE operation inventory via RP 01-be-sourcing"
-   2.1 `$operation_inventory_draft` = THINK per [`reasoning/discovery-uiux/01-be-sourcing.md`](reasoning/discovery-uiux/01-be-sourcing.md), input=`$$be_truth_bundle`
-   2.2 ASSERT length(`$operation_inventory_draft.items`) ≥ 1
-   2.3 IF assertion fails:
-       2.3.1 EMIT "BE inventory 為空；可能是 BE artifacts 內容退化（feature 全 @ignore / activity 全 stub）" to user
-       2.3.2 STOP
+2. `$op_extract` = MARK "extract BE operation inventory + detect BE gaps via RP 01-be-sourcing"
+   2.1 LOAD REF [`references/be-gap-handling.md`](references/be-gap-handling.md) — BE 缺口偵測規則 + FE-side supplementation invariant
+   2.2 `$be_sourcing_out` = THINK per [`reasoning/discovery-uiux/01-be-sourcing.md`](reasoning/discovery-uiux/01-be-sourcing.md), input=`$$be_truth_bundle`
+   2.3 `$operation_inventory_draft` = DERIVE `$be_sourcing_out.operation_inventory`
+   2.4 `$$be_gap_findings` = DERIVE `$be_sourcing_out.be_gap_findings`
+   2.5 `$supplement_questions` = DERIVE `$be_sourcing_out.clarify_payload.questions`
+   2.6 ASSERT length(`$operation_inventory_draft.items`) ≥ 1
+   2.7 IF assertion fails:
+       2.7.1 EMIT "BE inventory 為空；可能是 BE artifacts 內容退化（feature 全 @ignore / activity 全 stub）" to user
+       2.7.2 STOP
 
-3. `$draft_sourcing` = MARK "classify operations and write draft sourcing report as Seam A anchor"
-   3.1 LOAD REF [`references/be-to-fe-mapping.md`](references/be-to-fe-mapping.md) §1 — has-ui / no-ui 分類 rubric
-   3.2 `$classification_draft` = THINK per [`reasoning/discovery-uiux/02-operation-classify.md`](reasoning/discovery-uiux/02-operation-classify.md), input=`$operation_inventory_draft`
-   3.3 CREATE `${PLAN_REPORTS_DIR}`
-   3.4 `$sourcing_draft` = DRAFT sourcing report draft ← `$$be_truth_bundle`, `$operation_inventory_draft`, `$classification_draft.ambiguous_items`
-   3.5 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md` ← `$sourcing_draft`
-   3.6 `$plan_summary_draft` = DRAFT Discovery-UIUX Sourcing Summary draft ← pointer `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md`
-   3.7 WRITE `${PLAN_SPEC}` ← `$plan_summary_draft`
+3. `$seam_0_prime` = MARK "Seam 0' — fire BE-gap FE-side supplementation clarify-loop"
+   3.1 CREATE `${PLAN_REPORTS_DIR}`
+   3.2 `$be_gap_draft` = DRAFT BE gap report draft ← `$$be_gap_findings`, `$supplement_questions`；含 `## BE Gaps Detected` + `## Open BE Supplementation Questions` sections per [`references/be-gap-handling.md`](references/be-gap-handling.md) §4
+   3.3 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-be-gap.md` ← `$be_gap_draft`
+   3.4 IF length(`$supplement_questions`) == 0：GOTO #2.4.1
+   3.5 [USER INTERACTION] `$be_gap_clarify_report` = DELEGATE `/clarify-loop`，附上 `$supplement_questions` + `located_file_path = ${PLAN_REPORTS_DIR}/discovery-uiux-be-gap.md` + `located_anchor_section = "Open BE Supplementation Questions"`
+   3.6 WAIT for `$be_gap_clarify_report`
+   3.7 IF `$be_gap_clarify_report.status == incomplete`:
+       3.7.1 EMIT "Seam 0' (BE gap) 的 clarify-loop 回 incomplete；draft report 留檔，請補完題組後重跑" to user
+       3.7.2 STOP
+   3.8 `$$be_gap_findings` = DERIVE 把 `$be_gap_clarify_report.answers` 整合進 `$$be_gap_findings`（每筆填入 chosen_option_id）
+   3.9 `$be_gap_final` = DRAFT final BE gap report ← `$$be_gap_findings`；section 改為 `## BE Gaps Detected` + `## BE Gaps Resolved (FE-side)` + `## BE Gaps Forwarded`
+   3.10 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-be-gap.md` ← `$be_gap_final`
 
-4. `$seam_a_clarify` = MARK "fire Seam A clarify-loop for ambiguous has-ui classification"
-   4.1 IF length(`$classification_draft.ambiguous_items`) == 0：GOTO #2.5.1
-   4.2 [USER INTERACTION] `$classify_clarify_report` = DELEGATE `/clarify-loop`，附上 `$classification_draft.clarify_payload` + `located_file_path = ${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md` + `located_anchor_section = "Open Classification Questions"`
-   4.3 WAIT for `$classify_clarify_report`
-   4.4 IF `$classify_clarify_report.status == incomplete`:
-       4.4.1 EMIT "classification 階段的 clarify-loop 回 incomplete；draft report 留檔，請補完題組後重跑" to user
-       4.4.2 STOP
+4. `$intent_sourcing` = MARK "RP 00 — derive fe_intent_bundle + fire Seam 0 intent clarify-loop"
+   4.1 LOAD REF [`references/fe-intent-contract.md`](references/fe-intent-contract.md) — FE intent bundle schema + 7 類 Seam 0 題型
+   4.2 `$raw_idea` = DERIVE `$$runtime_context.LAST_USER_PROMPT`（缺欄視為空字串）
+   4.3 `$intent_out` = THINK per [`reasoning/discovery-uiux/00-fe-intent-sourcing.md`](reasoning/discovery-uiux/00-fe-intent-sourcing.md), input={raw_idea: `$raw_idea`, operation_inventory: `$operation_inventory_draft`, be_truth: `$$be_truth_bundle`}
+   4.4 `$$fe_intent_bundle` = DERIVE `$intent_out.fe_intent_bundle`
+   4.5 `$intent_questions` = DERIVE `$intent_out.clarify_payload.questions`
+   4.6 `$intent_draft` = DRAFT intent report draft ← `$raw_idea`, `$$fe_intent_bundle`, `$intent_questions`；含 raw idea verbatim fenced block + alignment_matrix table + `## Open Intent Questions` section per [`references/fe-intent-contract.md`](references/fe-intent-contract.md) §5
+   4.7 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-intent.md` ← `$intent_draft`
+   4.8 IF length(`$intent_questions`) == 0：GOTO #2.5.1
+   4.9 [USER INTERACTION] `$intent_clarify_report` = DELEGATE `/clarify-loop`，附上 `$intent_questions` + `located_file_path = ${PLAN_REPORTS_DIR}/discovery-uiux-intent.md` + `located_anchor_section = "Open Intent Questions"`
+   4.10 WAIT for `$intent_clarify_report`
+   4.11 IF `$intent_clarify_report.status == incomplete`:
+        4.11.1 EMIT "Seam 0 (FE intent) 的 clarify-loop 回 incomplete；draft report 留檔，請補完題組後重跑" to user
+        4.11.2 STOP
+   4.12 `$$fe_intent_bundle` = DERIVE 把 `$intent_clarify_report.answers` 整合進 `$$fe_intent_bundle`（填回 scope_decisions / page_compositions / actor_splits / state_axis_priority / brand_seed unknown 欄位）
+   4.13 `$intent_final` = DRAFT final intent report ← `$raw_idea`, `$$fe_intent_bundle`；section 改為 raw idea verbatim + alignment_matrix + `## Resolved Intent Decisions`
+   4.14 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-intent.md` ← `$intent_final`
 
-5. `$sourcing_finalize` = MARK "integrate clarify answers and re-write final sourcing report"
-   5.1 `$classification_final` = THINK 把 `$classify_clarify_report.answers` 整合進 `$classification_draft`
-   5.2 `$sourcing_final` = DRAFT final sourcing report ← `$operation_inventory_draft`, `$classification_final`
-   5.3 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md` ← `$sourcing_final`
-   5.4 WRITE `${PLAN_SPEC}` ← updated Discovery-UIUX Sourcing Summary（pointer 對應 final report）
+5. `$draft_sourcing` = MARK "classify operations (intent + be_gap aware) and write draft sourcing report as Seam A anchor"
+   5.1 LOAD REF [`references/be-to-fe-mapping.md`](references/be-to-fe-mapping.md) §1 — has-ui / no-ui 分類 rubric
+   5.2 `$classification_draft` = THINK per [`reasoning/discovery-uiux/02-operation-classify.md`](reasoning/discovery-uiux/02-operation-classify.md), input={operation_inventory: `$operation_inventory_draft`, be_truth: `$$be_truth_bundle`, fe_intent_bundle: `$$fe_intent_bundle`, be_gap_findings: `$$be_gap_findings`}
+   5.3 `$sourcing_draft` = DRAFT sourcing report draft ← `$$be_truth_bundle`, `$operation_inventory_draft`, `$classification_draft.ambiguous_items`；含 pointer 到 `discovery-uiux-intent.md` + `discovery-uiux-be-gap.md`
+   5.4 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md` ← `$sourcing_draft`
+   5.5 `$plan_summary_draft` = DRAFT Discovery-UIUX Sourcing Summary draft ← pointer `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md`
+   5.6 WRITE `${PLAN_SPEC}` ← `$plan_summary_draft`
 
-6. `$flow_derive` = MARK "derive uat_flows and frontend_lens for has-ui ops via RP 03; fire Seam B clarify-loop if needed"
-   6.1 `$has_ui_ops` = DERIVE 由 `$classification_final.items` 過濾出 classification == has-ui 的子集
-   6.2 `$uat_flows_draft` = THINK per [`reasoning/discovery-uiux/03-userflow-derive.md`](reasoning/discovery-uiux/03-userflow-derive.md), input={has_ui_ops: `$has_ui_ops`, be_truth: `$$be_truth_bundle`}
-   6.3 LOAD REF [`aibdd-discovery::references/rules/frontend-rule-axes.md`](aibdd-discovery::references/rules/frontend-rule-axes.md) — UI verb catalog / role mapping / anchor 命名 / boundary role gate
-   6.4 LOAD REF [`aibdd-discovery::references/rules/hallucination-detection-checklist.md`](aibdd-discovery::references/rules/hallucination-detection-checklist.md) — Pattern 4 Frontend Lens 等腦補檢測
-   6.5 `$frontend_lens` = THINK 從 `$uat_flows_draft` 機械抽 UIVerbBinding[] + AnchorCandidate[] + state_axes_hint per UI verb catalog
-   6.6 IF `$frontend_lens.clarify_payload.questions` 非空 ∨ `$uat_flows_draft.clarify_payload.questions` 非空:
-       6.6.1 `$flow_questions` = DERIVE concat(`$uat_flows_draft.clarify_payload.questions`, `$frontend_lens.clarify_payload.questions`)
-       6.6.2 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-flow-clarify.md` ← draft flow + lens clarify anchor file
-       6.6.3 [USER INTERACTION] `$flow_clarify_report` = DELEGATE `/clarify-loop`，附上 `$flow_questions` + `located_file_path = ${PLAN_REPORTS_DIR}/discovery-uiux-flow-clarify.md`
-       6.6.4 WAIT for `$flow_clarify_report`
-       6.6.5 IF `$flow_clarify_report.status == incomplete`:
-             6.6.5.1 EMIT "uat-flow / frontend-lens 階段的 clarify-loop 回 incomplete；請補完題組後重跑" to user
-             6.6.5.2 STOP
-       6.6.6 GOTO #2.6.2
+6. `$seam_a_clarify` = MARK "fire Seam A clarify-loop for ambiguous has-ui classification"
+   6.1 IF length(`$classification_draft.ambiguous_items`) == 0：GOTO #2.7.1
+   6.2 [USER INTERACTION] `$classify_clarify_report` = DELEGATE `/clarify-loop`，附上 `$classification_draft.clarify_payload` + `located_file_path = ${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md` + `located_anchor_section = "Open Classification Questions"`
+   6.3 WAIT for `$classify_clarify_report`
+   6.4 IF `$classify_clarify_report.status == incomplete`:
+       6.4.1 EMIT "classification 階段的 clarify-loop 回 incomplete；draft report 留檔，請補完題組後重跑" to user
+       6.4.2 STOP
 
-7. `$bundle_assemble` = MARK "assemble discovery bundle struct"
-   7.1 `$$discovery_bundle` = DERIVE struct{be_truth: `$$be_truth_bundle`, operation_inventory: `$operation_inventory_draft`, classification: `$classification_final`, uat_flows: `$uat_flows_draft`, frontend_lens: `$frontend_lens`, gap_report_path: `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md`}
-   7.2 ASSERT length(`$$discovery_bundle.uat_flows.items`) == length(`$has_ui_ops`)
-   7.3 IF assertion fails:
-       7.3.1 EMIT "has-ui operation 數量與 derived uat_flow 數量不一致；可能 reasoning RP 漏推" to user
-       7.3.2 STOP
+7. `$sourcing_finalize` = MARK "integrate clarify answers and re-write final sourcing report"
+   7.1 `$classification_final` = THINK 把 `$classify_clarify_report.answers` 整合進 `$classification_draft`
+   7.2 `$sourcing_final` = DRAFT final sourcing report ← `$operation_inventory_draft`, `$classification_final`；含 pointer 到 `discovery-uiux-intent.md` + `discovery-uiux-be-gap.md`
+   7.3 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md` ← `$sourcing_final`
+   7.4 WRITE `${PLAN_SPEC}` ← updated Discovery-UIUX Sourcing Summary（pointer 對應 final report）
+
+8. `$flow_derive` = MARK "derive uat_flows and frontend_lens for has-ui ops via RP 03 (intent + be_gap aware); fire Seam B clarify-loop if needed"
+   8.1 `$has_ui_ops` = DERIVE 由 `$classification_final.items` 過濾出 classification == has-ui 的子集
+   8.2 `$uat_flows_draft` = THINK per [`reasoning/discovery-uiux/03-userflow-derive.md`](reasoning/discovery-uiux/03-userflow-derive.md), input={has_ui_ops: `$has_ui_ops`, be_truth: `$$be_truth_bundle`, fe_intent_bundle: `$$fe_intent_bundle`, be_gap_findings: `$$be_gap_findings`}
+   8.3 LOAD REF [`aibdd-discovery::references/rules/frontend-rule-axes.md`](aibdd-discovery::references/rules/frontend-rule-axes.md) — UI verb catalog / role mapping / anchor 命名 / boundary role gate
+   8.4 LOAD REF [`aibdd-discovery::references/rules/hallucination-detection-checklist.md`](aibdd-discovery::references/rules/hallucination-detection-checklist.md) — Pattern 4 Frontend Lens 等腦補檢測
+   8.5 `$frontend_lens` = THINK 從 `$uat_flows_draft` 機械抽 UIVerbBinding[] + AnchorCandidate[] + state_axes_hint per UI verb catalog
+   8.6 IF `$frontend_lens.clarify_payload.questions` 非空 ∨ `$uat_flows_draft.clarify_payload.questions` 非空:
+       8.6.1 `$flow_questions` = DERIVE concat(`$uat_flows_draft.clarify_payload.questions`, `$frontend_lens.clarify_payload.questions`)
+       8.6.2 WRITE `${PLAN_REPORTS_DIR}/discovery-uiux-flow-clarify.md` ← draft flow + lens clarify anchor file
+       8.6.3 [USER INTERACTION] `$flow_clarify_report` = DELEGATE `/clarify-loop`，附上 `$flow_questions` + `located_file_path = ${PLAN_REPORTS_DIR}/discovery-uiux-flow-clarify.md`
+       8.6.4 WAIT for `$flow_clarify_report`
+       8.6.5 IF `$flow_clarify_report.status == incomplete`:
+             8.6.5.1 EMIT "uat-flow / frontend-lens 階段的 clarify-loop 回 incomplete；請補完題組後重跑" to user
+             8.6.5.2 STOP
+       8.6.6 GOTO #2.8.6.2
+
+9. `$bundle_assemble` = MARK "assemble discovery bundle struct"
+   9.1 `$$discovery_bundle` = DERIVE struct{be_truth: `$$be_truth_bundle`, operation_inventory: `$operation_inventory_draft`, classification: `$classification_final`, uat_flows: `$uat_flows_draft`, frontend_lens: `$frontend_lens`, fe_intent_bundle: `$$fe_intent_bundle`, be_gap_findings: `$$be_gap_findings`, gap_report_path: `${PLAN_REPORTS_DIR}/discovery-uiux-sourcing.md`, intent_report_path: `${PLAN_REPORTS_DIR}/discovery-uiux-intent.md`, be_gap_report_path: `${PLAN_REPORTS_DIR}/discovery-uiux-be-gap.md`}
+   9.2 ASSERT length(`$$discovery_bundle.uat_flows.items`) >= length(`$has_ui_ops`)
+   9.3 IF assertion fails:
+       9.3.1 EMIT "uat_flow 數量小於 has-ui operation 數量；可能 reasoning RP 漏推（注意：ux-only-flow 視為額外 UATFlow，因此 ≥ 而非 ==）" to user
+       9.3.2 STOP
 
 ### Phase 3 — DERIVE userflow activity + atomic rule with verification semantics
 > produces: `$$activity_models`, `$$atomic_rule_draft`
@@ -351,6 +390,8 @@ references:
 | 3 | `check_discovery_phase.py` | Discovery feature 必須維持 rule-only 形狀 |
 | 4 | `check_operation_wise.py` | 先擋明顯檔名或 trigger 反模式 |
 | 5 | `check_raw_artifact_alignment.py` | raw idea / BE truth 與 artifact 對齊檢查；違規記為 GAP，不阻擋通關 |
+| 6 | `check_uiux_intent_alignment.py` | raw idea 提到的 UX 元素必須有對應 frontend artifact unit 或顯式 GAP entry；違規記為 GAP，不阻擋通關 |
+| 7 | `check_no_be_mutation_leak.py` | clean artifact + GAP report 不得含 `references/be-gap-handling.md` §3 forbidden phrase（modify BE / 改 BE / patch BE 等） |
 
 #### 5.B Semantic gate (subagent rubric — inline per §4.7.6)
 
@@ -378,6 +419,12 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
 | `UIUX_BE_OPERATION_COVERAGE` | 每個 has-ui operation ≥1 frontend feature |
 | `UIUX_NO_UI_GAP_REPORT_PRESENT` | GAP report 含每個 no-ui operation 的 reasoning column 與 source 對應 |
 | `UIUX_API_YML_MIRROR_PRESENT` | `${SPECS_ROOT_DIR}/${TLB.id}/contracts/api.yml` 存在且旁檔 `.source-hash` 與 sibling BE 來源 sha256 一致（Phase 1 §6 落地；下游 `nextjs-storybook-cucumber-e2e` pre-red §3.0 依賴） |
+| `UIUX_INTENT_REPORT_PRESENT` | `${PLAN_REPORTS_DIR}/discovery-uiux-intent.md` 存在且無 `Open Intent Questions` 殘留；含 raw idea verbatim block + alignment_matrix |
+| `UIUX_INTENT_ALIGNMENT` | raw idea 提到的 UX 元素皆有對應 frontend artifact unit（feature / activity）或在 GAP section 顯式列出 |
+| `UIUX_INTENT_NO_LEAK` | clean artifact 與所有 report 不得殘留 `CiC(INT: ...)` |
+| `UIUX_BE_GAP_REPORT_PRESENT` | `${PLAN_REPORTS_DIR}/discovery-uiux-be-gap.md` 存在且無 `Open BE Supplementation Questions` 殘留；終稿含 `## BE Gaps Resolved (FE-side)` + `## BE Gaps Forwarded` |
+| `UIUX_NO_BE_MUTATION_LEAK` | clean artifact + GAP report + classification reasoning 不得含 `references/be-gap-handling.md` §3 forbidden phrase blacklist |
+| `UIUX_INTENT_SCOPE_BINDING` | `$$fe_intent_bundle.scope_decisions` 每筆對應到 classification.items 的同 op_id；classification.intent_trace.decision == exclude 時 classification ≠ has-ui |
 
 **Failure contract**: violations 不得透過弱化 checklist 來 patch；fail 時返回 Phase 4 §1（落檔重做）並帶回原始 inputs。
 
@@ -390,9 +437,11 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
        1.1.3 `$phase_out` = TRIGGER `python3 ${PROJECT_ROOT}/.claude/skills/aibdd-discovery/scripts/check_discovery_phase.py ${$args_abs}`
        1.1.4 `$operation_out` = TRIGGER `python3 ${PROJECT_ROOT}/.claude/skills/aibdd-discovery/scripts/check_operation_wise.py ${$args_abs} --constitution ${BDD_CONSTITUTION_PATH}`
        1.1.5 `$alignment_out` = TRIGGER `python3 ${PROJECT_ROOT}/.claude/skills/aibdd-discovery/scripts/check_raw_artifact_alignment.py ${$args_abs}`
-       1.1.6 `$semantic_verdict` = DELEGATE 獨立 semantic subagent，rubric=Phase 5 §5.B table，input={discovery_bundle: `$$discovery_bundle`, atomic_rule_draft: `$$atomic_rule_draft`, artifact_bundle: `$$artifact_bundle`}
-       1.1.7 `$$quality_verdict` = PARSE 所有 gate 輸出的合併 verdict
-       1.1.8 BRANCH `$$quality_verdict.ok` ? GOTO #5.2.1 : GOTO #4.2.1
+       1.1.6 `$intent_alignment_out` = TRIGGER `python3 ${$$skill_dir}/scripts/check_uiux_intent_alignment.py ${$args_abs}`
+       1.1.7 `$be_mutation_leak_out` = TRIGGER `python3 ${$$skill_dir}/scripts/check_no_be_mutation_leak.py ${$args_abs}`
+       1.1.8 `$semantic_verdict` = DELEGATE 獨立 semantic subagent，rubric=Phase 5 §5.B table，input={discovery_bundle: `$$discovery_bundle`, atomic_rule_draft: `$$atomic_rule_draft`, artifact_bundle: `$$artifact_bundle`, fe_intent_bundle: `$$fe_intent_bundle`, be_gap_findings: `$$be_gap_findings`}
+       1.1.9 `$$quality_verdict` = PARSE 所有 gate 輸出的合併 verdict
+       1.1.10 BRANCH `$$quality_verdict.ok` ? GOTO #5.2.1 : GOTO #4.2.1
        END LOOP
 
 2. `$gate_hard_stop` = MARK "hard stop — failure contract: 5 rounds exhausted"
@@ -432,7 +481,8 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
 - 由 `/aibdd-discovery-uiux` command 觸發（root entry，frontend TLB 場景取代 `/aibdd-discovery`）
 - 下游 contract 鏡像責任：Phase 1 §6 把 sibling BE `contracts/api.yml` 鏡像進 FE `${SPECS_ROOT_DIR}/${TLB.id}/contracts/api.yml` 並寫 `.source-hash`；`nextjs-storybook-cucumber-e2e` template pre-red §3.0 freshness gate 依賴此鏡像
 - DELEGATE `/aibdd-form-activity` + `/aibdd-form-feature-spec` — 落檔 formulation skills
-- DELEGATE `/clarify-loop` — 5 個觸發點：missing-field（UIUX_BACKEND_BOUNDARY_ID）/ Seam A classification / Seam B uat-flow+frontend-lens / Seam C atomic-rule coverage / Phase 5 殘留 sweep；題組沿用既有 schema，每次呼叫前必先落 draft 檔（File-first invariant）
-- 下游：`/aibdd-plan` 進行 technical plan / DSL proposal planning；frontend 場景常接 `/aibdd-uiux-discovery` 做視覺探索後再 `/aibdd-plan`
+- DELEGATE `/clarify-loop` — 7 個觸發點：missing-field（UIUX_BACKEND_BOUNDARY_ID）/ Seam 0' BE-gap FE-side supplementation（Phase 2 §3）/ Seam 0 FE intent（Phase 2 §4）/ Seam A classification（Phase 2 §6）/ Seam B uat-flow+frontend-lens（Phase 2 §8）/ Seam C atomic-rule coverage（Phase 3）/ Phase 5 殘留 sweep；題組沿用既有 schema，每次呼叫前必先落 draft 檔（File-first invariant）。Seam 0' 題型必為 FE-side supplementation；禁 BE-mutation 選項（[`references/be-gap-handling.md`](references/be-gap-handling.md) §3 黑名單）
+- 下游：`/aibdd-plan` 進行 technical plan / DSL proposal planning；frontend 場景常接 `/aibdd-uiux-discovery` 做視覺探索後再 `/aibdd-plan`；視覺探索可消費 `$$fe_intent_bundle.brand_seed` 作為起點
 - 共用 scripts（reuse aibdd-discovery）：`kickoff_path_resolve.py` / `bind_plan_package.py` / `grep_sticky_notes.py` / `check_actor_legality.py` / `check_discovery_phase.py` / `check_operation_wise.py` / `check_raw_artifact_alignment.py`
+- 本 skill 私有 scripts：`check_uiux_intent_alignment.py` / `check_no_be_mutation_leak.py`
 - Registry entry 樣板：`assets/registry/entry.yml`
