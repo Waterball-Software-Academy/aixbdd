@@ -32,8 +32,10 @@ from pathlib import Path
 
 
 FULFILL_RE = re.compile(r"\broute\.fulfill\s*\(")
-PARSE_RE = re.compile(r"\.parse\s*\(")
+PARSE_RE = re.compile(r"\.(?:safe)?[Pp]arse\s*\(")  # matches .parse( and .safeParse(
 ROUTE_OPEN_RE = re.compile(r"\bpage\.route\s*\(")
+# 501 = "unmapped route" pre-dispatch fallback; no operation schema available → exempt
+EXEMPT_STATUS_RE = re.compile(r"status\s*:\s*501\b")
 
 
 def scan_file(path: Path) -> list[tuple[int, str]]:
@@ -46,6 +48,10 @@ def scan_file(path: Path) -> list[tuple[int, str]]:
 
     for idx, line in enumerate(lines):
         if not FULFILL_RE.search(line):
+            continue
+        # Exempt pre-dispatch 501 fulfills (unmapped route fallback; no op schema).
+        lookahead = " ".join(lines[idx : min(idx + 4, len(lines))])
+        if EXEMPT_STATUS_RE.search(lookahead):
             continue
         # Walk upstream until we hit the enclosing `page.route(` or the file top.
         upstream_has_parse = False
