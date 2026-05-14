@@ -32,16 +32,22 @@ references:
     purpose: presets 子樹索引；preset SSOT 入口
   - path: references/presets/web-backend.md
     purpose: web-backend boundary 對應 preset patterns（與 aibdd-core boundary asset 對齊）
+  - path: references/presets/web-frontend.md
+    purpose: web-frontend boundary 對應 preset patterns（與 aibdd-core boundary asset 對齊）
   - path: references/promotion-gate.md
     purpose: DSL promotion gate 判定（新版 boundary DSL 下目前 no-op/future work）
   - path: references/forbidden-mutations.md
     purpose: 本 skill 禁寫 artifact 清單
+  - path: aibdd-frontend-context-analyze::SKILL.md
+    purpose: web-frontend Scenario route/data/result context helper（只回 reasoning handoff，不寫 .feature）
   - path: aibdd-core::physical-first-principle.md
     purpose: physical-first 原則 + L4 mapping 規則 + MIP / MR rules
   - path: aibdd-core::artifact-partitioning.md
     purpose: 四份 artifact 分工矩陣
   - path: aibdd-core::spec-package-paths.md
     purpose: boundary-aware package path SSOT
+  - path: aibdd-core::preset-contract/web-frontend.md
+    purpose: web-frontend preset contract（handler-routing / handler ids / Tier-1/Tier-2）
 ```
 
 | ID | Path | Phase scope | Purpose |
@@ -66,7 +72,9 @@ references:
 | R19 | `reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md` | Phase 2 | Diff/Reconcile/CiC + ClauseBinding + CoverageRow + plan DSL trace |
 | R20 | `.claude/skills/aibdd-plan/scripts/python/resolve_plan_paths.py` | Phase 1 | 將 `arguments.yml` 展開成 plan output truth paths |
 | R21 | `.claude/skills/aibdd-plan/references/dsl-output-contract.md` | Phase 1-5 | plan DSL entry / L4 binding contract |
-| R22 | `.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml`（含 `handlers.*` policy） | glossary | **READ-only**：`sentence_part`／`handler`／Gherkin `keyword` 路由為 boundary preset asset SSOT；`/aibdd-plan` 已寫入 `dsl.yml`。歷史 `sentence-parts-framework.md` 僅 Tombstone。 |
+| R22 | `.claude/skills/aibdd-core/assets/boundaries/<preset>/handler-routing.yml`（含 `routes[]` / `handlers.*` policy） | glossary | **READ-only**：`sentence_part`／`handler`／Gherkin `keyword` 路由為 boundary preset asset SSOT；preset 由 plan DSL `L4.preset.name` 決定。歷史 `sentence-parts-framework.md` 僅 Tombstone。 |
+| R23 | `aibdd-core::preset-contract/web-frontend.md` | Phase 2-4 | `web-frontend` preset contract；frontend context 只能套用在 `L4.preset.name == web-frontend` 的 examples |
+| R24 | `aibdd-frontend-context-analyze::SKILL.md` | Phase 2 | web-frontend route/data/result context helper；只回 `FrontendContextHandoff`，不寫 `.feature` |
 
 ## §2 SOP
 
@@ -89,42 +97,54 @@ references:
 11. `$$plan_output_axis` = DERIVE bundle from `$$plan_paths`, constitution, and DSL output contract
 
 ### Phase 2 — REASON spec-by-example pipeline（reasoning phases SSOT）
-> produces: `$$indexed_truth`, `$$rule_strategy`, `$$rule_test_data`, `$$scenario_plan`, `$$reason_handoff`, `$$feature_file_tasks`
+> produces: `$$indexed_truth`, `$$rule_strategy`, `$$rule_test_data`, `$$frontend_context_handoff`, `$$scenario_plan`, `$$reason_handoff`, `$$feature_file_tasks`
 
-0. **`sentence_part` / `handler` / Gherkin `keyword`**：由 `.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml`（routes + handlers）與 `.claude/skills/aibdd-core/references/preset-contract/web-backend.md`（preset 級契約）定義 SSOT，`/aibdd-plan` Phase 6 已寫入 `dsl.yml`；本 skill 依 R22 **唯讀**對齊，**不得**在本 skill 內重新發明路由或對照表。歷史檔 `.claude/skills/aibdd-plan/references/sentence-parts-framework.md` 僅 Tombstone。
+0. **`sentence_part` / `handler` / Gherkin `keyword`**：由每個 plan DSL entry 的 `L4.preset.name` 決定對應 `.claude/skills/aibdd-core/assets/boundaries/<preset>/handler-routing.yml`（routes + handlers）與 `aibdd-core::preset-contract/<preset>.md`。本 skill 依 R22 **唯讀**對齊，**不得**在本 skill 內重新發明路由或對照表；不得用 feature filename / 自然語言猜測 frontend/backend。歷史檔 `.claude/skills/aibdd-plan/references/sentence-parts-framework.md` 僅 Tombstone。
 1. `$$indexed_truth` = THINK per [`reasoning/aibdd-spec-by-example-analyze/01-index-input-truth.md`](reasoning/aibdd-spec-by-example-analyze/01-index-input-truth.md)，input=`$$plan_output_axis`
 2. `$$rule_strategy` = THINK per [`reasoning/aibdd-spec-by-example-analyze/02-classify-rule-test-strategy.md`](reasoning/aibdd-spec-by-example-analyze/02-classify-rule-test-strategy.md)，input=`$$indexed_truth`
 3. `$$rule_test_data` = THINK per [`reasoning/aibdd-spec-by-example-analyze/03-enumerate-rule-data-values.md`](reasoning/aibdd-spec-by-example-analyze/03-enumerate-rule-data-values.md)，input=`$$rule_strategy` + `$$indexed_truth.plan_dsl_index` + contract/data/test-strategy indexes
-4. `$$scenario_plan` = THINK per [`reasoning/aibdd-spec-by-example-analyze/04-plan-scenario-structure.md`](reasoning/aibdd-spec-by-example-analyze/04-plan-scenario-structure.md)，input=`$$rule_test_data`
-5. `$$reason_handoff` = THINK per [`reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md`](reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md)，input=`$$scenario_plan` + `$$indexed_truth`
-6. ASSERT `$$reason_handoff` 內每條 atomic rule 已具備 reducer metadata：`type`、`techniques`、`dimensions`（見 R16）；metadata 僅可存在於 reasoning / coverage / handoff，**不得**要求回寫 `.feature`
-7. ASSERT 指派 **BVA** 之 rule 在 `$$rule_test_data` 中至少有一組邊界代表值或 CiC(BDY)；否則 STOP
-8. ASSERT 指派 **State Transition** 之 rule 具 `from/event/to` 或等價狀態枚舉；否則 STOP
-9. ASSERT 每個 renderable Example / Scenario / Scenario Outline 已具備前置狀態建構分析；下列子規則 **皆為 hard-stop**，不得用 CiC(GAP) 旁路、不得自行發明 Given：
-   9.0 `$$boundary_profile` = READ `aibdd-core::boundary-type-profiles/${boundary_type}.profile.yml` per [`aibdd-core::boundary-profile-contract.md`](aibdd-core::boundary-profile-contract.md)；`$boundary_type` 取自 `${BOUNDARY_YML}#boundaries[0].type`
-       9.0.1 `$persistence_handler` = COMPUTE `$$boundary_profile.persistence_handler.handler_id`
-       9.0.2 `$persistence_state_ref_pattern` = COMPUTE `$$boundary_profile.persistence_handler.state_ref_pattern`
-       9.0.3 `$persistence_coverage_gate` = COMPUTE `$$boundary_profile.persistence_handler.coverage_gate`
-       9.0.4 ASSERT `$persistence_handler` non-empty AND `$persistence_state_ref_pattern` non-empty AND `$persistence_coverage_gate ∈ {"not-null-columns", "deferred-v1", "none"}`；違反時 STOP + REPORT 指示回 `/aibdd-kickoff` 或 `/aibdd-plan` 補 boundary profile 之 `persistence_handler` 區塊
-       9.0.5 BRANCH `$persistence_coverage_gate`
-              `not-null-columns` → 套用 9.A–9.D（preset 啟用 entity coverage gate）
-              `deferred-v1`      → SKIP 9.A–9.D，記錄 reason="profile coverage_gate=deferred-v1"，繼續 step 10
-              `none`             → SKIP 9.A–9.D，記錄 reason="profile coverage_gate=none"，繼續 step 10
-   9.A 識別該 Example 的 When step 所需的所有參與 entity（含 aggregate root 與被 `${$persistence_state_ref_pattern}` 引用的 child entity）
-   9.B 對每個參與 entity，必須在 plan DSL（local + shared）中找到對應的 `${$persistence_handler}` builder（`L4.preset.handler == ${$persistence_handler}` AND `L4.source_refs.data` 符合 `${$persistence_state_ref_pattern}` 樣式並指向該 entity 的 primary state ref）；composite builder（同條 entry seed 多個 entity）**不算**涵蓋其底層 base entity 的 builder 義務（譬如 `student-assigned` 不視為涵蓋 `student` 的 builder）
-   9.C 對每個 Given step 所引用的既有 entity ID（如 `學員 X`、`旅程 Y`、`stage Z`），必須能由 plan DSL 的 `${$persistence_handler}` 串鏈唯一構造出來，不得依賴未宣告的隱式 fixture
-   9.D IF 任一參與 entity 缺對應 plan DSL `${$persistence_handler}` builder 或串鏈不可達：**STOP + REPORT 指示回 `/aibdd-plan` 補 entity-level `${$persistence_handler}`**；**禁止**改用 CiC(GAP) 標註後繼續、**禁止**發明未列於 plan DSL 的 Given step、**禁止**假設 composite given 已涵蓋 base entity
-10. ASSERT 每個 **Scenario Outline** 合併群組附 internal `merge_decision` trace（見 R18）；若 Step0 不通過仍合成 Outline → STOP
-11. SCAN `$$reason_handoff` 是否引入 `test-strategy.yml` / plan DSL 未列舉之外部依賴
-    11.1 IF 有: STOP + REPORT 指示回 `/aibdd-plan` 補 dependency edge / external-stub DSL
-12. ASSERT `$$reason_handoff.coverage_rows` 對 `(rule × dimension)` 無空格 — 空格必須已是 CiC 標記附理由
-13. ASSERT `$$reason_handoff.clause_bindings[*].dsl_entry_id` 均存在於 `$$indexed_truth.plan_dsl_index`
-    13.1 IF 任一缺失: WRITE CiC(GAP) + STOP + REPORT 指示回 `/aibdd-plan` 補 DSL mapping
-14. ASSERT `$$reason_handoff` 不產生或修改 DSL entries
-15. IF matching DSL entry 含 datatable：ASSERT 符合 [`references/rules/feature-syntax.md`](references/rules/feature-syntax.md) 與該 entry preset 慣例
-16. `$$feature_file_tasks` = DERIVE feature-file task list from `$$reason_handoff.examples`, grouping by target feature path; each task payload must contain exactly one `target_path`, the subset of reasoning / coverage / clause bindings / examples for that file, and the atomic rule ids covered by that file
-17. ASSERT every target feature file referenced by `$$reason_handoff.examples` appears in exactly one `$$feature_file_tasks` item
-18. ASSERT every `$$feature_file_tasks[*]` is self-contained for `/aibdd-form-feature-spec` example-fill execution and does not require cross-task mutable state
+4. `$has_web_frontend` = MATCH any selected / candidate DSL entry in `$$indexed_truth.plan_dsl_index.entries[]` has `L4.preset.name == "web-frontend"`
+5. BRANCH `$has_web_frontend`
+   true  → GOTO #2.5.1
+   false → GOTO #2.6
+   5.1 `$$frontend_context_handoff` = DELEGATE `/aibdd-frontend-context-analyze` with payload `{mode: "frontend-context", indexed_truth: $$indexed_truth, rule_test_data: $$rule_test_data, caller_context: {integration_point: "after-rp03-before-rp04"}}`
+   5.2 ASSERT `$$frontend_context_handoff.status ∈ {"ok","not_applicable","blocked"}`
+   5.3 IF `$$frontend_context_handoff.status == "blocked"` OR `$$frontend_context_handoff.exit_ok == false`:
+       5.3.1 STOP + REPORT `Frontend context hard gate failed; rerun /aibdd-plan to add DSL/shared DSL or /aibdd-discovery-uiux to resolve userflow truth`
+   5.4 ASSERT every executable `required_clause_candidate` in `$$frontend_context_handoff` has `preset_name == "web-frontend"` and `dsl_entry_id` in `$$indexed_truth.plan_dsl_index.entries[].id`
+6. `$$scenario_plan` = THINK per [`reasoning/aibdd-spec-by-example-analyze/04-plan-scenario-structure.md`](reasoning/aibdd-spec-by-example-analyze/04-plan-scenario-structure.md)，input=`$$rule_test_data` + optional `$$frontend_context_handoff`
+7. `$$reason_handoff` = THINK per [`reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md`](reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md)，input=`$$scenario_plan` + `$$indexed_truth` + optional `$$frontend_context_handoff`
+8. ASSERT `$$reason_handoff` 內每條 atomic rule 已具備 reducer metadata：`type`、`techniques`、`dimensions`（見 R16）；metadata 僅可存在於 reasoning / coverage / handoff，**不得**要求回寫 `.feature`
+9. ASSERT 指派 **BVA** 之 rule 在 `$$rule_test_data` 中至少有一組邊界代表值或 CiC(BDY)；否則 STOP
+10. ASSERT 指派 **State Transition** 之 rule 具 `from/event/to` 或等價狀態枚舉；否則 STOP
+11. ASSERT 每個 renderable Example / Scenario / Scenario Outline 已具備前置狀態建構分析；下列子規則 **皆為 hard-stop**，不得用 CiC(GAP) 旁路、不得自行發明 Given：
+   11.0 `$$boundary_profile` = READ `aibdd-core::boundary-type-profiles/${boundary_type}.profile.yml` per [`aibdd-core::boundary-profile-contract.md`](aibdd-core::boundary-profile-contract.md)；`$boundary_type` 取自 `${BOUNDARY_YML}#boundaries[0].type`
+       11.0.1 `$persistence_handler` = COMPUTE `$$boundary_profile.persistence_handler.handler_id`
+       11.0.2 `$persistence_state_ref_pattern` = COMPUTE `$$boundary_profile.persistence_handler.state_ref_pattern`
+       11.0.3 `$persistence_coverage_gate` = COMPUTE `$$boundary_profile.persistence_handler.coverage_gate`
+       11.0.4 ASSERT `$persistence_handler` non-empty AND `$persistence_state_ref_pattern` non-empty AND `$persistence_coverage_gate ∈ {"not-null-columns", "deferred-v1", "none"}`；違反時 STOP + REPORT 指示回 `/aibdd-kickoff` 或 `/aibdd-plan` 補 boundary profile 之 `persistence_handler` 區塊
+       11.0.5 BRANCH `$persistence_coverage_gate`
+              `not-null-columns` → 套用 11.A–11.D（preset 啟用 entity coverage gate）
+              `deferred-v1`      → SKIP 11.A–11.D，記錄 reason="profile coverage_gate=deferred-v1"，繼續 step 12
+              `none`             → SKIP 11.A–11.D，記錄 reason="profile coverage_gate=none"，繼續 step 12
+   11.A 識別該 Example 的 When step 所需的所有參與 entity（含 aggregate root 與被 `${$persistence_state_ref_pattern}` 引用的 child entity）
+   11.B 對每個參與 entity，必須在 plan DSL（local + shared）中找到對應的 `${$persistence_handler}` builder（`L4.preset.handler == ${$persistence_handler}` AND `L4.source_refs.data` 符合 `${$persistence_state_ref_pattern}` 樣式並指向該 entity 的 primary state ref）；composite builder（同條 entry seed 多個 entity）**不算**涵蓋其底層 base entity 的 builder 義務（譬如 `student-assigned` 不視為涵蓋 `student` 的 builder）
+   11.C 對每個 Given step 所引用的既有 entity ID（如 `學員 X`、`旅程 Y`、`stage Z`），必須能由 plan DSL 的 `${$persistence_handler}` 串鏈唯一構造出來，不得依賴未宣告的隱式 fixture
+   11.D IF 任一參與 entity 缺對應 plan DSL `${$persistence_handler}` builder 或串鏈不可達：**STOP + REPORT 指示回 `/aibdd-plan` 補 entity-level `${$persistence_handler}`**；**禁止**改用 CiC(GAP) 標註後繼續、**禁止**發明未列於 plan DSL 的 Given step、**禁止**假設 composite given 已涵蓋 base entity
+12. IF `$has_web_frontend == true`:
+    12.1 ASSERT every web-frontend executable context clause in `$$reason_handoff.clause_bindings[]` came from `$$frontend_context_handoff.required_clause_candidates[]` or an existing plan/shared DSL entry
+    12.2 ASSERT no web-backend / non-frontend example is required to carry `route_context`, `ui_context`, or frontend-only handlers
+13. ASSERT 每個 **Scenario Outline** 合併群組附 internal `merge_decision` trace（見 R18）；若 Step0 不通過仍合成 Outline → STOP
+14. SCAN `$$reason_handoff` 是否引入 `test-strategy.yml` / plan DSL 未列舉之外部依賴
+    14.1 IF 有: STOP + REPORT 指示回 `/aibdd-plan` 補 dependency edge / external-stub DSL
+15. ASSERT `$$reason_handoff.coverage_rows` 對 `(rule × dimension)` 無空格 — 空格必須已是 CiC 標記附理由
+16. ASSERT `$$reason_handoff.clause_bindings[*].dsl_entry_id` 均存在於 `$$indexed_truth.plan_dsl_index`
+    16.1 IF 任一缺失: WRITE CiC(GAP) + STOP + REPORT 指示回 `/aibdd-plan` 補 DSL mapping
+17. ASSERT `$$reason_handoff` 不產生或修改 DSL entries
+18. IF matching DSL entry 含 datatable：ASSERT 符合 [`references/rules/feature-syntax.md`](references/rules/feature-syntax.md) 與該 entry preset 慣例
+19. `$$feature_file_tasks` = DERIVE feature-file task list from `$$reason_handoff.examples`, grouping by target feature path; each task payload must contain exactly one `target_path`, the subset of reasoning / coverage / clause bindings / examples for that file, and the atomic rule ids covered by that file
+20. ASSERT every target feature file referenced by `$$reason_handoff.examples` appears in exactly one `$$feature_file_tasks` item
+21. ASSERT every `$$feature_file_tasks[*]` is self-contained for `/aibdd-form-feature-spec` example-fill execution and does not require cross-task mutable state
 
 ### Phase 3 — DELEGATE formulation + write artifacts
 
@@ -191,6 +211,8 @@ references:
 - IF rule 缺 `type` / `techniques` / `dimensions` reducer metadata，或 metadata 被回寫進 `.feature`: GOTO #2.2 重跑 RP-02
 - IF BVA / State Transition 產物不完整: GOTO #2.3 重跑 RP-03
 - IF Example 缺前置狀態建構分析，或缺 setup source 卻產生未列於 DSL 的 Given: STOP + REPORT 指示回 `/aibdd-plan` 補 setup DSL / seed mapping
+- IF web-frontend Example 缺 hard-required `route_context` / data-dependent `data_context` / `observable_result`: STOP + REPORT 指示回 `/aibdd-plan` 補 frontend DSL/shared DSL 或回 `/aibdd-discovery-uiux` 補 userflow truth
+- IF frontend context helper 回傳非 `web-frontend` candidate 或 candidate 無 DSL L1 trace: STOP + REPORT helper contract violation
 - IF 非法 Outline 合併: GOTO #2.4 重跑 RP-04
 
 ### Phase 3 fail handling
