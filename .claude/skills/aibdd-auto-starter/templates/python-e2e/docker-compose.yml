@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  app:
+    image: ${PROJECT_SLUG}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ${PROJECT_SLUG}-app
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/${DB_NAME}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:15
     container_name: ${PROJECT_SLUG}-postgres

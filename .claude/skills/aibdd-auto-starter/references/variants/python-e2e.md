@@ -77,13 +77,16 @@ ${PROJECT_ROOT}/
 ├── requirements.txt
 ├── pyproject.toml
 ├── behave.ini
+├── Dockerfile                              # Python 3.11 runtime image；封裝 app + tests + alembic
+├── .dockerignore                           # 排除本機 cache / venv / env 檔，保留 migration context
+├── Makefile                                # Docker image 統一入口：build / up / behave / behave-dry-run
 ├── docker-compose.yml
 └── alembic.ini
 ```
 
 ---
 
-## 依賴安裝（pip）
+## Runtime 與依賴
 
 `requirements.txt` 內容：
 
@@ -116,7 +119,17 @@ httpx>=0.26.0
 PyJWT>=2.8.0
 ```
 
-安裝指令：`pip install -r requirements.txt`
+所有 starter runtime / acceptance 指令以 Docker image 為唯一入口，不要求使用者在本機安裝 Python dependencies。
+
+常用指令：
+
+```
+make build           # 強制 docker build -t {{PROJECT_SLUG}} .
+make up              # app container 或 image 已存在則不 build，然後 docker compose up --no-build
+make behave-dry-run  # 以 Docker image 執行 behave --dry-run
+make behave          # 以 Docker image 執行 behave（Testcontainers PostgreSQL）
+make test            # alias: make behave
+```
 
 ---
 
@@ -128,7 +141,29 @@ PyJWT>=2.8.0
 
 ### docker-compose.yml
 
-開發用 PostgreSQL 15 容器。容器名稱 `{{PROJECT_SLUG}}-postgres`，資料庫 `{{PROJECT_SLUG}}_dev`，帳密 `postgres:postgres`，port 5432。附帶 healthcheck。
+開發用 app + PostgreSQL 15 compose stack。
+
+- `app`：從 `Dockerfile` build Python 3.11 runtime image，啟動 `uvicorn {{PY_APP_MODULE}}.main:app --host 0.0.0.0 --port 8000`，對外開 `8000:8000`
+- `postgres`：容器名稱 `{{PROJECT_SLUG}}-postgres`，資料庫 `{{PROJECT_SLUG}}_dev`，帳密 `postgres:postgres`，port 5432，附帶 healthcheck
+- `app` 透過 `DATABASE_URL=postgresql+psycopg://postgres:postgres@postgres:5432/{{PROJECT_SLUG}}_dev` 連到 compose network 內的 DB，並等待 postgres healthy
+
+### Dockerfile
+
+使用 `python:3.11-slim` 作為 runtime base image，安裝 `requirements.txt`，複製 `pyproject.toml`、`behave.ini`、`alembic.ini`、`${PY_APP_DIR}/`、`tests/`、`alembic/`，預設 `CMD` 啟動 FastAPI。目的不是取代本機開發，而是提供不依賴本機 Python 版本的 baseline runtime。
+
+### Makefile
+
+提供 Docker image 統一入口：
+
+- `make build`：強制重建 `${PROJECT_SLUG}` image
+- `make ensure-image`：若 image 已存在則略過 build；不存在才建置
+- `make ensure-compose-runtime`：若 compose app container 已存在則略過 build；否則檢查 image，不存在才建置
+- `make up` / `make down` / `make logs`：管理 compose app + postgres stack；`make up` 走 `ensure-compose-runtime` 並使用 `docker compose up --no-build`
+- `make behave-dry-run`：走 `ensure-image`，在 image 內執行 `behave --dry-run`
+- `make behave` / `make test`：走 `ensure-image`，在 image 內執行 acceptance tests
+- `make shell`：走 `ensure-image`，進入 image shell 進行診斷
+
+`make behave` / `make behave-dry-run` 會掛載 `/var/run/docker.sock`，並設定 `TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal` 與 `--add-host=host.docker.internal:host-gateway`，讓 container 內的 Testcontainers 可以透過宿主 Docker daemon 啟動 PostgreSQL 測試容器。
 
 ### alembic.ini
 
@@ -220,8 +255,9 @@ Starter 安全邊界：
 1. **檔案完整性**：所有 template 對照表中的檔案都已寫入目標路徑（含 `.aibdd/dev-constitution.md`、`.aibdd/bdd-stack/project-bdd-axes.md`、`prehandling-before-red-phase.md` 與其餘 `bdd-stack/*.md`）；且 `arguments.yml` §9 含 `RED_PREHANDLING_HOOK_REF`
 2. **Placeholder 替換**：專案中不應殘留任何 `{{...}}` 字串
 3. **目錄結構**：`repositories`／`services`／`schemas` 具占位 `__init__.py`；`tests/` 與 `tests/features/` 具 package `__init__.py` 以利巢狀 step modules
-4. **安裝測試**：`pip install -r requirements.txt` 能正常完成
-5. **Behave 可執行**：`behave --dry-run` 不報錯（骨架內建 `HealthCheck.feature`，至少載入 1 個 scenario；Behave 1.3.x 在完全無 `.feature` 時會 `ConfigError` 退出非零）
+4. **容器建置測試**：`make build` 能正常完成，確保 Python 3.11 runtime 與 requirements 可安裝
+5. **Behave 可執行**：`make behave-dry-run` 不報錯（骨架內建 `HealthCheck.feature`，至少載入 1 個 scenario；Behave 1.3.x 在完全無 `.feature` 時會 `ConfigError` 退出非零）
+6. **Acceptance 可執行**：`make behave` 透過 Docker image 執行，並可由 Testcontainers 啟動 PostgreSQL 測試容器
 
 ---
 
@@ -249,6 +285,9 @@ Starter 安全邊界：
 | `requirements.txt` | `requirements.txt` |
 | `pyproject.toml` | `pyproject.toml` |
 | `behave.ini` | `behave.ini` |
+| `Dockerfile` | `Dockerfile` |
+| `.dockerignore` | `.dockerignore` |
+| `Makefile` | `Makefile` |
 | `docker-compose.yml` | `docker-compose.yml` |
 | `alembic.ini` | `alembic.ini` |
 | `app__init__.py` | `${PY_APP_DIR}/__init__.py` |
@@ -292,6 +331,8 @@ Starter 安全邊界：
 Walking skeleton 已建立完成。
 
 下一步：
-1. cd ${PROJECT_ROOT} && pip install -r requirements.txt
-2. /aibdd-discovery — 開始需求探索
+1. cd ${PROJECT_ROOT} && make up
+2. curl http://localhost:8000/health
+3. make behave-dry-run
+4. /aibdd-discovery — 開始需求探索
 ```

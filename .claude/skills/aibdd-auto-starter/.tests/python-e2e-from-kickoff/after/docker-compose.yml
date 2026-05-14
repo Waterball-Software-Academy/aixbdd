@@ -1,6 +1,20 @@
 version: '3.8'
 
 services:
+  app:
+    image: aixbdd-test-backend
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: aixbdd-test-backend-app
+    environment:
+      DATABASE_URL: postgresql+psycopg://postgres:postgres@postgres:5432/aixbdd_test_backend_dev
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: postgres:15
     container_name: aixbdd-test-backend-postgres
