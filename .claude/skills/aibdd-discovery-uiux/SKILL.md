@@ -1,6 +1,6 @@
 ---
 name: aibdd-discovery-uiux
-description: 從 sibling backend boundary 的 `.feature` + `.activity` + `contracts/openapi.yml` 推導 frontend TLB 的 userflow 視角 `.activity` + `.feature` skeleton — 取代 `/aibdd-discovery` 在 frontend TLB 場景。先依 arguments.yml 的 UIUX_BACKEND_BOUNDARY_ID 解析 BE truth；CLASSIFY 每個 BE operation 為 has-ui / no-ui（no-ui 寫進 GAP 報告不落 feature）；再為 has-ui operation 推導 UI verb binding + accessible-name anchor + 4 種驗證語意（locator / visual-state / route / API-binding）的 Rule preset；DELEGATE /aibdd-form-activity 與 /aibdd-form-feature-spec 落檔。TRIGGER when 使用者下 /aibdd-discovery-uiux、TLB.role=="frontend" 且 sibling BE 已具備 spec truth。SKIP when TLB 非 frontend、UIUX_BACKEND_BOUNDARY_ID 未設定、或 sibling BE artifacts 缺漏。
+description: 從 sibling backend boundary 的 `.feature` + `.activity` + `contracts/api.yml` 推導 frontend TLB 的 userflow 視角 `.activity` + `.feature` skeleton — 取代 `/aibdd-discovery` 在 frontend TLB 場景。先依 arguments.yml 的 UIUX_BACKEND_BOUNDARY_ID 解析 BE truth；把 sibling BE `contracts/api.yml` 鏡像進 FE `${CONTRACTS_DIR}/api.yml` 並寫 `.source-hash`（下游 pre-red §3.0 freshness gate 依賴）；CLASSIFY 每個 BE operation 為 has-ui / no-ui（no-ui 寫進 GAP 報告不落 feature）；再為 has-ui operation 推導 UI verb binding + accessible-name anchor + 4 種驗證語意（locator / visual-state / route / API-binding）的 Rule preset；DELEGATE /aibdd-form-activity 與 /aibdd-form-feature-spec 落檔。TRIGGER when 使用者下 /aibdd-discovery-uiux、TLB.role=="frontend" 且 sibling BE 已具備 spec truth。SKIP when TLB 非 frontend、UIUX_BACKEND_BOUNDARY_ID 未設定、或 sibling BE artifacts 缺漏。
 metadata:
   user-invocable: true
   source: project-level dogfooding
@@ -143,6 +143,31 @@ references:
        5.5.1 EMIT "sibling BE 缺 .feature 或 .activity；請先跑 /aibdd-discovery 在 ${UIUX_BACKEND_BOUNDARY_ID}" to user
        5.5.2 STOP
    5.6 `$$be_truth_bundle` = DERIVE struct{features: `$be_features`, activities: `$be_activities`, contracts: `$be_contracts`, boundary_id: `$$runtime_context.UIUX_BACKEND_BOUNDARY_ID`}
+
+6. `$api_yml_mirror` = MARK "mirror sibling BE api.yml into FE CONTRACTS_DIR + write .source-hash (pre-red §3.0 SSOT)"
+   6.1 `$be_api_yml_src` = COMPUTE `${$be_specs_dir}/contracts/api.yml`
+   6.2 ASSERT path_exists(`$be_api_yml_src`)
+   6.3 IF assertion fails:
+       6.3.1 EMIT "sibling BE 缺 contracts/api.yml：`${$be_api_yml_src}`；請先在 ${UIUX_BACKEND_BOUNDARY_ID} 跑 /aibdd-form-api-spec" to user
+       6.3.2 STOP
+   6.4 `$fe_contracts_dir` = COMPUTE `${SPECS_ROOT_DIR}/${$$runtime_context.TLB.id}/contracts`
+   6.5 `$fe_api_yml_dst` = COMPUTE `${$fe_contracts_dir}/api.yml`
+   6.6 `$fe_api_yml_hash` = COMPUTE `${$fe_api_yml_dst}.source-hash`
+   6.7 CREATE `$fe_contracts_dir`（若不存在）
+   6.8 `$be_api_sha256` = TRIGGER `python3 -c "import hashlib,sys;print(hashlib.sha256(open(sys.argv[1],'rb').read()).hexdigest())" "${$be_api_yml_src}"`
+   6.9 IF `$be_api_sha256` 取值失敗:
+       6.9.1 EMIT "BE api.yml sha256 計算失敗：`${$be_api_yml_src}`" to user
+       6.9.2 STOP
+   6.10 `$mirror_decision` = BRANCH path_exists(`$fe_api_yml_dst`) ∧ path_exists(`$fe_api_yml_hash`)
+         ? (READ `$fe_api_yml_hash` == `$be_api_sha256` ? "in-sync" : "drift")
+         : "absent"
+   6.11 IF `$mirror_decision` ∈ {"absent", "drift"}:
+         6.11.1 `$be_api_yml_text` = READ `$be_api_yml_src`
+         6.11.2 WRITE `$fe_api_yml_dst` ← `$be_api_yml_text`
+         6.11.3 WRITE `$fe_api_yml_hash` ← `$be_api_sha256`
+         6.11.4 EMIT "FE api.yml mirror 已${$mirror_decision == 'absent' ? '初始化' : '更新'}：`${$fe_api_yml_dst}`（hash=`${$be_api_sha256[:12]}…`）" to user
+   6.12 `$$be_truth_bundle.fe_api_yml_path` = DERIVE `$fe_api_yml_dst`
+   6.13 `$$be_truth_bundle.fe_api_yml_source_hash` = DERIVE `$be_api_sha256`
 
 ### Phase 2 — SOURCE backend operations + classify has-ui vs no-ui
 > produces: `$$discovery_bundle`
@@ -352,6 +377,7 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
 | `UIUX_NO_BE_VERB_LEAK` | Rule 不得出現 backend 黑名單動詞（POST / persist / 200 / database / API / commit transaction 等） |
 | `UIUX_BE_OPERATION_COVERAGE` | 每個 has-ui operation ≥1 frontend feature |
 | `UIUX_NO_UI_GAP_REPORT_PRESENT` | GAP report 含每個 no-ui operation 的 reasoning column 與 source 對應 |
+| `UIUX_API_YML_MIRROR_PRESENT` | `${SPECS_ROOT_DIR}/${TLB.id}/contracts/api.yml` 存在且旁檔 `.source-hash` 與 sibling BE 來源 sha256 一致（Phase 1 §6 落地；下游 `nextjs-storybook-cucumber-e2e` pre-red §3.0 依賴） |
 
 **Failure contract**: violations 不得透過弱化 checklist 來 patch；fail 時返回 Phase 4 §1（落檔重做）並帶回原始 inputs。
 
@@ -404,6 +430,7 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
 ## §3 CROSS-REFERENCES
 
 - 由 `/aibdd-discovery-uiux` command 觸發（root entry，frontend TLB 場景取代 `/aibdd-discovery`）
+- 下游 contract 鏡像責任：Phase 1 §6 把 sibling BE `contracts/api.yml` 鏡像進 FE `${SPECS_ROOT_DIR}/${TLB.id}/contracts/api.yml` 並寫 `.source-hash`；`nextjs-storybook-cucumber-e2e` template pre-red §3.0 freshness gate 依賴此鏡像
 - DELEGATE `/aibdd-form-activity` + `/aibdd-form-feature-spec` — 落檔 formulation skills
 - DELEGATE `/clarify-loop` — 5 個觸發點：missing-field（UIUX_BACKEND_BOUNDARY_ID）/ Seam A classification / Seam B uat-flow+frontend-lens / Seam C atomic-rule coverage / Phase 5 殘留 sweep；題組沿用既有 schema，每次呼叫前必先落 draft 檔（File-first invariant）
 - 下游：`/aibdd-plan` 進行 technical plan / DSL proposal planning；frontend 場景常接 `/aibdd-uiux-discovery` 做視覺探索後再 `/aibdd-plan`

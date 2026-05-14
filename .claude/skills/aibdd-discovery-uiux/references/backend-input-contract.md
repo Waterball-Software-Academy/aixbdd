@@ -27,6 +27,7 @@
 | BE features | `${$be_packages_dir}/**/*.feature` | Gherkin rule-only 或含 Examples | STOP — 引導使用者先在 BE 端跑 `/aibdd-discovery` |
 | BE activities | `${$be_packages_dir}/**/activities/*.activity` | Activity DSL | STOP — 引導使用者先在 BE 端跑 `/aibdd-discovery` |
 | BE contracts | `${$be_contracts_dir}/**/*.yml` ∨ `${$be_contracts_dir}/**/*.yaml` | OpenAPI 3.x / AsyncAPI / GraphQL schema / 自訂事件 schema | 缺檔不致命，但會降低 has-ui / no-ui 分類精度；記入 sourcing report |
+| **BE primary OpenAPI** | `${$be_contracts_dir}/api.yml` | OpenAPI 3.x — primary contract，被 Phase 1 §6 鏡像到 FE `${SPECS_ROOT_DIR}/${TLB.id}/contracts/api.yml` | **STOP** — 缺失視為 BE 端 `/aibdd-form-api-spec` 尚未跑；FE 無法為 `nextjs-storybook-cucumber-e2e` pre-red §3.0 提供鏡像 SSOT |
 | BE shared DSL | `${$be_shared_dir}/dsl.yml` ∨ `${$be_shared_dir}/dsl.md` | shared DSL L1-L4 | 缺檔不致命；無法 cross-reference `be_operation_binding.dsl_ref` |
 | BE boundary metadata | `${$be_architecture_dir}/boundary.yml` | boundary spec | 缺檔不致命；用於 actor / role 推導 |
 
@@ -70,9 +71,26 @@
 
 ---
 
-## §6 不在本檔範疇
+## §6 BE → FE api.yml 鏡像 contract
+
+下游 `nextjs-storybook-cucumber-e2e` template pre-red §3.0 需要 FE boundary 自身的 `${CONTRACTS_DIR}/api.yml`（FE 永遠是 consumer，不自寫 OpenAPI），由本 skill 在 Phase 1 §6 鏡像而來：
+
+| 項目 | 規約 |
+|---|---|
+| Source | `${$be_specs_dir}/contracts/api.yml`（BE primary OpenAPI） |
+| Destination | `${SPECS_ROOT_DIR}/${TLB.id}/contracts/api.yml`（FE mirror） |
+| Hash 旁檔 | `${SPECS_ROOT_DIR}/${TLB.id}/contracts/api.yml.source-hash` — 內容為 BE source 的 sha256 |
+| 觸發時點 | Phase 1 §6（在 `$$be_truth_bundle` 組裝之前） |
+| Refresh 判定 | `absent` / `drift` 時覆寫；`in-sync` 時跳過 |
+| 鏡像方向 | **單向** BE → FE；FE 端任何手改皆視為違規，下次跑本 skill 會被 overwrite |
+| 下游依賴 | `nextjs-storybook-cucumber-e2e` pre-red §3.0 freshness gate；Phase 5 §5.B rubric `UIUX_API_YML_MIRROR_PRESENT` |
+
+---
+
+## §7 不在本檔範疇
 
 - 任何「如何讀檔」「如何 walk glob」的 SOP — 屬 SKILL.md Phase 1 §5
 - 任何「has-ui / no-ui 分類規則」 — 屬 [`be-to-fe-mapping.md`](be-to-fe-mapping.md)
 - 任何「Rule 句型」 — 屬 [`verification-semantics-presets.md`](verification-semantics-presets.md)
 - 任何「coverage 完整性」 — 屬 [`userflow-rule-coverage.md`](userflow-rule-coverage.md)
+- 任何「鏡像後 Zod schema 怎麼生」 — 屬 `nextjs-storybook-cucumber-e2e` template pre-red §3.2
