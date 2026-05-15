@@ -28,8 +28,7 @@ AIBDD execute skills.
     with backend projects authored before profile dispatch was introduced.
   Only one of the two preset contract refs is required per project. Future
   preset additions extend this dispatch table rather than each consumer's
-  hardcoded list (mirror of `aibdd-core::boundary-profile-contract.md`
-  §Profile dispatch and `/aibdd-plan` SOP §Phase 6.8.1).
+  hardcoded list (see `BACKEND_PRESET_CONTRACT_REF` / `FRONTEND_PRESET_CONTRACT_REF` dispatch above).
 - The loader reads those paths directly.
 - The loader must not infer rules from key names, basenames, or conventions.
 
@@ -41,7 +40,7 @@ AIBDD execute skills.
 - `/aibdd-plan/assets/boundaries` is not a runtime source for execute skills.
 - `handler-routing.yml` is the source for sentence part, Gherkin keyword,
   handler, and required source kinds.
-- For `web-backend`, `sentence_part` must equal `handler`.
+- For `web-backend`, `part` must equal `handler`.
 
 ## Project-Owned Runtime References
 

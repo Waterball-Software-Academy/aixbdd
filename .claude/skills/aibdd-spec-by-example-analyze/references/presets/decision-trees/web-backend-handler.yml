@@ -1,0 +1,72 @@
+# Handler-selection 決策表（web-backend）
+#
+# 給定一個 Gherkin clause，依下表逐欄判斷得 abstract_role → handler。
+# 結構化決策表取代散文 SOP；無「讀 overview.md 取後設決策樹」等 narrative。
+
+# 抽象角色 → handler 映射
+abstract_role_to_handler:
+  states_prepare:        state-builder
+  operation_invocation:  operation-invoke
+  operation_result_verifier: operation-response-success-and-failure
+  response_body_verifier:    operation-response-success-readmodel
+  states_verify:         state-verifier
+  clock_mock:            time-control
+  external_provider_stub: external-stub
+
+# Gherkin clause → abstract_role 判定樹
+# 從 keyword 起讀；每條 rule 必須給 `match`（語意特徵）與 `abstract_role`。
+clause_to_abstract_role:
+  - keyword: Given
+    rules:
+      - match: "句子描述某 aggregate／DB row 已存在於某狀態（例：『訂單 X 已建立』『學員 X 已綁定旅程 Y』）"
+        abstract_role: states_prepare
+      - match: "句子描述當前時間或業務時鐘狀態（例：『現在是活動截止前一日』）"
+        abstract_role: clock_mock
+      - match: "句子描述跨 boundary 之第三方 provider 將回某值或失敗（例：『金流 API 將回 200』『SMS 服務不可用』）"
+        abstract_role: external_provider_stub
+
+  - keyword: When
+    rules:
+      - match: "句子描述使用者觸發某 HTTP operation（例：『使用者送出結帳請求』『使用者查詢訂單』）"
+        abstract_role: operation_invocation
+      - match: "句子描述業務時鐘前進（例：『活動截止後一日』『五分鐘後』）"
+        abstract_role: clock_mock
+
+  - keyword: Then
+    rules:
+      - match: "句子描述 HTTP status／exception envelope 結果（例：『系統受理該請求』『系統拒絕並回覆缺漏原因』）"
+        abstract_role: operation_result_verifier
+      - match: "句子描述 response body／projection 欄位（例：『回覆中含訂單編號』『清單中含此訂單』）"
+        abstract_role: response_body_verifier
+      - match: "句子描述 DB／aggregate 持久化狀態（例：『訂單狀態變更為待出貨』『庫存扣減 N』）"
+        abstract_role: states_verify
+
+# Handler 之 L4 必填欄位（與 web-backend.md §0 對齊）
+l4_required_fields:
+  state-builder:
+    - source_refs.data            # 指 DBML aggregate root primary table
+    - param_bindings              # 或 datatable_bindings；至少一個非空
+  operation-invoke:
+    - source_refs.contracts       # 指 contracts/*.yml 之 operationId
+    - channel_type
+    - channel_name
+    - method
+  operation-response-success-and-failure:
+    - assertion_bindings          # 指 HTTP status / exception envelope
+  operation-response-success-readmodel:
+    - source_refs.contracts       # 指 response schema
+    - assertion_bindings
+  state-verifier:
+    - source_refs.data
+    - assertion_bindings          # 指 DB column 期望值
+  time-control:
+    - summary                     # 不展開 clock 內部
+  external-stub:
+    - source_refs.contracts       # 第三方 provider contract
+    - stub_payload                # 預期 response shape
+
+# 禁止項
+forbidden:
+  - "把同 boundary 內部協作者（譬如自己的 OrderRepository）列為 external-stub target"
+  - "把 internal scheduler／worker／queue 升格為 operation_invocation——它們不是 UI-facing operation"
+  - "L1 句型內出現 channel 名／endpoint URL／HTTP method／status code 字面值"

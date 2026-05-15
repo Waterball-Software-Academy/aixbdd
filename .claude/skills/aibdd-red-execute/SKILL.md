@@ -123,7 +123,7 @@ references:
 5. ASSERT no same-tier duplicate ids and every entry has `id`, `L1`, `L4`, `L4.preset`, and `L4.source_refs`.
 6. `$$preset_registry` = DERIVE each `L4.preset.name` to `.claude/skills/aibdd-core/assets/boundaries/<preset-name>/`.
 7. ASSERT each preset has `handler-routing.yml`, handler doc, variant doc, and no `backend` alias resolution.
-8. ASSERT `web-backend` entries have `sentence_part == handler`.
+8. ASSERT `web-backend` entries have `part == handler`.
 
 ### Phase 4 — ARCHIVE runtime features
 > produces: `$$runtime_feature_files`

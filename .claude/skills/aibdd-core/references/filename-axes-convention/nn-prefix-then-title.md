@@ -137,12 +137,12 @@ Better:
 ### Bad: handler name as title
 
 ```text
-04-http-operation.feature
+04-operation-invoke.feature
 ```
 
 Why bad:
 
-- `http-operation` is a preset handler, not user-facing behavior.
+- `operation-invoke` is a preset handler, not user-facing behavior.
 
 Better:
 

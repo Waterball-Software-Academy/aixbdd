@@ -1,223 +1,61 @@
----
-name: aibdd-spec-by-example-analyze
-description: Phase 5 BDD Analyze — Clause Analysis + 覆蓋矩陣 → 最小必要 Example 句型集。消費 `/aibdd-plan` 產出的 boundary/package truth（features、dsl.yml、contracts、data、test-strategy），DELEGATE `/aibdd-form-feature-spec` 落 .feature（含 Examples），並寫入 package coverage。TRIGGER when 使用者下 /speckit.aibdd.bdd-analyze、/speckit-aibdd-bdd-analyze。本 skill 為 preset SSOT：所有 step pattern preset 在 references/presets/。
-metadata:
-  user-invocable: true
-  source: project-level dogfooding, unified from legacy extension skill root
----
+# AIxBDD - Spec by Example Analyze
 
-# aibdd-spec-by-example-analyze
+嚴格遵照底下 Principles 來執行 SOP。
 
-Phase 5 業務例 analyzer skill — 把 `/aibdd-discovery` 的 atomic rule 翻成最小必要 Spec-by-Example 集合；L4 physical mapping **只讀** `/aibdd-plan` 產出的 `dsl.yml` / OpenAPI / DBML / test-strategy truth。preset SSOT 之所在。
+## PRINCIPLE: CWD 為產出錨點
 
-## §1 REFERENCES
+- 本 skill 與其 sub-SOP **所有經授權產生或修改的 artifact**，**一律**落在當次執行的工作目錄 **`CWD`** 所涵蓋之專案／規格樹內（相對路徑自 **`CWD`** 解析；本檔所列 `${SPECS_ROOT_DIR}`、`${CURRENT_PLAN_PACKAGE}`、`${FEATURE_SPECS_DIR}`、`${TRUTH_FUNCTION_PACKAGE}`、`${PLAN_REPORTS_DIR}` 等皆以 **`CWD`** 為錨。
+- 【嚴禁】把應屬本流程的產物寫到 **`CWD` 外**的任意絕對路徑，或以「方便」為由落到未載明於當步 SOP 的其他根目錄。
 
-```yaml
-references:
-  - path: references/role-and-contract.md
-    purpose: 角色定位 + L1-L4 職責拆分 + scope 邊界
-  - path: references/contracts/io.md
-    purpose: arguments.yml IO schema
-  - path: references/contracts/quality.md
-    purpose: Subagent semantic validation invariant + script checks
-  - path: references/relevance.md
-    purpose: axis 相關性判定
-  - path: references/rules/clause-analysis.md
-    purpose: Legacy — Given/When/Then clause 拆解詞彙表（reasoning phases SSOT 取代）
-  - path: references/rules/coverage-matrix.md
-    purpose: Legacy — 測試維度詞彙表（reasoning phases SSOT 取代）
-  - path: references/rules/feature-syntax.md
-    purpose: Gherkin syntax for example-fill mode
-  - path: references/presets/README.md
-    purpose: presets 子樹索引；preset SSOT 入口
-  - path: references/presets/web-backend.md
-    purpose: web-backend boundary 對應 preset patterns（與 aibdd-core boundary asset 對齊）
-  - path: references/promotion-gate.md
-    purpose: DSL promotion gate 判定（新版 boundary DSL 下目前 no-op/future work）
-  - path: references/forbidden-mutations.md
-    purpose: 本 skill 禁寫 artifact 清單
-  - path: aibdd-core::physical-first-principle.md
-    purpose: physical-first 原則 + L4 mapping 規則 + MIP / MR rules
-  - path: aibdd-core::artifact-partitioning.md
-    purpose: 四份 artifact 分工矩陣
-  - path: aibdd-core::spec-package-paths.md
-    purpose: boundary-aware package path SSOT
-```
+## PRINCIPLE: Artifact output contract（硬限制）
 
-| ID | Path | Phase scope | Purpose |
-|---|---|---|---|
-| R1 | `aibdd-core::physical-first-principle.md` | global | physical-first 原則 + L4 mapping 規則 + MIP / MR rules |
-| R2 | `aibdd-core::artifact-partitioning.md` | global | 四份 artifact 分工矩陣 |
-| R3 | `aibdd-core::spec-package-paths.md` | global | boundary-aware package path SSOT |
-| R4 | `references/role-and-contract.md` | Phase 1-2 | 角色定位 + L1-L4 職責拆分 + scope 邊界 |
-| R5 | `references/contracts/io.md` | Phase 1 | arguments.yml IO schema |
-| R7 | `references/contracts/quality.md` | Phase 4 | Subagent semantic validation invariant + script checks |
-| R8 | `references/relevance.md` | global | axis 相關性判定 |
-| R9 | `references/rules/clause-analysis.md` | glossary | **Legacy**：Given/When/Then 部位對應；clause 拆解程序以 reasoning phases 為準 |
-| R10 | `references/rules/coverage-matrix.md` | glossary | **Legacy**：測試維度詞表；矩陣填空程序以 reasoning phases 為準 |
-| R11 | `references/rules/feature-syntax.md` | Phase 3 | Gherkin syntax for example-fill mode |
-| R12 | `references/presets/` | Phase 2-3 | step pattern preset SSOT（preset 由 plan DSL `entries[].L4.preset.name` 派生）|
-| R13 | `references/promotion-gate.md` | Phase 5 | DSL promotion gate 判定（新版 boundary DSL 下目前 no-op/future work） |
-| R14 | `references/forbidden-mutations.md` | global | 禁寫 artifact 清單 |
-| R15 | `reasoning/aibdd-spec-by-example-analyze/01-index-input-truth.md` | Phase 2 | 索引 `/aibdd-plan` output：features / dsl.yml / OpenAPI / DBML / test-strategy / preset |
-| R16 | `reasoning/aibdd-spec-by-example-analyze/02-classify-rule-test-strategy.md` | Phase 2 | atomic rule → 決策樹測試策略 + internal reducer metadata（供 coverage / handoff 使用，不回寫 `.feature`） |
-| R17 | `reasoning/aibdd-spec-by-example-analyze/03-enumerate-rule-data-values.md` | Phase 2 | 依 DSL binding / contract / data truth 枚舉 Given/When/Then 具體值 |
-| R18 | `reasoning/aibdd-spec-by-example-analyze/04-plan-scenario-structure.md` | Phase 2 | Scenario vs Outline 合併決策（Step0/Step1 + datatable shape） |
-| R19 | `reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md` | Phase 2 | Diff/Reconcile/CiC + ClauseBinding + CoverageRow + plan DSL trace |
-| R20 | `.claude/skills/aibdd-plan/scripts/python/resolve_plan_paths.py` | Phase 1 | 將 `arguments.yml` 展開成 plan output truth paths |
-| R21 | `.claude/skills/aibdd-plan/references/dsl-output-contract.md` | Phase 1-5 | plan DSL entry / L4 binding contract |
-| R22 | `.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml`（含 `handlers.*` policy） | glossary | **READ-only**：`sentence_part`／`handler`／Gherkin `keyword` 路由為 boundary preset asset SSOT；`/aibdd-plan` 已寫入 `dsl.yml`。歷史 `sentence-parts-framework.md` 僅 Tombstone。 |
+- 本 SOP **唯一允許產生或修改**的 artifact，**只能**來自於下述 SOP 中透過 CREATE / WRITE / UPDATE / DELEGATE 明確標注的產出物：feature files 例子填充（**只**經 DELEGATE `/aibdd-form-feature-spec` mode=example-fill）、`${TRUTH_FUNCTION_PACKAGE}/coverage/*.coverage.yml` 之 `coverage_type: example` 列、`${PLAN_REPORTS_DIR}/bdd-analyze-cic.md`、`${PLAN_REPORTS_DIR}/bdd-analyze-quality.md`。
+- 【嚴禁】除上述 target 外，**其他任何 READ / SEARCH / THINK / DERIVE 所觀察到的路徑，都只可作為分析依據，不得被順手建立、寫入、更新或補骨架。**
 
-## §2 SOP
+## PRINCIPLE: 不重畫 Plan 真相
 
-### Phase 1 — BIND `/aibdd-plan` output context
-> produces: `$$args_path`, `$$plan_paths`, `$$plan_output_axis`
+- `/aibdd-plan` 已 accepted 的 `${BOUNDARY_PACKAGE_DSL}`、`${BOUNDARY_SHARED_DSL}`、`${CONTRACTS_DIR}/**`、`${DATA_DIR}/**`、`${TEST_STRATEGY_FILE}`、`${FEATURE_SPECS_DIR}/**` 之 atomic rule 本體 **為唯讀輸入**；本 skill **不得**新增或修改任何 DSL entry、不得改寫 contract operation 或 DBML 欄位、不得改 atomic rule 字詞、不得改 feature 路徑／檔名。
+- 若發現 plan 真相不足以推導 Example（缺 binding、缺 contract 欄位、缺 DBML 表、缺 stub policy 等）→ 累積 CiC 便條紙寫入 `${PLAN_REPORTS_DIR}/bdd-analyze-cic.md`，**STOP** 並提示回 `/aibdd-plan`；**禁止**就地補洞、**禁止**自生 step pattern 讓下游 bypass。
 
-1. LOAD `aibdd-core::physical-first-principle.md`
-2. LOAD `aibdd-core::artifact-partitioning.md`
-3. LOAD `.claude/skills/aibdd-plan/references/dsl-output-contract.md`
-4. `$$args_path` = DERIVE absolute arguments path from caller payload else `${workspace_root}/.aibdd/arguments.yml`
-5. READ `$$args_path` per [`references/contracts/io.md`](references/contracts/io.md) §Config
-6. ASSERT required plan keys exist: `SPECS_ROOT_DIR`, `PLAN_SPEC`, `PLAN_REPORTS_DIR`, `TRUTH_BOUNDARY_ROOT`, `TRUTH_FUNCTION_PACKAGE`, `FEATURE_SPECS_DIR`, `BOUNDARY_PACKAGE_DSL`, `BOUNDARY_SHARED_DSL`, `TEST_STRATEGY_FILE`
-   6.1 IF 缺: STOP + REPORT 指示回 `/aibdd-discovery` 或 `/aibdd-plan` 綁定路徑
-7. `$$plan_paths` = TRIGGER `python3 ".claude/skills/aibdd-plan/scripts/python/resolve_plan_paths.py" "$$args_path"`
-8. ASSERT `$$plan_paths.ok == true`
-   8.1 IF false: STOP + REPORT resolver error
-9. READ `${BDD_CONSTITUTION_PATH}` 全文 and ASSERT §5 filename axes 無 TODO
-   9.1 IF 任一軸 TODO: STOP + REPORT 指示跑 `/speckit.aibdd.author-constitution`
-10. ASSERT paths exist where required: `features_dir`, `boundary_package_dsl`, `test_strategy_file`, `truth_boundary_root`
-11. `$$plan_output_axis` = DERIVE bundle from `$$plan_paths`, constitution, and DSL output contract
+## PRINCIPLE: 真相格式委派 specifier skills
 
-### Phase 2 — REASON spec-by-example pipeline（reasoning phases SSOT）
-> produces: `$$indexed_truth`, `$$rule_strategy`, `$$rule_test_data`, `$$scenario_plan`, `$$reason_handoff`, `$$feature_file_tasks`
+- `.feature` 之 Scenario／Scenario Outline + Examples 填空之**唯一合法管道**為 **`DELEGATE /aibdd-form-feature-spec`** with `mode=example-fill`。一個 feature path 為一次 DELEGATE；payload 含 `target_path`、`reasoning`（本輪推理 bundle 切片）、`atomic_rule_ids`。
+- 本 skill **不得**手寫任何 `.feature` 任一行；只負責 DERIVE caller payload 並 `DELEGATE`。違者視為 ownership 違規，**立即 STOP**。
 
-0. **`sentence_part` / `handler` / Gherkin `keyword`**：由 `.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml`（routes + handlers）與 `.claude/skills/aibdd-core/references/preset-contract/web-backend.md`（preset 級契約）定義 SSOT，`/aibdd-plan` Phase 6 已寫入 `dsl.yml`；本 skill 依 R22 **唯讀**對齊，**不得**在本 skill 內重新發明路由或對照表。歷史檔 `.claude/skills/aibdd-plan/references/sentence-parts-framework.md` 僅 Tombstone。
-1. `$$indexed_truth` = THINK per [`reasoning/aibdd-spec-by-example-analyze/01-index-input-truth.md`](reasoning/aibdd-spec-by-example-analyze/01-index-input-truth.md)，input=`$$plan_output_axis`
-2. `$$rule_strategy` = THINK per [`reasoning/aibdd-spec-by-example-analyze/02-classify-rule-test-strategy.md`](reasoning/aibdd-spec-by-example-analyze/02-classify-rule-test-strategy.md)，input=`$$indexed_truth`
-3. `$$rule_test_data` = THINK per [`reasoning/aibdd-spec-by-example-analyze/03-enumerate-rule-data-values.md`](reasoning/aibdd-spec-by-example-analyze/03-enumerate-rule-data-values.md)，input=`$$rule_strategy` + `$$indexed_truth.plan_dsl_index` + contract/data/test-strategy indexes
-4. `$$scenario_plan` = THINK per [`reasoning/aibdd-spec-by-example-analyze/04-plan-scenario-structure.md`](reasoning/aibdd-spec-by-example-analyze/04-plan-scenario-structure.md)，input=`$$rule_test_data`
-5. `$$reason_handoff` = THINK per [`reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md`](reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md)，input=`$$scenario_plan` + `$$indexed_truth`
-6. ASSERT `$$reason_handoff` 內每條 atomic rule 已具備 reducer metadata：`type`、`techniques`、`dimensions`（見 R16）；metadata 僅可存在於 reasoning / coverage / handoff，**不得**要求回寫 `.feature`
-7. ASSERT 指派 **BVA** 之 rule 在 `$$rule_test_data` 中至少有一組邊界代表值或 CiC(BDY)；否則 STOP
-8. ASSERT 指派 **State Transition** 之 rule 具 `from/event/to` 或等價狀態枚舉；否則 STOP
-9. ASSERT 每個 renderable Example / Scenario / Scenario Outline 已具備前置狀態建構分析；下列子規則 **皆為 hard-stop**，不得用 CiC(GAP) 旁路、不得自行發明 Given：
-   9.0 `$$boundary_profile` = READ `aibdd-core::boundary-type-profiles/${boundary_type}.profile.yml` per [`aibdd-core::boundary-profile-contract.md`](aibdd-core::boundary-profile-contract.md)；`$boundary_type` 取自 `${BOUNDARY_YML}#boundaries[0].type`
-       9.0.1 `$persistence_handler` = COMPUTE `$$boundary_profile.persistence_handler.handler_id`
-       9.0.2 `$persistence_state_ref_pattern` = COMPUTE `$$boundary_profile.persistence_handler.state_ref_pattern`
-       9.0.3 `$persistence_coverage_gate` = COMPUTE `$$boundary_profile.persistence_handler.coverage_gate`
-       9.0.4 ASSERT `$persistence_handler` non-empty AND `$persistence_state_ref_pattern` non-empty AND `$persistence_coverage_gate ∈ {"not-null-columns", "deferred-v1", "none"}`；違反時 STOP + REPORT 指示回 `/aibdd-kickoff` 或 `/aibdd-plan` 補 boundary profile 之 `persistence_handler` 區塊
-       9.0.5 BRANCH `$persistence_coverage_gate`
-              `not-null-columns` → 套用 9.A–9.D（preset 啟用 entity coverage gate）
-              `deferred-v1`      → SKIP 9.A–9.D，記錄 reason="profile coverage_gate=deferred-v1"，繼續 step 10
-              `none`             → SKIP 9.A–9.D，記錄 reason="profile coverage_gate=none"，繼續 step 10
-   9.A 識別該 Example 的 When step 所需的所有參與 entity（含 aggregate root 與被 `${$persistence_state_ref_pattern}` 引用的 child entity）
-   9.B 對每個參與 entity，必須在 plan DSL（local + shared）中找到對應的 `${$persistence_handler}` builder（`L4.preset.handler == ${$persistence_handler}` AND `L4.source_refs.data` 符合 `${$persistence_state_ref_pattern}` 樣式並指向該 entity 的 primary state ref）；composite builder（同條 entry seed 多個 entity）**不算**涵蓋其底層 base entity 的 builder 義務（譬如 `student-assigned` 不視為涵蓋 `student` 的 builder）
-   9.C 對每個 Given step 所引用的既有 entity ID（如 `學員 X`、`旅程 Y`、`stage Z`），必須能由 plan DSL 的 `${$persistence_handler}` 串鏈唯一構造出來，不得依賴未宣告的隱式 fixture
-   9.D IF 任一參與 entity 缺對應 plan DSL `${$persistence_handler}` builder 或串鏈不可達：**STOP + REPORT 指示回 `/aibdd-plan` 補 entity-level `${$persistence_handler}`**；**禁止**改用 CiC(GAP) 標註後繼續、**禁止**發明未列於 plan DSL 的 Given step、**禁止**假設 composite given 已涵蓋 base entity
-10. ASSERT 每個 **Scenario Outline** 合併群組附 internal `merge_decision` trace（見 R18）；若 Step0 不通過仍合成 Outline → STOP
-11. SCAN `$$reason_handoff` 是否引入 `test-strategy.yml` / plan DSL 未列舉之外部依賴
-    11.1 IF 有: STOP + REPORT 指示回 `/aibdd-plan` 補 dependency edge / external-stub DSL
-12. ASSERT `$$reason_handoff.coverage_rows` 對 `(rule × dimension)` 無空格 — 空格必須已是 CiC 標記附理由
-13. ASSERT `$$reason_handoff.clause_bindings[*].dsl_entry_id` 均存在於 `$$indexed_truth.plan_dsl_index`
-    13.1 IF 任一缺失: WRITE CiC(GAP) + STOP + REPORT 指示回 `/aibdd-plan` 補 DSL mapping
-14. ASSERT `$$reason_handoff` 不產生或修改 DSL entries
-15. IF matching DSL entry 含 datatable：ASSERT 符合 [`references/rules/feature-syntax.md`](references/rules/feature-syntax.md) 與該 entry preset 慣例
-16. `$$feature_file_tasks` = DERIVE feature-file task list from `$$reason_handoff.examples`, grouping by target feature path; each task payload must contain exactly one `target_path`, the subset of reasoning / coverage / clause bindings / examples for that file, and the atomic rule ids covered by that file
-17. ASSERT every target feature file referenced by `$$reason_handoff.examples` appears in exactly one `$$feature_file_tasks` item
-18. ASSERT every `$$feature_file_tasks[*]` is self-contained for `/aibdd-form-feature-spec` example-fill execution and does not require cross-task mutable state
+## PRINCIPLE: 靜默累積 CiC 便條紙，不呼叫 clarify-loop
 
-### Phase 3 — DELEGATE formulation + write artifacts
+- 本 skill 為背景推理階段；任何上游真相缺洞、Outline 合併歧義、Example 維度無法填滿等疑處，**一律**累積為 CiC 便條紙寫入 `${PLAN_REPORTS_DIR}/bdd-analyze-cic.md`（kind ∈ `GAP`／`ASM`／`BDY`／`CON`，每條含 `where`／`text`），由下游 `/speckit.clarify` 下一輪消化。
+- **禁止** inline 向使用者提問；**禁止** DELEGATE `/clarify-loop`。本原則與 plan/discovery 不同——上述兩 skill 需互動澄清，本 skill 一律靜默。
 
-1. ASSERT `$$feature_file_tasks` non-empty
-2. `$multi_feature_files` = MATCH length(`$$feature_file_tasks`) > 1
-3. `$subagent_supported` = JUDGE current runtime supports feature-file subagent / task parallel execution
-4. BRANCH `$multi_feature_files`
-   true  → GOTO #3.5
-   false → GOTO #3.11
-5. BRANCH `$subagent_supported`
-   true  → GOTO #3.6
-   false → GOTO #3.8
-6. LOOP per `$task` in `$$feature_file_tasks`
-   6.1 TRIGGER one feature-file task as parallel subagent with payload {target_path: `$task.target_path`, mode: "example-fill", reasoning: `$task`}
-   END LOOP
-7. WAIT all feature-file subagent tasks and ASSERT all completed `ok=true`
-8. MARK feature-file todo queue from `$$feature_file_tasks`
-9. LOOP per `$task` in marked feature-file todo queue
-   9.1 DELEGATE `/aibdd-form-feature-spec` with payload {target_path: `$task.target_path`, mode: "example-fill", reasoning: `$task`}
-   END LOOP
-10. GOTO #3.12
-11. `$single_task` = DERIVE the only item from `$$feature_file_tasks`
-12. DELEGATE `/aibdd-form-feature-spec` with payload {target_path: `$single_task.target_path`, mode: "example-fill", reasoning: `$single_task`}
-13. WRITE `${TRUTH_FUNCTION_PACKAGE}/coverage/*.coverage.yml` example 層（`coverage_type: example`），若 coverage dir 不存在則建立
-14. ASSERT `${BOUNDARY_PACKAGE_DSL}` / `${BOUNDARY_SHARED_DSL}` 未被修改
-15. ASSERT 所有 atomic rule 至少有 1 條 example 覆蓋
-16. ASSERT Gherkin 符合 matching DSL entry 的 preset step pattern
-17. ASSERT feature output contains no analyzer-only metadata comments or tags（例如 `@type` / `@techniques` / `@dimensions` / `@merge_decision` / `@cic` / `@setup_required`）；reducer metadata 必須留在 reasoning / coverage / handoff
+## PRINCIPLE: STRICT SOP
 
-### Phase 4 — QUALITY GATE
+1. **依序不漏步**：自底下列 SOP 逐一執行；每做一步，在訊息中**明示該步編號**。
+2. **限縮延長推理**：僅當 sub-SOP 當步**明文**標示須 **`THINK / REASONING`** 時，才拉長內省與推演；否則以**最直接**可做之 `READ`／`PARSE`／`DERIVE`／`WRITE`／`UPDATE`／`DELEGATE`／`TRIGGER` 工具呼叫達成該步，省略與該步授權範圍無關的冗長鋪墊，以降低往返等待時間。
 
-1. EXECUTE script checks per [`references/contracts/quality.md`](references/contracts/quality.md) §Script checks
-   1.1 IF 任一 script `ok=false`: GOTO #3.1
-2. DELEGATE Subagent semantic validation per [`references/contracts/quality.md`](references/contracts/quality.md) §Subagent semantic validation invariants
-   2.1 IF subagent 回 `ok=false`:
-      2.1.1 IF 根因為 plan truth 缺 binding / contract / data target: STOP + REPORT 指示回跑 `/aibdd-plan`
-      2.1.2 ELSE: GOTO #3.1
-3. ASSERT script + subagent 皆 `ok=true`
+## PRINCIPLE: 長流程待辦（兩層）
 
-### Phase 5 — PROMOTION gate
+長流程會跨多輪對話；在 **conversation compact**（對話摘要壓縮）之後，執行者仍要靠**同一套待辦**還原：目前卡在哪個 **phase**，該 phase 內細項又到哪一格。底下為**兩層**約定：**外層只列 phase**，**進入該 phase** 再把該 sub-SOP 第一層編號步驟拆成子項。尚未開始的 phase 不必預先展開成檔案級細項，以免待辦與實際 `SOP.md` 脫節。
 
-1. EXECUTE per [`references/promotion-gate.md`](references/promotion-gate.md) §2 scan
-2. IF gate unavailable for `dsl.yml` package model: SKIP with report note（no-op）
-3. IF gate 觸發 and supports package `dsl.yml`: WRITE `${CURRENT_PLAN_PACKAGE}/promotion-proposal.md`
+- **必須工具化**：Tier 0／Tier 1 對應的勾選項，**要以執行環境提供的任務／待辦建立與更新能力實體化**（例如 **`TODOCREATE`**、**`TASKCREATE`** 等 tool；或宿主 IDE／Agent 內與之等效的待辦 API），在跑 sub-SOP **當下**就建好清單並隨步驟推進更新狀態。**禁止**只靠聊天裡口頭列點、不經工具建立的「心裡待辦」——壓縮後無法還原，也無法核對漏步。
+- **Tier 0（phase）**：對應本檔 `# SOP` 最外層每一項；每一項對應一個 sub-SOP 目錄（例：`01-bind-and-load/`）。這一層的勾選語意是「該 phase 的細項已全部展開**且**依 `SOP.md` 跑完」。
+- **Tier 1（phase 內細項）**：僅在目前執行中的 phase 建立；對應該 phase `SOP.md` 裡**第一層編號步驟**拆解出的動作（`READ`／`WRITE`／`DERIVE`／`DELEGATE`／`TRIGGER` 等）。編號建議：`(phase序)`、`(phase序-子序)`（例：`1`、`1-1`）；**進入該 phase 時**以 **`TODOCREATE`／`TASKCREATE`（或等效）** 補齊子項。
 
-### Phase 6 — REPORT
+**(1)** 的子項全部完成後，以 **`TODOCREATE`／`TASKCREATE`（或等效）** 將 Tier 0 之 **(1)** 標為完成，再對 **(2)** 重複「展開 → 跑完」，依序往後。**未完成當前 phase** 前，**不要**為後續 phase 預開檔案層級的細項。
 
-1. EMIT REPORT per `aibdd-core::report-contract.md` §REPORT 匯報（白話文 1-3 句）：
-   "BDD Analysis 完成。依 `/aibdd-plan` 的 dsl.yml / contract / data truth 產出 .feature Examples 與 package coverage；未修改 DSL / contracts / data / test-strategy。{若有便條紙則加「尚有 N 張便條紙待釐清」；無則省略}"
+# SOP
 
-## §3 FAILURE & FALLBACK
+請執行到哪讀到哪，千萬不要提早閱讀後續文件，這會讓用戶起始體驗到的延遲度很久，SOP 寫啥就做啥，沒叫你 [THINK/REASONING] 就絕對不准啟用 EXTENDED THINKING。
 
-### Phase 1 fail handling
-- IF `/aibdd-plan` resolver 失敗或 required truth path 缺: STOP + REPORT 指示回跑 `/aibdd-plan`
-- IF plan quality report 缺或 plan gate 未過: STOP + REPORT 指示回上游補完
-- IF constitution §5 任一軸 TODO: STOP + REPORT 指示跑 `/speckit.aibdd.author-constitution`
+0. 在 CWD 底下 grep 搜尋 `**/arguments.yml` 檔案，做 parameters binding for all following phases，這些參數後續每一 phase 都會用到。此檔案一定存在，如不存在請直接停止執行，向使用者回報：「我在 ${CWD} 底下找不到 **/arguments.yml 檔案，你是否已經執行過 /aibdd-kickoff、/aibdd-discovery、/aibdd-plan 了？」
 
-### Phase 2 fail handling
-- IF plan DSL entry 無 preset: STOP + REPORT 指示回 `/aibdd-plan` 補 DSL L4 preset
-- IF matching preset 檔不存在: STOP + REPORT specific preset path
-- IF feature 無 matching DSL entry: WRITE CiC(GAP) + STOP + REPORT 指示回 `/aibdd-plan`
-- IF 新外部依賴未列於 `test-strategy.yml` / DSL external-stub: STOP + REPORT 指示回 `/aibdd-plan`
-- IF datatable schema 違反: REPORT specific entry, GOTO #2.14 重新套用 feature-syntax / preset
-- IF rule 缺 `type` / `techniques` / `dimensions` reducer metadata，或 metadata 被回寫進 `.feature`: GOTO #2.2 重跑 RP-02
-- IF BVA / State Transition 產物不完整: GOTO #2.3 重跑 RP-03
-- IF Example 缺前置狀態建構分析，或缺 setup source 卻產生未列於 DSL 的 Given: STOP + REPORT 指示回 `/aibdd-plan` 補 setup DSL / seed mapping
-- IF 非法 Outline 合併: GOTO #2.4 重跑 RP-04
+1. EXECUTE the sub-sop: `01-bind-and-load/SOP.md`
 
-### Phase 3 fail handling
-- IF DELEGATE form-feature-spec 失敗（filename guard 觸發）: REPORT 退回 caller 重新 Discovery Operation Partition
-- IF multi-feature task bundle 中任一 target feature path 缺 task、重複 task 或 task payload 非 self-contained: STOP + REPORT specific target path and task partition defect
-- IF runtime 支援 subagent/task 平行執行卻未優先採用 feature-file 平行 task: GOTO #3.3 重選執行策略
-- IF 任一 feature-file subagent/task 失敗: REPORT failed target path + STOP
-- IF WRITE package coverage 失敗: REPORT IO error + STOP
-- IF DSL / contract / data / test-strategy 被偵測為修改: STOP + REPORT owner conflict
+2. EXECUTE the sub-sop: `02-classify-rule/SOP.md`
 
-### Phase 4 fail handling
-- IF script checks `ok=false`: GOTO #3.1 重做 formulation
-- IF subagent semantic validation `ok=false` 且根因為 plan truth: STOP + REPORT 指示回 `/aibdd-plan`
-- IF subagent semantic validation `ok=false` 且根因為本層: GOTO #3.1
+3. EXECUTE the sub-sop: `03-enumerate-data/SOP.md`
 
-### Phase 5 fail handling
-- IF promotion-gate-scan.sh 失敗: REPORT script error + STOP（promotion 是非阻塞 phase，但 script 不能壞）
+4. EXECUTE the sub-sop: `04-plan-scenario/SOP.md`
 
-### Phase 6 fail handling
-- IF EMIT 失敗（caller 已斷線）: WRITE summary to `${SPECS_ROOT_DIR}/.bdd-analysis-report.md` + STOP
+5. EXECUTE the sub-sop: `05-delegate-and-quality-gate/SOP.md`
 
-## §4 CROSS-REFERENCES
-
-- 由 `/speckit.aibdd.bdd-analyze` command 觸發（`.claude/skills` unified entry）
-- DELEGATE `/aibdd-form-feature-spec`（example-fill mode）
-- 上游：`/aibdd-plan` 產出 boundary/package physical mapping truth (`dsl.yml`, contracts, data, test-strategy)
-- 下游：`/speckit.tasks` + `/speckit.implement` 處理 implementation gap
-- DSL promotion 後續：`/speckit.aibdd.promote-dsl`
-- Re-entry 規則：見 [`reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md`](reasoning/aibdd-spec-by-example-analyze/05-build-coverage-handoff.md)
-- Registry entry 樣板：`assets/registry/entry.yml`
+6. 和用戶說道（可使用不同詞彙但維持語意）：「OK /aibdd-spec-by-example-analyze 完成。本輪 atomic rules 已展成 Scenario／Scenario Outline + Examples，coverage matrix 已寫入 package；語意 verdict 已寫入 `${PLAN_REPORTS_DIR}/bdd-analyze-quality.md`（deterministic check 腳本已自本 skill 移除，不再強制執行）。{若有 CiC 便條紙：『尚有 N 張便條紙待 /speckit.clarify 釐清，路徑：${PLAN_REPORTS_DIR}/bdd-analyze-cic.md。』否則省略}如沒問題，可以執行 /aibdd-tasks，正式進入 task list 拆解。」

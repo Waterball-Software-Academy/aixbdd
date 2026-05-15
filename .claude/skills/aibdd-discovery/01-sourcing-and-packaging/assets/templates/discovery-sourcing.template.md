@@ -18,6 +18,8 @@
 
 > **唯一**承載處：這輪 specified raw idea 對 boundary 內既有規格檔（含 function package 下 `.feature`、`.activity`、`dsl.yml`，以及 `data/`、`contracts/` 等）造成什麼 **impact**。
 > **每個檔案至多一列**：`變更類型` 寫本輪對該檔的最終狀態；`impact 描述` 用一句話寫滿「對齊依據；本輪對規格內容的影響」，必要時用分號串接，**禁止**再開第二張表重述同一批檔案。
+> **逐檔列舉（尤其 `.feature`）**：第一欄須為**單一規格檔**之相對路徑（見表內列名），**禁止**以單列 `packages/.../features/*.feature` 之 **glob** 代替多個實際檔案列，以免下游（例如 plan phase 之 DSL synthesis）無法機械建立「每檔一迭代」之 workset。若專案刻意約定「僅用目錄 glob 閉包、不展開逐檔」，**必須**在下方 `Notes` **明文化**該約定與風險，不得依預設留白。
+> **`變更類型` 即語意標籤**：`新增`／`更新`／`條件式更新`／`讀取對照` 已涵蓋「本輪新產出規格檔」vs「在既有檔上變更」之區分；**不要**重複另加第三欄或其它平行欄承載同一語意。
 > `${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${PLAN_SPEC}` 等 plan-side artifacts **不**進此表。
 
 | 既有規格檔（相對 `${TRUTH_BOUNDARY_ROOT}`） | 變更類型 | impact 描述 |
@@ -64,6 +66,6 @@
 
 ## Notes
 
-- `Impact matrix`：**唯一**表格；每列對應一個既有規格檔與本輪 raw idea 的 impact（含只讀對照與實際變更，統一寫在 `impact 描述`）。
+- `Impact matrix`：**唯一**表格；每列對應**一個**規格檔與本輪 raw idea 的 impact（含只讀對照與實際變更，統一寫在 `impact 描述`）；**`.feature`** 與其它將被後續 phase 機械對拍之檔案**必須**各佔一列並填 **`變更類型`**，**不得以 glob 省略展開**。若確採 glob 閉包策略，須於本節第一句明載。
 - `Function package charters`：每個 function package 的職責邊界與本輪增量；**與** `Packaging decision` **必須一致**。
 - 若本輪只新開 plan package、沿用既有 function package，請在 `Packaging decision` **明寫**：「**新開的是 plan package，不是 function package**」。

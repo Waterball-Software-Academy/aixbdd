@@ -1,0 +1,33 @@
+id: web-service
+role: backend
+
+description: >
+  Backend HTTP API boundary. Persistent state is expressed as DBML and
+  formulated by the boundary state specifier skill.
+
+state_specifier:
+  skill: /aibdd-form-entity-spec
+  format: dbml
+  semantics: persistent
+  output_dir_key: DATA_DIR
+  default_filename: domain.dbml
+
+operation_contract_specifier:
+  skill: /aibdd-form-api-spec
+  format: openapi
+  output_dir_key: CONTRACTS_DIR
+  default_filename: api.yml
+
+persistence_handler:
+  handler_id: state-builder
+  state_ref_pattern: "data/*.dbml#<table>"
+  coverage_gate: deferred-v1
+
+test_strategy:
+  layer: e2e
+  io_boundary:
+    do_not_mock:
+      - FastAPI app
+      - SQLAlchemy persistence
+      - PostgreSQL test database
+    must_stub: []

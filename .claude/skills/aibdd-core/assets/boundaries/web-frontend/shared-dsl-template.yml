@@ -19,7 +19,7 @@ entries:
       callable_via: navigation
       preset:
         name: web-frontend
-        sentence_part: route-given
+        part: route-given
         handler: route-given
         variant: "<frontend-variant-id>"
       param_bindings:
@@ -57,7 +57,7 @@ entries:
       callable_via: adapter
       preset:
         name: web-frontend
-        sentence_part: viewport-control
+        part: viewport-control
         handler: viewport-control
         variant: "<frontend-variant-id>"
       param_bindings:
@@ -73,7 +73,7 @@ entries:
         boundary: null
         test_strategy: test-strategy.yml#viewport_profiles
 
-  - id: shared.success-failure.operation-success
+  - id: shared.operation-response-success-and-failure.operation-success
     source:
       rule_id: frontend-shared-operation-success
       boundary_id: frontend
@@ -93,8 +93,8 @@ entries:
       callable_via: ui
       preset:
         name: web-frontend
-        sentence_part: success-failure
-        handler: success-failure
+        part: operation-response-success-and-failure
+        handler: operation-response-success-and-failure
         variant: "<frontend-variant-id>"
       param_bindings: {}
       datatable_bindings: {}
@@ -110,7 +110,7 @@ entries:
         boundary: null
         test_strategy: null
 
-  - id: shared.success-failure.operation-failure
+  - id: shared.operation-response-success-and-failure.operation-failure
     source:
       rule_id: frontend-shared-operation-failure
       boundary_id: frontend
@@ -130,8 +130,8 @@ entries:
       callable_via: ui
       preset:
         name: web-frontend
-        sentence_part: success-failure
-        handler: success-failure
+        part: operation-response-success-and-failure
+        handler: operation-response-success-and-failure
         variant: "<frontend-variant-id>"
       param_bindings: {}
       datatable_bindings: {}
@@ -147,7 +147,7 @@ entries:
         boundary: null
         test_strategy: null
 
-  - id: shared.success-failure.operation-failure-reason
+  - id: shared.operation-response-success-and-failure.operation-failure-reason
     source:
       rule_id: frontend-shared-operation-failure-reason
       boundary_id: frontend
@@ -167,8 +167,8 @@ entries:
       callable_via: ui
       preset:
         name: web-frontend
-        sentence_part: success-failure
-        handler: success-failure
+        part: operation-response-success-and-failure
+        handler: operation-response-success-and-failure
         variant: "<frontend-variant-id>"
       param_bindings: {}
       datatable_bindings: {}
@@ -202,7 +202,7 @@ entries:
       callable_via: adapter
       preset:
         name: web-frontend
-        sentence_part: time-control
+        part: time-control
         handler: time-control
         variant: "<frontend-variant-id>"
       param_bindings:

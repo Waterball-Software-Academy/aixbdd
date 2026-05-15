@@ -1,39 +1,26 @@
-# 參數設定
-
-- **產出錨點** → 同 SKILL.md **PRINCIPLE: CWD 為產出錨點**；下列 `${…}` 均錨定於 **`CWD`**。
-- **implementation 根** → `${CURRENT_PLAN_PACKAGE}/implementation/`
-- **sequence 目錄** → `${CURRENT_PLAN_PACKAGE}/implementation/sequences/`
-- **internal-structure 檔** → `${CURRENT_PLAN_PACKAGE}/implementation/internal-structure.class.mmd`
-
-請注意，所有路徑都是相對於 ${CWD} 所在路徑，請勿新增任何檔案是並非在 ${CWD} 之中，不可妥協。
-
----
-
 # SOP
 
-1. **THINK：external boundary surface 模型**
-   - **READ** `rules/external-surface-granularity.md`。
-   - 對 `$BOUNDARY_DELTA.provider_edges` 之每條 edge **FAITHFUL REASONING**：每個 **provider boundary** 必有 contract reference 或顯式 non-contract 原因；每條 mockable consumer→provider edge 必有 test double policy；**禁止**把同 boundary 內部協作者列為 mock target；3rd-party providers 必有 external stub candidate（payload 與 response binding source）；行為依賴 provider failure 者必有 failure-mode anchor。
-   - 輸出 `$EXTERNAL_SURFACE_MODEL`（含 `edges[]`、`stubs[]`、`failure_modes[]`）。本步**不寫檔**。
+緣由：在推導完 system boundary 的 operation / data contracts 之後，就算是定義好了測試此邊界上最關鍵的兩個重要部位(operation for endpoint verifier, data for state verifier)，不過如果要建構更穩定的實作計劃，我們不能只有 e2e test，還要有 internal structural design，如此才能遵守 "tidy-first" (make changes easy then make easy change) 原則，讓程式不只能通過測試，還能有精準、fit-design、的好架構。
 
-2. **THINK：實作路徑與內部結構**
-   - **READ** `rules/sequence-path-granularity.md`。
-   - 從 `$PLAN_INPUTS.activity_truth`／`$PLAN_INPUTS.feature_truth`／`$BOUNDARY_DELTA`／`$EXTERNAL_SURFACE_MODEL` **FAITHFUL REASONING** 萃取**主要實作路徑**：happy／alt／err **各為獨立路徑**；每條路徑必有可追溯之 activity flow／atomic rule／contract operation／dispatch decision 依據。
-   - 輸出 `$IMPLEMENTATION_MODEL = { paths: [...], collaborators: [...] }`，每條 path 含 `scenario_slug`／`category`（`happy`|`alt`|`err`）／`actor`／`boundary_entry_operation`／`internal_collaborators[]`／`provider_calls[]`／`state_changes[]`／`response_verifier_candidates[]`／`source_refs`。
+此步驟的目的是產出針對此實作計劃的 "程式實作類別圖 (C4-Level class diagram)"，以及作為更領先指標、用於推導出此類別圖的多個不同情境下的 Sequence diagram。
 
-3. **CREATE：implementation 目錄骨架**
-   - CREATE `${CURRENT_PLAN_PACKAGE}/implementation/`、`${CURRENT_PLAN_PACKAGE}/implementation/sequences/`。
-   - 本步**只建目錄**，**不**預建空 `.mmd` 檔。
+1. READ dev constitution：READ `${DEV_CONSTITUTION_PATH}`，後續內部結構與分層須與之一致。
 
-4. **WRITE FILES：sequence diagrams**
-   - FOR EACH path in `$IMPLEMENTATION_MODEL.paths`：依 `<scenario_slug>.<category>.sequence.mmd` 寫入 `${CURRENT_PLAN_PACKAGE}/implementation/sequences/`，內容為 Mermaid sequence 圖。
-   - 每張 sequence **必含**：actor、boundary entry operation、internal collaborators、provider contract calls、state changes、response verifier candidates。
-   - **不得**把多條主要路徑塞同一 `.mmd`（違反 `rules/sequence-path-granularity.md`）；**不得**用 legacy 命名 `*.backend.sequence.mmd`。
+2. THINK：設計實作路徑與內部結構
+   - READ `rules/sequence-path-granularity.md`。
+   - READ `reasoning/implementation-path-design.md`（SSOT、impact 覆蓋、path 可追溯、`$IMPLEMENTATION_MODEL` 形狀）
+   - 依上列規範 faithful reasoning 產出 `$IMPLEMENTATION_MODEL`；本步不寫檔。
 
-5. **WRITE FILE：internal-structure.class.mmd**
-   - 把 `$IMPLEMENTATION_MODEL.paths` 之**結構聯集**（所有 collaborators／operations／state surfaces）寫入 `${CURRENT_PLAN_PACKAGE}/implementation/internal-structure.class.mmd`，作為下游 `/aibdd-tasks` GREEN 階段定位類別／模組／operation 之依據。
-   - **不得**含 product code patch、step definition 內容、test queue 狀態。
+3. CREATE：`${PLAN_IMPLEMENTATION_DIR}`、`${PLAN_SEQUENCE_DIR}`。僅目錄；不預建空 `.mmd`。
 
-6. **ASSERT：路徑可追溯性**
-   - 對每個 implementation target（actor／operation／collaborator／provider call／state change），ASSERT 至少能追溯到一條 activity path／atomic rule／provider contract／boundary-map dispatch override；
-   - 任一 target 找不到追溯來源 → 在 `$IMPLEMENTATION_MODEL.blocked_reasons[]` 紀錄（含 target、原因），供 phase 05 之 `research.md` 之 `## Blocked Reasons` 顯式落地；**禁止**靜默忽略。
+4. WRITE：sequence diagrams
+   - FOR EACH path in `$IMPLEMENTATION_MODEL.paths`：寫入 `${PLAN_SEQUENCE_DIR}/<scenario_slug>.<category>.sequence.mmd`（Mermaid sequence）。每張必含：actor、boundary entry operation、internal collaborators、provider contract calls、state changes、response verifier candidates。
+   - 不得將多條主要路徑塞入同一 `.mmd`；不得使用 `*.backend.sequence.mmd` 命名。
+
+5. WRITE：`${PLAN_INTERNAL_STRUCTURE}`
+   - READ `rules/internal-structure-union.md`（相對本 `03-implementation-plan/`）：其中定義「結構聯集」並附示意例子；將 `$IMPLEMENTATION_MODEL.paths` 依該定義收成單一 class diagram（collaborators／operations／state surfaces），供下游 GREEN 定位類別／模組／operation。
+   - 不得含 product code patch、step definition 內容、test queue 狀態。
+
+6. ASSERT：可追溯性
+   - 每個 implementation target（actor、operation、collaborator、provider call、state change）須至少可追溯至一條 activity path、atomic rule、provider contract 或 boundary-map dispatch。
+   - 無法追溯者寫入 `$IMPLEMENTATION_MODEL.blocked_reasons[]`（含 target、原因），供後續 phase 在 plan package 內約定之 research 類工件顯式落地（例如 `${PLAN_REPORTS_DIR}` 下由上游指定的檔案）；禁止靜默忽略。

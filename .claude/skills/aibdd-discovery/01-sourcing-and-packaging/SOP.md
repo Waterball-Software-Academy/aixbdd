@@ -34,9 +34,11 @@
   
 
 3. WRITE FILE: 依 `assets/templates/discovery-sourcing.template.md` 寫入 `${PLAN_REPORTS_DIR}/discovery-sourcing.md`（章節順序與 placeholder 以該檔為準）；填寫密度與敘事可對照 `assets/templates/discovery-sourcing.example.md`。同步更新 `${PLAN_SPEC}`：**保留**步驟 **1.2** 已寫入之需求全文；**追加** pointer 指向 `discovery-sourcing.md`（及必要錨點），並可補與 example 同一故事線的**執行摘要**句；**不重複**貼 `discovery-sourcing.md` 全文至 spec。**本步只允許 WRITE `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 與 UPDATE `${PLAN_SPEC}`；不得動 boundary truth。**
+   - **`## Impact matrix` 機械約束**：凡本輪實際寫入 boundary truth、或將列為本輪／後續 phase 計畫產物並需被機械對拍之規格檔（**尤其**將置於 `${FEATURE_SPECS_DIR}` 下之 `.feature`），表中 **各一列**且 **`變更類型` 必填**；**禁止**以單列 `*.feature` 或其他 **glob** 代替逐檔展開——除非於同報告 **`Notes`** 明定「下游僅採 glob 閉包」並載明落差風險。細則見 template 內該表的表頭說明。
 
 4. THINK: 在已鎖定 `$package_naming_language` 的前提下拆解本次需求涉及幾個 **function package**（`1..*`）：**bottom-up 顆粒度規則**見 `01-sourcing-and-packaging/rules/function-package-granularity.md`。每個 `$function_package_slug` 必須在 `discovery-sourcing.md` 的 **`## Function package charters`** 有「職責一句、納入、排除、本輪變更型態」；拆法與反例語感見 `assets/templates/discovery-sourcing.example.md`，欄位義務見 `assets/templates/discovery-sourcing.template.md`。**本步只產出判斷結論，不授權寫任何新檔。**
 
 5. CREATE DIRS ONLY: 在已鎖定 `$package_naming_language` 的前提下逐模組對照 boundary；若實作落在此 boundary，於 `${TRUTH_BOUNDARY_PACKAGES_DIR}` 下建立或沿用 `${TRUTH_FUNCTION_PACKAGE}`，並**僅建立目錄骨架** `${ACTIVITIES_DIR}`、`${FEATURE_SPECS_DIR}` 讓路徑可解析。**不得**在本步建立或寫入任何 `dsl.yml`、`.feature`、`.activity`、contracts、data 或其他內容檔。**目錄樹示意**見 `assets/templates/discovery-sourcing.example.md` 內「Spec structure（示意樹）」
 
 6. UPDATE FILE: 將上一步拆解與 charters 結論回寫 `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 與 `${PLAN_SPEC}`；`${PLAN_SPEC}` 須維持步驟 **1.2** 的需求全文與本步更新後的 pointer／執行摘要；句型仍對齊 `assets/templates/discovery-sourcing.example.md`。**本步只允許 UPDATE `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 與 `${PLAN_SPEC}`；其他 artifact 一律禁止變更。**
+   - 回寫時 **覆核** **`## Impact matrix`** 是否符合步驟 **3** 之「每規格檔至多一列、**.feature** 須逐檔列示、禁以 glob 代之（除非 `Notes` 已簽約 glob 閉包）以及 **`變更類型` 已填**：與實際規格檔集合不一致時須於本步修正矩陣，不得留到下游 DSL／plan phase 才被動發現。

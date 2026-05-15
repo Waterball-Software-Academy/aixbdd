@@ -51,12 +51,10 @@
 
 1. EXECUTE the sub-sop: `01-bind-and-load/SOP.md`
 
-2. EXECUTE the sub-sop: `02-boundary-truth/SOP.md`
+2. EXECUTE the sub-sop: `02-contracts-design/SOP.md`
 
 3. EXECUTE the sub-sop: `03-implementation-plan/SOP.md`
 
 4. EXECUTE the sub-sop: `04-dsl-synthesis/SOP.md`
 
-5. EXECUTE the sub-sop: `05-plan-doc-and-handoff/SOP.md`
-
-6. 和用戶說道（可使用不同詞彙但維持語意）：「OK 基本上 /aibdd-plan 所有技術計畫都做完了。boundary-map／contracts／data／test-strategy 已落到 boundary 真相，DSL 已物理化、可被 red 端使用，sequence diagrams 與 internal-structure 已寫入 plan package，plan.md 已列出本輪 Impacted Feature Files。如沒問題，可以執行 /aibdd-spec-by-example-analyze，來把 atomic rules 展成 Scenario Outline 與 Examples。」
+5. 和使用者說道（詞可變、語意不變）：「我已經做完 aibdd-plan 階段的任務，從外部驗收介面一路推理到內部實作類別架構，並且從 boundary 介面推導出後續可被撰寫成可執行規格的 DSL 語句。你看一下我產的 <api?dbml?類別圖？其他規格？> 規格吧，確定我這樣設計沒問題的話，接下來可以執行 /aibdd-spec-by-example-analyze 來為每一個 Feature file 去列舉關鍵測試情境了。」

@@ -31,30 +31,36 @@ Formulation skill。綁定 DSL = OpenAPI 3.x (.yml)。被 `aibdd-service-contrac
 
 ## §3 Formulate SOP
 
-1. **讀取 format reference**：`references/format-reference.md`（OpenAPI 3.x 語法）
-2. **依 slice_list 展開**：每個 slice 產出一個 OpenAPI YAML；共用 schema 放 `common.yml`
-3. **填入 path + method**：從推理包的 endpoint → RESTful path + HTTP method 映射
-4. **套用 patterns**：讀 `references/patterns/`（rest-naming / error-schema / modular-layout）
-5. **$ref 跨檔引用**：依切檔策略寫入正確的 `$ref` 引用
-6. **保留 CiC**：推理包中的便條紙 inline 到 OpenAPI 的 `x-cic` extension 或 `description`
-7. **寫檔**：依 slice 的 `target_path` 逐一寫出
+1. **讀取 format reference**：`references/format-reference.md`（OpenAPI 3.x **語法合法**範例、狀態碼、型別）
+2. **讀取行為 / 封裝規約**：`references/patterns/command-resource.md`（狀態遷移、命令封裝、讀模型、後端裁定邊界）
+3. **讀取反模式**：`references/patterns/anti-patterns.md`（對照自查）
+4. **依 slice_list 展開**：每個 slice 產出一個 OpenAPI YAML；共用 schema 放 `common.yml`
+5. **填入 path + method**：從推理包的 endpoint → RESTful path + HTTP method 映射（命名細節見 `patterns/rest-naming.md`）
+6. **錯誤與切檔**：`patterns/error-schema.md`、`patterns/modular-layout.md`
+7. **$ref 跨檔引用**：依切檔策略寫入正確的 `$ref` 引用
+8. **保留 CiC**：推理包中的便條紙 inline 到 OpenAPI 的 `x-cic` extension 或 `description`（語法見 format-reference）
+9. **寫檔**：依 slice 的 `target_path` 逐一寫出
 
 ---
 
 ## §4 DSL 最佳實踐
 
+### 領域與狀態（優先於「路徑長相」）
+- **禁止**將核心狀態遷移或規則裁定下放給客戶端 request body，除非推理包明示為測試／示意且與正式 API 分離（見 `command-resource.md`）。
+- **避免**僅切狀態的 endpoint；**偏誤**：同一使用者意圖合併為單一命令，並以 **snapshot／GET** 滿足讀模型（細節見 `command-resource.md`、`anti-patterns.md`）。
+
 ### REST 命名
-- path: 名詞複數（`/api/v1/orders`）
-- method: CRUD → HTTP mapping（GET / POST / PUT / PATCH / DELETE）
-- operationId: `<verb><Resource>` camelCase（`createOrder`）
+- path: 名詞複數或從屬資源（見 `patterns/rest-naming.md`）
+- method: CRUD 與命令型 `POST`（見 `command-resource.md`）
+- operationId: `<verb><Resource>` camelCase（`createOrder`）；**path 仍保持名詞導向**
 - tag: 等於 EndpointGroup.group_id
 
 ### Error schema
-- 統一使用 `ErrorResponse { message, code }`
+- 統一使用 `ErrorResponse { message, code }`（見 `patterns/error-schema.md`）
 - 放在 `common.yml#/components/schemas/ErrorResponse`
 
 ### 模組化 layout
-- 切檔策略由 Planner 決定；本 skill 配合落地
+- 切檔策略由 Planner 決定；本 skill 配合落地（見 `patterns/modular-layout.md`）
 - `$ref` 引用語法嚴格遵循 OpenAPI 3.x 規範
 - 每個 slice 的 `info.title` 反映 scope
 
@@ -70,8 +76,9 @@ Formulation skill。綁定 DSL = OpenAPI 3.x (.yml)。被 `aibdd-service-contrac
 
 ## §6 參考
 
-- **format-reference.md**：OpenAPI 3.x 核心 / schema / security / $ref
-- **patterns/rest-naming.md**：path / method / status code 最佳實踐
-- **patterns/error-schema.md**：error response 統一結構
-- **patterns/modular-layout.md**：多檔組織 / $ref / lint
-- **anti-patterns.md**：path 動詞化 / 不一致錯誤格式 / $ref 失效
+- **references/format-reference.md**：合法 `responses` 形狀、狀態碼對照、型別推斷
+- **references/patterns/command-resource.md**：狀態遷移、業務封裝、讀模型、命令型 POST 資源化
+- **references/patterns/anti-patterns.md**：RPC 氣味、純狀態 API、204+無讀模型、誤放後端裁量欄
+- **references/patterns/rest-naming.md**：path / method / operationId
+- **references/patterns/error-schema.md**：`ErrorResponse` 與 4xx 分工
+- **references/patterns/modular-layout.md**：common.yml、相對 `$ref`、slice `info`

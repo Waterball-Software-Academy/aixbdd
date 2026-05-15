@@ -33,8 +33,6 @@ references:
     purpose: feature 粒度 anti-pattern token + 命名規範
   - path: references/diagram-file-naming.md
     purpose: Mermaid 產物 compound extension 規範
-  - path: references/boundary-profile-contract.md
-    purpose: Boundary type profile 最小契約
   - path: references/dsl-output-contract/red-usable-l1-l4.md
     purpose: DSL L1-L4 必填欄位契約
   - path: references/filename-axes-convention/nn-prefix-then-title.md
@@ -65,16 +63,15 @@ references:
 | R6 | `references/artifact-partitioning.md` | legacy | 舊 Speckit artifact 分工矩陣；僅供仍未遷移的 legacy skill 讀取 |
 | R7 | `references/feature-granularity.md` | global | feature 粒度 anti-pattern token 篩檢 + 命名規範（`/aibdd-form-feature-spec` 寫檔守門用）|
 | R8 | `references/diagram-file-naming.md` | global | Mermaid 產物 compound extension：`*.class.mmd` / `*.sequence.mmd`（IDE routing） |
-| R9 | `references/boundary-profile-contract.md` | global | Boundary type profile 最小契約（type → operation contract / state / DSL handler 對應）|
-| R10 | `references/dsl-output-contract/red-usable-l1-l4.md` | global | DSL L1-L4 必填欄位契約：`/aibdd-red` 可機械吃下的最低 schema |
-| R11 | `references/filename-axes-convention/nn-prefix-then-title.md` | global | spec package 與 feature 檔的 `NN-title` 命名軸 SSOT |
-| R12 | `references/gherkin-rule-body-prefix-policy/four-rules-prefix.md` | global | Rule body 四種 prefix（must/should/shall/may）寫作規範 |
-| R13 | `references/preset-contract/web-backend.md` | global | `web-backend` boundary preset 規章（handler-routing / handlers / variants 對應） |
-| R14 | `references/i18n/en-us.md` | global | en-US locale prose 慣例 |
-| R15 | `references/i18n/ja-jp.md` | global | ja-JP locale prose 慣例 |
-| R16 | `references/i18n/ko-kr.md` | global | ko-KR locale prose 慣例 |
-| R17 | `references/i18n/zh-hans.md` | global | zh-Hans locale prose 慣例 |
-| R18 | `references/i18n/zh-hant.md` | global | zh-Hant locale prose 慣例 |
+| R9 | `references/dsl-output-contract/red-usable-l1-l4.md` | global | DSL L1-L4 必填欄位契約：`/aibdd-red` 可機械吃下的最低 schema |
+| R10 | `references/filename-axes-convention/nn-prefix-then-title.md` | global | spec package 與 feature 檔的 `NN-title` 命名軸 SSOT |
+| R11 | `references/gherkin-rule-body-prefix-policy/four-rules-prefix.md` | global | Rule body 四種 prefix（must/should/shall/may）寫作規範 |
+| R12 | `references/preset-contract/web-backend.md` | global | `web-backend` boundary preset 規章（handler-routing / handlers / variants 對應） |
+| R13 | `references/i18n/en-us.md` | global | en-US locale prose 慣例 |
+| R14 | `references/i18n/ja-jp.md` | global | ja-JP locale prose 慣例 |
+| R15 | `references/i18n/ko-kr.md` | global | ko-KR locale prose 慣例 |
+| R16 | `references/i18n/zh-hans.md` | global | zh-Hans locale prose 慣例 |
+| R17 | `references/i18n/zh-hant.md` | global | zh-Hant locale prose 慣例 |
 
 ## §2 ASSETS（Hub Exports）
 

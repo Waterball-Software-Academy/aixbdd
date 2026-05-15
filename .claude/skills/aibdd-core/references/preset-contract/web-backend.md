@@ -3,25 +3,25 @@
 ## Rules
 
 - Physical assets for this preset live under `aibdd-core/assets/boundaries/web-backend/`.
-- `handler-routing.yml` is the L4 policy SSOT for supported sentence parts, handler ids, keyword positions, and source-kind requirements.
-- `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `handler-routing.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting `L4.preset.{sentence_part,handler}`.
-- Planner MUST cite the matched route or `(sentence_part, handler)` tuple in the derivation trace; do not keep a parallel generic markdown classification SSOT.
+- `handler-routing.yml` is the L4 policy SSOT for `routes[].part`, handler ids, Gherkin keyword positions, source-kind requirements, and per-handler L4 rules under `dsl-writing-rules-for-each-part`.
+- `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `handler-routing.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting `L4.preset.{part,handler}`.
+- Planner MUST cite the matched route or `(part, handler)` tuple in the derivation trace; do not keep a parallel generic markdown classification SSOT.
 - `handlers/*.md` documents rendering slots and narrative guidance; it does not override `handler-routing.yml`.
 - `variants/*.md` defines runner/language/framework rendering contracts for a specific archetype.
 - `shared-dsl-template.yml` defines canonical boundary-wide shared DSL entries.
 - `L4.preset.name` MUST be `web-backend`.
-- For `web-backend`, `L4.preset.sentence_part` MUST equal `L4.preset.handler`.
+- For `web-backend`, `L4.preset.part` MUST equal `L4.preset.handler`.
 - Default variant is `python-e2e` unless boundary truth declares another supported variant.
 - `L4.preset.variant` MUST resolve to a file under `aibdd-core/assets/boundaries/web-backend/variants/`.
 - `L4.preset.handler` MUST resolve to a file under `aibdd-core/assets/boundaries/web-backend/handlers/`.
-- `L4.preset.sentence_part` MUST be supported by `handler-routing.yml`.
+- `L4.preset.part` MUST be supported by `handler-routing.yml`.
 - Handler routing MUST be resolved from `handler-routing.yml`; handler docs may clarify rendering but MUST NOT override routing.
 - Supported handler ids are:
-  - `aggregate-given`
-  - `http-operation`
-  - `success-failure`
-  - `readmodel-then`
-  - `aggregate-then`
+  - `state-builder`
+  - `operation-invoke`
+  - `operation-response-success-and-failure`
+  - `operation-response-success-readmodel`
+  - `state-verifier`
   - `time-control`
   - `external-stub`
 - Do not resolve `web-backend` through a `backend` alias.
@@ -59,9 +59,9 @@
 
 ### Sentence Part Resolution Branches
 
-- IF `L4.preset.sentence_part` is missing:
+- IF `L4.preset.part` is missing:
   - STOP with missing sentence part.
-- IF `sentence_part != handler` for `web-backend`:
+- IF `part != handler` for `web-backend`:
   - STOP with handler mismatch.
 - IF sentence part is not listed in `handler-routing.yml`:
   - STOP with unsupported sentence part.
@@ -103,8 +103,8 @@ L4:
       target: data/domain.dbml#students.id
   preset:
     name: web-backend
-    sentence_part: http-operation
-    handler: http-operation
+    part: operation-invoke
+    handler: operation-invoke
     variant: python-e2e
 ```
 
@@ -124,14 +124,14 @@ L4:
       target: data/domain.dbml#students.name
   preset:
     name: web-backend
-    sentence_part: aggregate-given
-    handler: aggregate-given
+    part: state-builder
+    handler: state-builder
     variant: python-e2e
 ```
 
 Why good:
 
-- `aggregate-given` is a supported routing handler.
+- `state-builder` is a supported routing handler.
 - Business setup uses explicit datatable bindings.
 
 ### Bad: `backend` alias
@@ -140,8 +140,8 @@ Why good:
 L4:
   preset:
     name: backend
-    sentence_part: http-operation
-    handler: http-operation
+    part: operation-invoke
+    handler: operation-invoke
     variant: python-e2e
 ```
 
@@ -156,8 +156,8 @@ Better:
 L4:
   preset:
     name: web-backend
-    sentence_part: http-operation
-    handler: http-operation
+    part: operation-invoke
+    handler: operation-invoke
     variant: python-e2e
 ```
 
@@ -167,8 +167,8 @@ L4:
 L4:
   preset:
     name: web-backend
-    sentence_part: readmodel-then
-    handler: aggregate-then
+    part: operation-response-success-readmodel
+    handler: state-verifier
     variant: python-e2e
 ```
 
@@ -183,8 +183,8 @@ Why bad:
 L4:
   preset:
     name: web-backend
-    sentence_part: success-failure
-    handler: success-failure
+    part: operation-response-success-and-failure
+    handler: operation-response-success-and-failure
 ```
 
 Why bad when no boundary default exists:
@@ -198,8 +198,8 @@ Better:
 L4:
   preset:
     name: web-backend
-    sentence_part: success-failure
-    handler: success-failure
+    part: operation-response-success-and-failure
+    handler: operation-response-success-and-failure
     variant: python-e2e
 ```
 
@@ -209,8 +209,8 @@ L4:
 L4:
   preset:
     name: web-backend
-    sentence_part: http-operation
-    handler: http-operation
+    part: operation-invoke
+    handler: operation-invoke
     variant: python-e2e
   handler_notes: "call POST /students/{id}/journey-stage with the stage name from the scenario"
 ```
@@ -233,8 +233,8 @@ L4:
       target: data/domain.dbml#journey_stages.name
   preset:
     name: web-backend
-    sentence_part: http-operation
-    handler: http-operation
+    part: operation-invoke
+    handler: operation-invoke
     variant: python-e2e
 ```
 
@@ -244,7 +244,7 @@ L4:
 L4:
   preset:
     name: web-backend
-    sentence_part: api-call
+    part: api-call
     handler: api-call
     variant: python-e2e
 ```

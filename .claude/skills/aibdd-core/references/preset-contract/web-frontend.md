@@ -3,19 +3,19 @@
 ## Rules
 
 - Physical assets for this preset live under `aibdd-core/assets/boundaries/web-frontend/`.
-- `handler-routing.yml` is the L4 policy SSOT for supported sentence parts, handler ids, keyword positions, and source-kind requirements.
+- `handler-routing.yml` is the L4 policy SSOT for `routes[].part`, handler ids, Gherkin keyword positions, and source-kind requirements.
 - `handler-routing.yml` declares 4 boundary-level invariants (I1 cross-process surface, I2 OpenAPI schema auto-gate, I3 per-scenario reset, I4 Storybook contract granularity) at its top comment block; per-handler `l4_requirements` MUST NOT redeclare these invariants.
-- `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `handler-routing.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting `L4.preset.{sentence_part,handler}`.
-- Planner MUST cite the matched route or `(sentence_part, handler)` tuple in the derivation trace; do not keep a parallel generic markdown classification SSOT.
+- `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `handler-routing.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting `L4.preset.{part,handler}`.
+- Planner MUST cite the matched route or `(part, handler)` tuple in the derivation trace; do not keep a parallel generic markdown classification SSOT.
 - `handlers/*.md` documents rendering slots and narrative guidance; it does not override `handler-routing.yml`. Handler narrative docs are future expansion and may be absent in v1.
 - `variants/*.md` defines runner/language/framework rendering contracts for a specific archetype, including the concrete cross-process mechanism required by invariant I1 and the per-scenario reset hook required by invariant I3.
 - `shared-dsl-template.yml` defines canonical boundary-wide shared DSL entries (route precondition, viewport, success/failure feedback, time control).
 - `L4.preset.name` MUST be `web-frontend`.
-- For `web-frontend`, `L4.preset.sentence_part` MUST equal `L4.preset.handler`.
+- For `web-frontend`, `L4.preset.part` MUST equal `L4.preset.handler`.
 - Default variant is `nextjs-playwright` unless boundary truth declares another supported variant.
 - `L4.preset.variant` MUST resolve to a file under `aibdd-core/assets/boundaries/web-frontend/variants/`.
 - `L4.preset.handler` MUST be one of the supported handler ids listed below; when `handlers/*.md` is present, the id MUST also resolve to a file under `aibdd-core/assets/boundaries/web-frontend/handlers/`.
-- `L4.preset.sentence_part` MUST be supported by `handler-routing.yml`.
+- `L4.preset.part` MUST be supported by `handler-routing.yml`.
 - Handler routing MUST be resolved from `handler-routing.yml`; handler docs may clarify rendering but MUST NOT override routing.
 - Supported handler ids (Tier-1 — always required by any frontend boundary):
   - `route-given`
@@ -23,7 +23,7 @@
   - `mock-state-given`
   - `time-control`
   - `ui-action`
-  - `success-failure`
+  - `operation-response-success-and-failure`
   - `ui-readmodel-then`
 - Supported handler ids (Tier-2 — opt-in per package):
   - `api-stub`
@@ -75,9 +75,9 @@
 
 ### Sentence Part Resolution Branches
 
-- IF `L4.preset.sentence_part` is missing:
+- IF `L4.preset.part` is missing:
   - STOP with missing sentence part.
-- IF `sentence_part != handler` for `web-frontend`:
+- IF `part != handler` for `web-frontend`:
   - STOP with handler mismatch.
 - IF sentence part is not listed in `handler-routing.yml`:
   - STOP with unsupported sentence part.
@@ -127,7 +127,7 @@ L4:
       target: literal:ui.button.name
   preset:
     name: web-frontend
-    sentence_part: ui-action
+    part: ui-action
     handler: ui-action
     variant: nextjs-playwright
 ```
@@ -151,7 +151,7 @@ L4:
       target: src/lib/schemas/borrow-request.ts#BorrowRequestSchema.status
   preset:
     name: web-frontend
-    sentence_part: mock-state-given
+    part: mock-state-given
     handler: mock-state-given
     variant: nextjs-playwright
 ```
@@ -178,7 +178,7 @@ L4:
     contract: contracts/borrow-request.yml#/paths/~1borrow-requests/post
   preset:
     name: web-frontend
-    sentence_part: api-call-then
+    part: api-call-then
     handler: api-call-then
     variant: nextjs-playwright
 ```
@@ -195,7 +195,7 @@ Why good:
 L4:
   preset:
     name: frontend
-    sentence_part: ui-action
+    part: ui-action
     handler: ui-action
     variant: nextjs-playwright
 ```
@@ -211,7 +211,7 @@ Better:
 L4:
   preset:
     name: web-frontend
-    sentence_part: ui-action
+    part: ui-action
     handler: ui-action
     variant: nextjs-playwright
 ```
@@ -222,7 +222,7 @@ L4:
 L4:
   preset:
     name: web-frontend
-    sentence_part: ui-readmodel-then
+    part: ui-readmodel-then
     handler: mock-state-then
     variant: nextjs-playwright
 ```
@@ -238,8 +238,8 @@ Why bad:
 L4:
   preset:
     name: web-frontend
-    sentence_part: success-failure
-    handler: success-failure
+    part: operation-response-success-and-failure
+    handler: operation-response-success-and-failure
 ```
 
 Why bad when no boundary default exists:
@@ -253,8 +253,8 @@ Better:
 L4:
   preset:
     name: web-frontend
-    sentence_part: success-failure
-    handler: success-failure
+    part: operation-response-success-and-failure
+    handler: operation-response-success-and-failure
     variant: nextjs-playwright
 ```
 
@@ -264,7 +264,7 @@ L4:
 L4:
   preset:
     name: web-frontend
-    sentence_part: ui-action
+    part: ui-action
     handler: ui-action
     variant: nextjs-playwright
   handler_notes: "click the primary submit button on the credit application form"
@@ -288,7 +288,7 @@ L4:
       target: literal:ui.button.name
   preset:
     name: web-frontend
-    sentence_part: ui-action
+    part: ui-action
     handler: ui-action
     variant: nextjs-playwright
 ```
@@ -299,7 +299,7 @@ L4:
 L4:
   preset:
     name: web-frontend
-    sentence_part: dom-event-then
+    part: dom-event-then
     handler: dom-event-then
     variant: nextjs-playwright
 ```
@@ -317,7 +317,7 @@ L4:
     component: src/components/borrow-request/BorrowRequestForm.tsx
   preset:
     name: web-frontend
-    sentence_part: ui-action
+    part: ui-action
     handler: ui-action
     variant: nextjs-playwright
 ```
@@ -337,7 +337,7 @@ L4:
   callable_via: src/mocks/store.ts::seedApplications
   preset:
     name: web-frontend
-    sentence_part: mock-state-given
+    part: mock-state-given
     handler: mock-state-given
     variant: nextjs-playwright
 ```
@@ -359,7 +359,7 @@ L4:
       value: true
   preset:
     name: web-frontend
-    sentence_part: api-call-then
+    part: api-call-then
     handler: api-call-then
     variant: nextjs-playwright
 ```

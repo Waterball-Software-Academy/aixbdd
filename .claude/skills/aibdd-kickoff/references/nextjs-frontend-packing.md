@@ -54,7 +54,7 @@ Frontend stack 沿用 backend 的 4-folder boundary skeleton（**不另開 front
 |---|---|
 | `contracts/` | boundary operation contract root（**consumer 側 OpenAPI**）；kickoff writes `contracts/.gitkeep` placeholder。對 `web-app`，consumer 端 OpenAPI 由團隊從上游 backend 取得或由 `/aibdd-form-api-spec` 共享產出 |
 | `data/` | boundary state truth root（**Zod schema spec 引用**）；kickoff writes `data/.gitkeep` placeholder。前端用此目錄存放 Zod schema 文件指引（指向 `${FE_SCHEMAS_DIR}` 內具體 .ts），對偶 backend 的 DBML 角色 |
-| `shared/` | boundary-level shared assets；kickoff creates `shared/dsl.yml` placeholder（其後由 `/aibdd-plan` Phase 6 從 `aibdd-core/assets/boundaries/web-frontend/shared-dsl-template.yml` 補入 `route-given` / `viewport-control` / `success-failure` / `time-control` 等 boundary-shared entries） |
+| `shared/` | boundary-level shared assets；kickoff creates `shared/dsl.yml` placeholder（其後由 `/aibdd-plan` Phase 6 從 `aibdd-core/assets/boundaries/web-frontend/shared-dsl-template.yml` 補入 `route-given` / `viewport-control` / `operation-response-success-and-failure` / `time-control` 等 boundary-shared entries） |
 | `packages/` | functional package **root only**；kickoff writes `packages/.gitkeep`；**不包含**任一 `packages/NN-*/` |
 
 Kickoff writes `.gitkeep` in `contracts/`, `data/`, and `packages/` so that the empty boundary skeleton survives `git add -A` and fixture filesystem comparison. `.gitkeep` is an empty file. Any non-empty file in these directories is the responsibility of downstream skills (`/aibdd-form-api-spec`, `/aibdd-plan`, `/aibdd-discovery`).
@@ -77,6 +77,6 @@ Kickoff **不**建立任一上述檔；它只宣告 path token，讓 frontend st
 ## What this packing does NOT include
 
 - **不**建立 backend stack（無 `app/` / `pom.xml` / `pyproject.toml` / Alembic / Flyway 等）
-- **不**啟用 boundary-level `aggregate-given` / `aggregate-then` / `external-stub` 等 backend handler（前端對應 handler 由 `aibdd-core::preset-contract/web-frontend.md` 規範）
+- **不**啟用 boundary-level `state-builder` / `state-verifier` / `external-stub` 等 backend handler（前端對應 handler 由 `aibdd-core::preset-contract/web-frontend.md` 規範）
 - **不**設定 MSW（boundary-level `mock-state-given` / `api-stub` / `api-call-then` 透過 `features/steps/fixtures.ts` 內 `mockApi` + `page.route` 提供，mock state 住在 fixture closure）
 - **不**寫死 `data/` 內容（前端 stack 此目錄留 `.gitkeep`；Zod schema 落在 `${FE_SCHEMAS_DIR}` 內，由 starter / plan 後續產生）

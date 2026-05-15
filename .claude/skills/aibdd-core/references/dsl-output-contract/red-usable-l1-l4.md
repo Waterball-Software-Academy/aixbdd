@@ -19,7 +19,7 @@
   - `fixture:...`
   - `stub_payload:...`
   - `literal:...`
-- `web-backend` entries SHOULD include `L4.preset` with `name`, `sentence_part`, `handler`, and `variant`.
+- `web-backend` entries SHOULD include `L4.preset` with `name`, `part`, `handler`, and `variant`.
 - Operation-backed L1 sentence parameters SHOULD be `<= 3`.
 - Datatable parameters SHOULD be `<= 6` after defaults.
 - Every L1 sentence MUST be stateless enough for `/aibdd-red` to identify subject, lookup identity, and expected data from that line plus its same-step datatable.
@@ -98,7 +98,7 @@ entries:
     L1: 顧問將學員「{student_name}」指派至「{stage_name}」階段
     L2:
       keyword: When
-      sentence_part: http-operation
+      part: operation-invoke
     L3:
       operation_id: assignStudentToJourneyStage
     L4:
@@ -118,8 +118,8 @@ entries:
           override_via: examples.requested_by
       preset:
         name: web-backend
-        sentence_part: http-operation
-        handler: http-operation
+        part: operation-invoke
+        handler: operation-invoke
         variant: python-e2e
 ```
 
@@ -135,7 +135,7 @@ Why good:
 L1: CRM 中已有以下學員旅程資料
 L2:
   keyword: Given
-  sentence_part: aggregate-given
+  part: state-builder
 L4:
   datatable_bindings:
     student_name:
@@ -146,8 +146,8 @@ L4:
       target: data/domain.dbml#student_journey.intent
   preset:
     name: web-backend
-    sentence_part: aggregate-given
-    handler: aggregate-given
+    part: state-builder
+    handler: state-builder
     variant: python-e2e
 ```
 
@@ -225,7 +225,7 @@ Given CRM 中已有以下學員資料：
 L1: 系統應保存上述資料
 L2:
   keyword: Then
-  sentence_part: aggregate-then
+  part: state-verifier
 ```
 
 Why bad:
@@ -238,7 +238,7 @@ Better:
 L1: CRM 應保存學員「{student_name}」位於「{stage_name}」階段
 L2:
   keyword: Then
-  sentence_part: aggregate-then
+  part: state-verifier
 L4:
   assertion_bindings:
     student_name:

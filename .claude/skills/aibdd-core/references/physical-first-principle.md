@@ -126,11 +126,11 @@ The pattern belongs in DSL L4 or the referenced test strategy entry, and must be
 
 Backend entries should reference `web-backend` handler names when applicable:
 
-- `aggregate-given`
+- `state-builder`
 - `command`
 - `query`
-- `success-failure`
-- `readmodel-then`
-- `aggregate-then`
+- `operation-response-success-and-failure`
+- `operation-response-success-readmodel`
+- `state-verifier`
 
 The preset reference selects reusable step-definition pattern instructions; it does not replace L4 physical mapping.

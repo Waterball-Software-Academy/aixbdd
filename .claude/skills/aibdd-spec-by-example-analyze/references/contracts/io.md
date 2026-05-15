@@ -2,9 +2,7 @@
 
 本 Planner 的 reads / writes / config 精確定義。Planner 只透過這裡宣告的 artifact 與世界溝通。
 
-> **路徑規約**：本 skill 是 `/aibdd-plan` output consumer。所有 runtime paths 必須由
-> `.claude/skills/aibdd-plan/scripts/python/resolve_plan_paths.py <arguments.yml>` 展開，
-> 不得猜測舊 flat features 目錄或自行建立 DSL 檔。
+> **路徑規約**：本 skill 是 `/aibdd-plan` output consumer。所有 runtime paths 必須由 workspace `.aibdd/arguments.yml` 宣告之鍵（如 `FEATURE_SPECS_DIR`、`TRUTH_FUNCTION_PACKAGE` 等）經 kickoff／plan 慣例展開後解析，不得猜測舊 flat features 目錄或自行建立 DSL 檔。
 
 ## §Reads
 
@@ -19,7 +17,8 @@
 | `${CONTRACTS_DIR}/**/*.{yml,yaml}` | OpenAPI operation contract truth | 必要（web-service boundary） |
 | `${DATA_DIR}/**/*.dbml` | DBML persistence/state truth | 有才讀，只讀 |
 | `${TEST_STRATEGY_FILE}` | dependency edges / external stub / runner strategy | 必要，只讀 |
-| `${PLAN_REPORTS_DIR}/aibdd-plan-quality.md` | 上游 plan gate 結果 | 必要 |
+| `${PLAN_REPORTS_DIR}/aibdd-plan-quality.md` | 上游 plan gate 結果（若存在） | 選填；本 skill **01-bind-and-load** 不依此檔決定是否進入 |
+| `aibdd-core::assets/boundaries/<type>/profile.yml` | 由 `${BOUNDARY_YML}.type` 解析之 boundary profile | 必要（persistence gate 與 formulation 語意） |
 | `${CURRENT_PLAN_PACKAGE}/implementation/**` | implementation diagrams for context | 有才讀，只讀 |
 | `${TRUTH_FUNCTION_PACKAGE}/coverage/*.coverage.yml` | 既有 package example coverage | 有才讀 |
 

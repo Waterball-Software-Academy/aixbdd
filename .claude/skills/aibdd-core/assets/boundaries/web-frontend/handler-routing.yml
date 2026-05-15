@@ -32,48 +32,48 @@
 routes:
   # ─── Tier-1 — always required ───
 
-  - sentence_part: route-given
+  - part: route-given
     keyword:
       - Given
       - Background
     handler: route-given
     semantic: Land the browser context on a specific application route as a scenario precondition.
 
-  - sentence_part: viewport-control
+  - part: viewport-control
     keyword:
       - Given
       - When
     handler: viewport-control
     semantic: Control browser viewport dimensions or device emulation profile.
 
-  - sentence_part: mock-state-given
+  - part: mock-state-given
     keyword:
       - Given
       - Background
     handler: mock-state-given
     semantic: Seed the in-process mock backend store with persistent state.
 
-  - sentence_part: time-control
+  - part: time-control
     keyword:
       - Given
       - When
     handler: time-control
     semantic: Control browser-visible time for time-dependent UI behavior.
 
-  - sentence_part: ui-action
+  - part: ui-action
     keyword:
       - Given
       - When
     handler: ui-action
     semantic: Drive a UI interaction through the rendered surface — click, fill, select, upload, keyboard, drag, programmatic navigation. Given usage is prerequisite multi-step setup; When usage is the target operation.
 
-  - sentence_part: success-failure
+  - part: operation-response-success-and-failure
     keyword:
       - Then
-    handler: success-failure
+    handler: operation-response-success-and-failure
     semantic: Verify the success-or-failure feedback class surfaced to the user (toast, inline error, banner, status pill).
 
-  - sentence_part: ui-readmodel-then
+  - part: ui-readmodel-then
     keyword:
       - Then
     handler: ui-readmodel-then
@@ -81,25 +81,25 @@ routes:
 
   # ─── Tier-2 — opt-in per package ───
 
-  - sentence_part: api-stub
+  - part: api-stub
     keyword:
       - Given
     handler: api-stub
     semantic: Override the in-process mock backend's per-scenario behavior for a specific operationId (next response status, body fixture, latency, response sequence). Distinct from mock-state-given which seeds data; api-stub seeds behavior.
 
-  - sentence_part: url-then
+  - part: url-then
     keyword:
       - Then
     handler: url-then
     semantic: Verify URL state — pathname, query string parameters, hash fragment — after the operation. Use this when URL is the load-bearing observable; otherwise prefer ui-readmodel-then.
 
-  - sentence_part: api-call-then
+  - part: api-call-then
     keyword:
       - Then
     handler: api-call-then
     semantic: Verify that a specific outgoing API call was emitted and its method/path/body/query/headers match expected shape. Schema conformance is enforced by the mock layer (see boundary invariant I2); this handler asserts call presence, count, and content shape.
 
-  - sentence_part: mock-state-then
+  - part: mock-state-then
     keyword:
       - Then
     handler: mock-state-then
@@ -151,7 +151,7 @@ handlers:
       - "`L4.param_bindings` reference roles or labelled targets — `getByRole` / `getByLabel` / `getByTestId` / explicit `name=` — never raw CSS or class selectors."
       - "`L4.source_refs.component` points to the specific Story export (e.g., `Button.stories.ts::Primary`) capturing the target state; `L4.source_refs.route` points to the route under which this interaction occurs. This handler does not own assertion bindings."
 
-  success-failure:
+  operation-response-success-and-failure:
     required_source_kinds:
       - operation_contract_response
     optional_source_kinds:

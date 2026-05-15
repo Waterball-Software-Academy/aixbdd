@@ -60,14 +60,14 @@ Legacy boundary-root behavior folders are not canonical. Accepted behavior truth
 - **`FEATURE_SPECS_DIR` / `ACTIVITIES_DIR`** 僅在目標 **`TRUTH_FUNCTION_PACKAGE`** 已定錨並寫回 `arguments.yml` 後，才對 script gate／formulation delegation 視為必填。
 - Skills **必須**能讀 `${BOUNDARY_YML}`（或等價的已解析 `TRUTH_BOUNDARY_ROOT`），才能決定檔案寫入與 quality gate 掃描路徑。
 - **Acceptance / Behave** 可執行 `.feature` 路徑由 **`BDD_CONSTITUTION_PATH`** 與 `PY_TEST_FEATURES_DIR` 定義（通常 `tests/features/`），與上表 Discovery 規格路徑分離。
-- Boundary operation contract truth 的**目錄**固定由 `${CONTRACTS_DIR}` 決定；operation contract truth 的**格式與 formulation skill** 由 `aibdd-core::boundary-profile-contract.md` 解析 boundary `type` 後決定（例如 `web-service` → OpenAPI via `/aibdd-form-api-spec`）。Planner 不得假設 `${CONTRACTS_DIR}` 內一定是 ad hoc `operations:` YAML。
-- Boundary state truth 的**目錄**固定由 `${DATA_DIR}` 決定；state truth 的**格式與 formulation skill** 由 `aibdd-core::boundary-profile-contract.md` 解析 boundary `type` 後決定（例如 `web-service` → DBML via `/aibdd-form-entity-spec`）。Planner 不得假設 `${DATA_DIR}` 內一定是 YAML。
+- Boundary operation contract truth 的**目錄**固定由 `${CONTRACTS_DIR}` 決定；operation contract 的**格式與 formulation skill** 以 `${BOUNDARY_YML}` 所宣告 `type` 對應之 `aibdd-core/assets/boundaries/<type>/profile.yml` 內 `operation_contract_specifier` 為準（例：`web-service` → OpenAPI，經 `/aibdd-form-api-spec`）。Planner 不得假設 `${CONTRACTS_DIR}` 內一定是 ad hoc `operations:` YAML。
+- Boundary state truth 的**目錄**固定由 `${DATA_DIR}` 決定；state 的**格式與 formulation skill** 以上述同檔之 `state_specifier` 為準（例：`web-service` → DBML，經 `/aibdd-form-entity-spec`）。Planner 不得假設 `${DATA_DIR}` 內一定是 YAML。
 
 ---
 
 ## Cross-reference
 
 - Mermaid diagram 檔名副檔名（`*.class.mmd` / `*.sequence.mmd`）：[`diagram-file-naming.md`](diagram-file-naming.md)
-- Boundary profile / state specifier：[`boundary-profile-contract.md`](boundary-profile-contract.md)
+- Boundary profile（`operation_contract_specifier`／`state_specifier`）與同目錄 `handler-routing.yml`：見 `aibdd-core` SKILL.md §2 ASSETS（`assets/boundaries/<type>/`）
 - 欄位預設值與占位符語意：`aibdd-kickoff::references/convention-mapping.md`
 - Feature 檔名軸（§5.1）與 bdd-stack 憲法樹：`${BDD_CONSTITUTION_PATH}`（專案內預設 `.aibdd/bdd-stack/project-bdd-axes.md`）；runner／step／fixture 細節見 `.aibdd/bdd-stack/*.md`

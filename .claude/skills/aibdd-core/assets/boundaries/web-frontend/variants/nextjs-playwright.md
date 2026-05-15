@@ -103,7 +103,7 @@ features/
       mock-state-given/
       time-control/
       ui-action/
-      success-failure/
+      operation-response-success-and-failure/
       ui-readmodel-then/
       api-stub/                # only if Tier-2 enabled in this package
       url-then/                # only if Tier-2 enabled
@@ -131,7 +131,7 @@ One generated step pattern maps to one `.ts` file unless an existing shared comm
 | `mock-state-given` | `mockApi.seed<Entity>(input)` (synchronous closure mutation) | Records Zod-validated by fixture's `page.route` handler on next dispatch |
 | `time-control` | `page.clock.install({ time })` / `page.clock.fastForward(ms)` / `page.clock.setFixedTime(d)` | Requires Playwright ≥ 1.45 |
 | `ui-action` | `page.getByRole / getByLabel / getByTestId(...).click() / .fill() / .selectOption() / .setInputFiles() / page.keyboard.press() / page.goBack() / page.goForward() / page.reload()` | Locator query MUST come from `L4.source_refs.component` Story export's argTypes / accessible name |
-| `success-failure` | `await expect(page.getByRole('alert' \| 'status'))...toBeVisible()` and `.toContainText(reason)` | Surface (toast / inline / banner) declared in `L4.assertion_bindings.surface` |
+| `operation-response-success-and-failure` | `await expect(page.getByRole('alert' \| 'status'))...toBeVisible()` and `.toContainText(reason)` | Surface (toast / inline / banner) declared in `L4.assertion_bindings.surface` |
 | `ui-readmodel-then` | `await expect(...).toHaveText \| toBeVisible \| toHaveCount \| toHaveAttribute(...)` | Collection assertions use `getByRole('row' \| 'listitem')` + `.toHaveCount(n)` |
 | `api-stub` | `mockApi.override(operationId, response, sequence?)` (synchronous closure mutation) | Active until per-scenario reset (fixture scope) |
 | `url-then` | `await expect(page).toHaveURL(re)` and/or `new URL(page.url()).searchParams.get(k)` | Pathname dynamic segments matched by regex from route map |

@@ -1,0 +1,98 @@
+# Handler-selection 決策表（web-frontend）
+#
+# 給定一個 Gherkin clause，依下表逐欄判斷得 type → handler。
+
+# type → handler 映射（與 web-frontend.md §0 L3.type 對齊）
+type_to_handler:
+  route-nav:          route-given
+  viewport-control:   viewport-control
+  mock-state-setup:   mock-state-given      # Tier-1
+  time-control:       time-control
+  ui-action:          ui-action
+  operation-response-success-and-failure:    operation-response-success-and-failure
+  ui-readmodel:       ui-readmodel-then
+  api-stub:           api-stub              # Tier-2
+  url-verify:         url-then              # Tier-2
+  api-call-verify:    api-call-then         # Tier-2
+  mock-state-verify:  mock-state-then       # Tier-2
+
+# Gherkin clause → type 判定樹
+clause_to_type:
+  - keyword: Given
+    rules:
+      - match: "句子描述瀏覽器落於某路由（例：『使用者已在大廳頁』『使用者已在 /rooms/123 頁』）"
+        type: route-nav
+      - match: "句子描述視窗尺寸或裝置（例：『使用者在手機裝置上』『視窗寬度為 768px』）"
+        type: viewport-control
+      - match: "句子描述後端狀態已被預先 seed（例：『系統內已存在房間 X』『使用者 Y 已加入房間』）"
+        type: mock-state-setup
+      - match: "句子描述當前 browser-visible 時間（例：『現在是活動開始前一日』）"
+        type: time-control
+      - match: "句子描述某 operation 將回特定 response（per-scenario override；Tier-2）"
+        type: api-stub
+
+  - keyword: When
+    rules:
+      - match: "句子描述使用者透過 UI 互動（例：『使用者輸入房碼』『使用者點擊送出』）"
+        type: ui-action
+      - match: "句子描述視窗或時間之變化"
+        type: viewport-control      # 或 time-control，依語境
+
+  - keyword: Then
+    rules:
+      - match: "句子描述 UI feedback class（例：『系統顯示成功提示』『系統顯示錯誤訊息』）"
+        type: operation-response-success-and-failure
+      - match: "句子描述 DOM 上可觀察的值／role／attribute／count（例：『清單中顯示 N 個項目』『按鈕為 disabled』）"
+        type: ui-readmodel
+      - match: "句子描述 URL 之狀態（例：『URL pathname 為 /rooms/123』；Tier-2）"
+        type: url-verify
+      - match: "句子描述 outgoing API call 之 shape／count（Tier-2）"
+        type: api-call-verify
+      - match: "句子描述 fixture closure store 被改變（Tier-2）"
+        type: mock-state-verify
+
+# Handler 之 L4 必填欄位
+l4_required_fields:
+  route-given:
+    - target_route
+    - url_pattern
+  viewport-control:
+    - summary
+  mock-state-given:
+    - fixture_api                 # mockApi.seedXxx
+    - operation_id                # 對應 page.route handler 涵蓋之 method × path
+    - payload_schema_or_reference
+  time-control:
+    - summary
+  ui-action:
+    - callable_via                # click / fill / press / etc
+    - source_refs.component       # Story export anchor（boundary I4）
+  operation-response-success-and-failure:
+    - assertion_bindings
+  ui-readmodel-then:
+    - source_refs.component
+    - assertion_bindings
+  api-stub:
+    - fixture_api                 # mockApi.override
+    - operation_id
+    - payload_schema_or_reference
+  url-then:
+    - url_pattern
+  api-call-then:
+    - fixture_api                 # mockApi.calls
+    - operation_id
+  mock-state-then:
+    - fixture_api                 # mockApi.inspectXxx
+
+# Tier-2 啟用門檻
+tier2_activation:
+  required_field: "test-strategy.yml.tier2_handlers.<id>"
+  required_value: "enabled"
+  on_missing: "視為未啟用；不得使用該 handler；改走 Tier-1 同效路徑"
+
+# 禁止項
+forbidden:
+  - "在 L1 句型暴露 fixture method 名、operation_id、Zod schema、Playwright API"
+  - "把 src/mocks/** 或 /__test__/* HTTP endpoint 當 cross-process surface（違反 I1）"
+  - "UI handler 之 source_refs.component 指 component file 而非 Story export anchor（違反 I4）"
+  - "Scenario 句子重宣告 OpenAPI／Zod schema gate（違反 I2；schema gate 由 fixture 在 route.fulfill 前 enforce）"

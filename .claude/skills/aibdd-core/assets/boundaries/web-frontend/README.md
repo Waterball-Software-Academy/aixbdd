@@ -15,7 +15,7 @@ Machine checks should validate `aibdd-core/assets/boundaries/web-frontend/handle
 
 | Path | Role |
 |------|------|
-| `handler-routing.yml` | SSOT: `routes` (`sentence_part` + `keyword` + `handler`) and `handlers` (`required_source_kinds`, `optional_source_kinds`, `l4_requirements`). Top-of-file comment block declares 4 boundary-level invariants (I1–I4). |
+| `handler-routing.yml` | SSOT: `routes` (`part` + `keyword` + `handler`) and `handlers` (`required_source_kinds`, `optional_source_kinds`, `l4_requirements`). Top-of-file comment block declares 4 boundary-level invariants (I1–I4). |
 | `handlers/*.md` | Handler narrative and rendering guidance; does not override `handler-routing.yml` *(future expansion — not in v1)* |
 | `variants/*.md` | Stack-specific rendering contracts such as `nextjs-playwright` *(future expansion — not in v1)* |
 | `shared-dsl-template.yml` | Boundary-wide canonical shared DSL entries |
@@ -59,11 +59,11 @@ Split into **Tier-1** (always required) and **Tier-2** (opt-in per package). Tie
 |---------|--------------|---------|--------------|---------------------------|
 | `route-given` | *(frontend-only)* | Given/Background | `route-navigator` | ✅ `Given I am on the home page` |
 | `viewport-control` | *(frontend-only)* | Given/When | `viewport-controller` | ✅ `When I resize the viewport to {int} x {int}` |
-| `mock-state-given` | `aggregate-given` | Given/Background | `mock-loader` | – |
+| `mock-state-given` | `state-builder` | Given/Background | `mock-loader` | – |
 | `time-control` | `time-control` | Given/When | `clock` | – |
-| `ui-action` | `http-operation` | Given/When | `ui-driver` | – |
-| `success-failure` | `success-failure` | Then | `ui-feedback-verifier` | – |
-| `ui-readmodel-then` | `readmodel-then` | Then | `ui-state-verifier` | ✅ 5 of 8 starter step patterns (page title / heading / link / button / text) |
+| `ui-action` | `operation-invoke` | Given/When | `ui-driver` | – |
+| `operation-response-success-and-failure` | `operation-response-success-and-failure` | Then | `ui-feedback-verifier` | – |
+| `ui-readmodel-then` | `operation-response-success-readmodel` | Then | `ui-state-verifier` | ✅ 5 of 8 starter step patterns (page title / heading / link / button / text) |
 
 ### Tier-2 — opt-in per package (4)
 
@@ -72,9 +72,9 @@ Split into **Tier-1** (always required) and **Tier-2** (opt-in per package). Tie
 | `api-stub` | `external-stub` | Given | Scenario needs a per-scenario mock-behavior override (e.g., next call returns 409, latency injection, response sequence) |
 | `url-then` | *(frontend-only)* | Then | Scenario asserts on URL state where URL is the load-bearing observable (otherwise prefer `ui-readmodel-then`) |
 | `api-call-then` | *(frontend-only)* | Then | Scenario asserts a specific outgoing call was emitted (count / shape match); schema conformance is automatic — see I2 |
-| `mock-state-then` | `aggregate-then` | Then | UI does not render the mutation but the scenario must still verify the mock store changed |
+| `mock-state-then` | `state-verifier` | Then | UI does not render the mutation but the scenario must still verify the mock store changed |
 
-> `route-given` exists because frontend behavior is route-conditional. Backend has no equivalent because each `http-operation` is self-locating via path.
+> `route-given` exists because frontend behavior is route-conditional. Backend has no equivalent because each `operation-invoke` is self-locating via path.
 
 ## Boundary-Level Invariants (mirrored from handler-routing.yml top comment)
 
