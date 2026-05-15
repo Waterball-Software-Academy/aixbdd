@@ -82,7 +82,7 @@ Sections 分兩類，render 時必須遵守依賴關係（具體執行步驟在 
 
 ## §5 跨 boundary 注意事項
 
-本 skill 只負責 frontend boundary 的 uiux-prompt。若有多 frontend boundary（罕見，目前 kickoff 限制單一 TLB），需各自跑一次 `/aibdd-uiux-discovery`，產 boundary-aware 路徑：
+本 skill 只負責 frontend boundary 的 uiux-prompt。若有多 frontend boundary（罕見，目前 kickoff 限制單一 TLB），需各自跑一次 `/aibdd-uiux-design`，產 boundary-aware 路徑：
 
 - `${SPECS_DIR}/${current_package_slug}/design/uiux-prompt.md`
 - `${SPECS_DIR}/${current_package_slug}/design/style-profile.yml`

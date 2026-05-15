@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/* Tailwind v4 auto source detection 預設跳過 gitignored 路徑。AIBDD 專案的
+   specs/ 子樹（含 producer skill 寫出的 contracts/components/<id>/<id>.tsx）
+   通常被 repo gitignore 排除（worktree 共用 parent .gitignore），導致該層
+   className 不會被掃進最終 CSS。顯式 @source 強制掃 specs/ 全樹，避免在
+   Next.js dev / Storybook preview 中元件呈現為「無樣式 wireframe」。 */
+@source "../../specs/**/*.{ts,tsx,mdx}";
+
 :root {
   --background: #ffffff;
   --foreground: #171717;

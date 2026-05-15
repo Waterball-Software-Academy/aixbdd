@@ -1,12 +1,12 @@
 ---
-name: aibdd-uiux-discovery
-description: 從 /aibdd-discovery 產出（spec.md / *.activity / *.feature skeleton / atomic rules）機械推導 component-first 視覺結構：先抽 component inventory（含 per-component state matrix）再組 frame composition map（每 frame 用哪些 component + canonical state combo），DELEGATE /clarify-loop 與 user 批次澄清視覺方向 / 元件盤點 / 品牌參考，emit Pencil-ready prompt（design/uiux-prompt.md）+ style profile（design/style-profile.yml）。下游可手動畫 .pen 或委派 /aibdd-uiux-draw 走 Pencil MCP 自動繪製。TRIGGER when 使用者下 /aibdd-uiux-discovery、discovery 完成想開始視覺探索、或被 plan 前流程委派。SKIP when discovery 產物缺失、target boundary 為純後端、已有既有 .pen 上游 SSOT、或 user 明示視覺已鎖（直接用既有 design system）。
+name: aibdd-uiux-design
+description: 從 /aibdd-discovery 產出（spec.md / *.activity / *.feature skeleton / atomic rules）機械推導 component-first 視覺結構：先抽 component inventory（含 per-component state matrix）再組 frame composition map（每 frame 用哪些 component + canonical state combo），DELEGATE /clarify-loop 與 user 批次澄清視覺方向 / 元件盤點 / 品牌參考，emit Pencil-ready prompt（design/uiux-prompt.md）+ style profile（design/style-profile.yml）。下游可手動畫 .pen 或委派 /aibdd-uiux-draw 走 Pencil MCP 自動繪製。TRIGGER when 使用者下 /aibdd-uiux-design、discovery 完成想開始視覺探索、或被 plan 前流程委派。SKIP when discovery 產物缺失、target boundary 為純後端、已有既有 .pen 上游 SSOT、或 user 明示視覺已鎖（直接用既有 design system）。
 metadata:
   user-invocable: true
   source: project-level dogfooding
 ---
 
-# aibdd-uiux-discovery
+# aibdd-uiux-design
 
 視覺探索規劃器（component-first v2）｜從 /aibdd-discovery 產出機械推導兩個關鍵結構 — **component inventory（含 per-component state matrix）+ frame composition map（每 frame 用哪些 component + canonical state combo）**；DELEGATE /clarify-loop 補齊使用者未講清楚的視覺維度；emit 一份 Pencil-ready 設計 brief（design/uiux-prompt.md）+ tokens 提案（design/style-profile.yml）。下游可手動畫 `.pen` 或委派 `/aibdd-uiux-draw` 透過 Pencil MCP 自動繪製。
 
@@ -119,7 +119,7 @@ references:
 
 4. TLB 必須是 frontend；後端 boundary 直接終止。
    4.1 IF `$$runtime_context.TLB.role` ≠ "frontend":
-       4.1.1 EMIT "目前 TLB 不是 frontend，aibdd-uiux-discovery 不適用" to user
+       4.1.1 EMIT "目前 TLB 不是 frontend，aibdd-uiux-design 不適用" to user
        4.1.2 STOP
 
 5. 把 discovery 產物全部讀進 bundle。
@@ -173,7 +173,7 @@ references:
    1.2 `$axes` = EDIT `$axes` ← attach `$$component_inventory` / `$$frame_composition` / `$$anchor_candidates` 為各題 context（讓 user 看到目前 derive 的當前資訊再回答）；§3 component inventory 與 §6 frame composition 為 v2 必答軸
 
 2. 組成 clarify-loop payload schema。
-   2.1 `$$clarify_payload` = RENDER clarify-loop payload, vars={round_purpose: "aibdd-uiux-discovery visual axes (component-first)", questions: `$axes`, update_mode_hint: "sync"}
+   2.1 `$$clarify_payload` = RENDER clarify-loop payload, vars={round_purpose: "aibdd-uiux-design visual axes (component-first)", questions: `$axes`, update_mode_hint: "sync"}
    2.2 ASSERT length(`$$clarify_payload.questions`) ≤ 16   # clarify-loop 會自動分 Sub-round（每 round ≤ 4 題）
 
 ### Phase 4 — DELEGATE /clarify-loop
@@ -231,7 +231,7 @@ references:
        - **路徑 A（推薦，自動）**：跑 `/aibdd-uiux-draw`；該 skill 讀 `${$$prompt_path}` + `${$$profile_path}`，透過 Pencil MCP 自動逐 component scene + frame composition scene 繪製並 export `.pen` 到 `${$pen_target_path}`
        - **路徑 B（手動，fallback）**：把 `${$$prompt_path}` 整段內容貼進 Pencil app 自己畫；完成後 export 為 `design.pen` 存到 `${$pen_target_path}`（**package root**，與 `spec.md` / `plan.md` 同層；不進 `design/` 目錄內）
        - 不論走 A 或 B，下一步都跑 `/aibdd-plan` — plan 階段從 package root 讀 `design.pen` 萃取 I4 anchor / DSL L1 / contract
-       - 註記：`.pen` 為**過渡轉換檔**；下游 `aibdd-pen-to-storybook` 翻成 `<ComponentId>.stories.tsx` 後，**Story 才是 boundary I4 binding anchor 的 SSOT**，`.pen` 不保證長期保留
+       - 註記：`.pen` 為**過渡轉換檔**；下游 `aibdd-pen-to-storybook` 一條龍翻成 `<ComponentId>.tsx` + `<ComponentId>.stories.tsx` 後，**Story 才是 boundary I4 binding anchor 的 SSOT**，`.pen` 不保證長期保留
    2.3 EMIT `$handoff_msg` to user
 
 ## §3 CROSS-REFERENCES
@@ -240,8 +240,8 @@ references:
 - `/clarify-loop` — DELEGATE 對象；本 skill 不自寫 UX 文案，所有澄清題目都丟它
 - `/aibdd-uiux-draw` — 直接下游（推薦路徑 A）；讀本 skill 產出的 `design/uiux-prompt.md` + `design/style-profile.yml`，透過 Pencil MCP 自動繪 `.pen`
 - `/aibdd-plan` — 後續下游；plan 階段會吃 `.pen` 萃取 I4 anchor / DSL L1 / contract
-- `/aibdd-form-story-spec` — 下下游；負責 `.pen → <ComponentId>.stories.tsx` 翻譯（合約定型；每個 component 對一個 stories 檔，每個 state 一個 export）
-- `aibdd-pen-to-storybook` — `.pen → React + Storybook` 橋樑（form-story 內部可委派）
+- `/aibdd-pen-to-storybook` — 下下游；**producer skill**，負責 `.pen → <ComponentId>.tsx + <ComponentId>.stories.tsx` 一條龍翻譯（合約定型；每個 component 對一份雙產出，每個 state 一個 story export）
+- `/aibdd-form-story-spec` — 平行路徑（caller-driven，無 `.pen`）；本 discovery 流程不會走到 — 設計來源既然是 `.pen`，下游就走 pen-to-storybook
 
 ### Future evolution
 

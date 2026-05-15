@@ -34,30 +34,46 @@ The app under test (`src/**`) MUST NOT contain mock layer code. `src/lib/api-cli
 
 All operations are synchronous closure mutations (no async HTTP). Per-scenario reset is automatic via fixture scope.
 
-| API | Backs handler | Input shape | Output shape |
-|---|---|---|---|
-| `mockApi.seed<Entity>(input)` | `mock-state-given` | entity-specific seed shape (record values validated by data-model Zod schema) | `void` (mutates closure store) |
-| `mockApi.inspect<Store>(where?)` | `mock-state-then` | optional `where` predicate object | `<Entity> \| <Entity>[]` from closure store |
-| `mockApi.override(operationId, response, sequence?)` | `api-stub` | `(operationId, { status, body, headers? }, sequence?)` | `void` (queues per-scenario response override) |
-| `mockApi.calls(operationId, since?)` | `api-call-then` | `(operationId, since?)` | `RecordedCall[]` from closure call recorder |
-| `mockApi.reset()` | per-scenario reset (I3) | – | `void` (clears closure store; usually unnecessary — fixture scope handles it) |
+| Method | Backs handler | Signature |
+|---|---|---|
+| `mockApi.seed<E>(input)` | `mock-state-given` | `input: EntityShape` — all NOT-NULL Zod fields required; `z.optional()` fields may be omitted; `z.nullable()` fields accept `null`. Returns `void`. |
+| `mockApi.inspect<E>(where?)` | `mock-state-then` | `where?: Partial<E>` — shallow-equality filter on the closure store; omit to return all entries. Returns `E \| E[]`. |
+| `mockApi.override(op, response, sequence?)` | `api-stub` | `op: string` operationId; `response: { status: number; body: unknown; headers?: Record<string,string> }`; `sequence?: number` — 0-based call ordinal: this override applies when `mockApi.calls(op).length == sequence`; omit = applies on the next call only. Returns `void`. |
+| `mockApi.calls(op, since?)` | `api-call-then` | `op: string` operationId; `since?: number` — 0-based call ordinal; returns calls at index ≥ `since`; omit = all calls in this scenario. Returns `RecordedCall[]`. |
+| `mockApi.reset()` | per-scenario reset (I3) | No args. Clears closure store and call recorder. Usually unnecessary — fixture scope handles it automatically. Returns `void`. |
 
-The fixture itself registers `page.route(API_HOST + '/<path>', handler)` for every operation. Handlers parse `req.method()` + path, mutate closure store, and call `route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(...) })`. Each handler MUST validate its outgoing payload against the operation's response Zod schema (boundary invariant I2).
+`RecordedCall` type:
+
+```ts
+interface RecordedCall {
+  operationId: string;
+  method: string;                       // 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH'
+  path: string;                         // resolved path, e.g. '/rooms/R-001/actions'
+  pathParams: Record<string, string>;  // path template segments, e.g. { roomCode: 'R-001' }
+  query: Record<string, string>;
+  body: unknown;                        // parsed JSON or null (GET / DELETE)
+  headers: Record<string, string>;
+  timestamp: number;                    // 0-based call ordinal within this scenario
+}
+```
+
+The fixture registers a single `page.route(API_HOST + '/**', handler)` that dispatches all operations by `method × path` regex. Each dispatch branch Zod-validates outgoing responses (boundary invariant I2).
 
 ## Required Test Fixture Shape (`features/steps/fixtures.ts`)
 
 ```ts
 /* eslint-disable react-hooks/rules-of-hooks -- Playwright fixture `use` callback is not a React Hook */
 import { test as base, createBdd } from 'playwright-bdd';
+import { CreateRoomBodySchema, CreateRoomResponseSchema, GetRoomResponseSchema } from '@/lib/schemas/room';
 
 interface MockApi {
   reset(): void;
-  // domain-specific seed/inspect methods, e.g.:
+  // domain-specific seed/inspect methods — one method per entity, camelCase entity name:
   seedRoom(input: { roomCode: string; seatsTaken: number; capacity?: number }): void;
   inspectRoom(code: string): RoomState | undefined;
   // tier-2 only:
-  // override(operationId: string, response: Override, sequence?: number): void;
-  // calls(operationId: string, since?: string): RecordedCall[];
+  override(operationId: string, response: { status: number; body: unknown; headers?: Record<string, string> }, sequence?: number): void;
+  calls(operationId: string, since?: number): RecordedCall[];
 }
 
 const API_HOST = 'http://localhost:4000'; // distinct from Next.js dev (localhost:3000)
@@ -65,20 +81,84 @@ const API_HOST = 'http://localhost:4000'; // distinct from Next.js dev (localhos
 export const test = base.extend<{ mockApi: MockApi }>({
   mockApi: async ({ page }, use) => {
     const store = new Map<string, RoomState>();
+    const recorder: RecordedCall[] = [];
+    const overrides = new Map<string, Array<{ sequence?: number; response: OverrideResponse }>>();
 
-    await page.route(`${API_HOST}/<resource>/**`, async (route) => {
+    // Helper: pop a matching override for (op, callIndex) if one is queued
+    const popOverride = (op: string, callIndex: number) => {
+      const queue = overrides.get(op);
+      if (!queue) return undefined;
+      const idx = queue.findIndex(o => o.sequence === undefined || o.sequence === callIndex);
+      return idx >= 0 ? queue.splice(idx, 1)[0].response : undefined;
+    };
+
+    // Single page.route covers every API operation; dispatch is by method × path regex.
+    await page.route(`${API_HOST}/**`, async (route) => {
       const req = route.request();
-      const url = new URL(req.url());
       const method = req.method();
-      // dispatch by method × path
-      // mutate `store` and call route.fulfill({ status, contentType, body })
-      // every fulfilled body must conform to its responseSchema (Zod)
+      const url = new URL(req.url());
+      const path = url.pathname;
+      const query = Object.fromEntries(url.searchParams);
+      const headers = req.headers();
+
+      // ── POST /rooms ─────────────────────────────────────────
+      if (method === 'POST' && path === '/rooms') {
+        const op = 'createRoom';
+        const body = req.postDataJSON() as unknown;
+        CreateRoomBodySchema.parse(body);                                              // I2 request gate
+        const callIndex = recorder.filter(c => c.operationId === op).length;
+        recorder.push({ operationId: op, method, path, pathParams: {}, query, body, headers, timestamp: recorder.length });
+
+        const override = popOverride(op, callIndex);
+        if (override) {
+          await route.fulfill({ status: override.status, contentType: 'application/json', body: JSON.stringify(override.body), headers: override.headers });
+          return;
+        }
+        const parsed = body as { roomCode: string };
+        const room: RoomState = { roomCode: parsed.roomCode, seatsTaken: 0 };
+        store.set(room.roomCode, room);
+        const resp = { roomCode: room.roomCode };
+        CreateRoomResponseSchema.parse(resp);                                          // I2 response gate
+        await route.fulfill({ status: 201, contentType: 'application/json', body: JSON.stringify(resp) });
+        return;
+      }
+
+      // ── GET /rooms/:roomCode ────────────────────────────────
+      const getRoomMatch = path.match(/^\/rooms\/([^/]+)$/);
+      if (method === 'GET' && getRoomMatch) {
+        const op = 'getRoom';
+        const roomCode = getRoomMatch[1];
+        const callIndex = recorder.filter(c => c.operationId === op).length;
+        recorder.push({ operationId: op, method, path, pathParams: { roomCode }, query, body: null, headers, timestamp: recorder.length });
+
+        const override = popOverride(op, callIndex);
+        if (override) {
+          await route.fulfill({ status: override.status, contentType: 'application/json', body: JSON.stringify(override.body), headers: override.headers });
+          return;
+        }
+        const room = store.get(roomCode);
+        if (!room) {
+          await route.fulfill({ status: 404, contentType: 'application/json', body: JSON.stringify({ error: 'room not found' }) });
+          return;
+        }
+        GetRoomResponseSchema.parse(room);                                             // I2 response gate
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(room) });
+        return;
+      }
+
+      // Unknown operation — fail explicitly rather than passing through to the real API.
+      await route.abort('failed');
     });
 
     const api: MockApi = {
-      reset: () => store.clear(),
-      seedRoom: (input) => store.set(input.roomCode, /* build entity */),
+      reset: () => { store.clear(); recorder.length = 0; overrides.clear(); },
+      seedRoom: (input) => store.set(input.roomCode, { roomCode: input.roomCode, seatsTaken: input.seatsTaken, capacity: input.capacity ?? 4 }),
       inspectRoom: (code) => store.get(code),
+      override: (op, response, sequence) => {
+        if (!overrides.has(op)) overrides.set(op, []);
+        overrides.get(op)!.push({ sequence, response });
+      },
+      calls: (op, since) => recorder.filter(c => c.operationId === op).slice(since ?? 0),
     };
     await use(api);
   },
@@ -87,7 +167,32 @@ export const test = base.extend<{ mockApi: MockApi }>({
 export const { Given, When, Then } = createBdd(test);
 ```
 
-The fixture's closure (`store`, `page.route` registrations) is automatically recreated per test (fixture scope = test). This is the **single** legitimate per-scenario reset hook (boundary invariant I3). Step files MUST NOT invent additional reset paths.
+### Fixture Scope = `test` — Auto-Reset Mechanism (Boundary Invariant I3)
+
+`playwright-bdd` inherits Playwright's default fixture scope `test`. Because `mockApi` is declared via `base.extend<{ mockApi: MockApi }>({ mockApi: async ({ page }, use) => { ... } })`, Playwright re-executes the callback **once per scenario**. Concretely, between scenarios the following are torn down and recreated from scratch:
+
+| What | Lifecycle |
+|---|---|
+| `store: Map<string, RoomState>` | New `Map` instance per scenario; previous-scenario seeds are unreachable |
+| `recorder: RecordedCall[]` | New array per scenario; previous-scenario calls are unreachable |
+| `overrides: Map<string, ...>` | New `Map` per scenario; queued overrides do not leak |
+| `page.route(API_HOST + '/**', ...)` registration | Bound to the new `page`, garbage-collected with the previous one |
+| The `mockApi` object exposed to step defs | Freshly constructed each scenario |
+
+**No mutable state survives the scenario boundary.** This is sufficient because:
+
+1. The fixture has no module-level / file-level mutable state (no `let foo = …` outside the callback).
+2. The closure binds to the per-scenario `page` argument, so `page.route` registrations cannot survive.
+3. `mockApi.reset()` is therefore **redundant** under normal scenarios — its only legitimate use is when a single scenario explicitly wants mid-scenario state clearing (rare; usually a design smell).
+
+**Forbidden reset paths (per I3):**
+
+- `test.beforeEach(() => mockApi.reset())` — auto-reset already handled; explicit hook adds a second reset path that can drift.
+- `test.afterEach(() => store.clear())` — closure is GC'd anyway; the hook accesses a soon-to-be-stale store.
+- Module-level `const store = new Map()` outside the `extend<>` callback — turns the fixture into a worker-scoped singleton and breaks I3.
+- Cucumber-style `Before` / `After` from `playwright-bdd` that mutate fixture state — fixture is the SSOT, not the BDD hook layer.
+
+Step files MUST NOT invent additional reset paths. If a scenario truly needs intra-scenario reset, call `mockApi.reset()` directly inside the step body — never in a hook.
 
 ## Step File Layout
 
@@ -124,19 +229,35 @@ One generated step pattern maps to one `.ts` file unless an existing shared comm
 
 ## Per-Handler Playwright API Mapping
 
-| Handler | Primary surface | Notes |
+Each handler's full Playwright surface — allowed verbs, assertion APIs, locator derivation rules, and Forbidden patterns — lives in `../handlers/<handler>.md` § Playwright Surface. This variant section only declares **stack-level constraints** that apply across all handlers; handler-local mapping MUST NOT be duplicated here.
+
+### Stack-level constraints (apply to every handler below)
+
+| Constraint | Authority |
+|---|---|
+| Playwright ≥ 1.45 (required for `page.clock`) | Runtime Contract (top of this file) |
+| `baseURL` resolution via `playwright.config.ts` | Playwright config |
+| Named viewport profiles resolved from `test-strategy.yml#viewport_profiles` | Project test strategy |
+| `Given` / `When` / `Then` imported from `./fixtures` only (never directly from `playwright-bdd`) | §Playwright-BDD Matcher Contract |
+| `mockApi.*` fixture API is the sole cross-process surface (I1) | §Mock Control Surface |
+| Zod-validated fulfillment / response bodies (I2) | §Schema Auto-Gate |
+| Story export as locator source (I4) | §Storybook Binding |
+
+### Handler narrative index (cross-link only)
+
+| Tier | Handler | Narrative |
 |---|---|---|
-| `route-given` | `page.goto(url)` | Resolved against `baseURL` (Next.js dev host) from `playwright.config.ts` |
-| `viewport-control` | `page.setViewportSize({width, height})` or `test.use({ viewport })` | Named profiles resolve via `test-strategy.yml#viewport_profiles` |
-| `mock-state-given` | `mockApi.seed<Entity>(input)` (synchronous closure mutation) | Records Zod-validated by fixture's `page.route` handler on next dispatch |
-| `time-control` | `page.clock.install({ time })` / `page.clock.fastForward(ms)` / `page.clock.setFixedTime(d)` | Requires Playwright ≥ 1.45 |
-| `ui-action` | `page.getByRole / getByLabel / getByTestId(...).click() / .fill() / .selectOption() / .setInputFiles() / page.keyboard.press() / page.goBack() / page.goForward() / page.reload()` | Locator query MUST come from `L4.source_refs.component` Story export's argTypes / accessible name |
-| `success-failure` | `await expect(page.getByRole('alert' \| 'status'))...toBeVisible()` and `.toContainText(reason)` | Surface (toast / inline / banner) declared in `L4.assertion_bindings.surface` |
-| `ui-readmodel-then` | `await expect(...).toHaveText \| toBeVisible \| toHaveCount \| toHaveAttribute(...)` | Collection assertions use `getByRole('row' \| 'listitem')` + `.toHaveCount(n)` |
-| `api-stub` | `mockApi.override(operationId, response, sequence?)` (synchronous closure mutation) | Active until per-scenario reset (fixture scope) |
-| `url-then` | `await expect(page).toHaveURL(re)` and/or `new URL(page.url()).searchParams.get(k)` | Pathname dynamic segments matched by regex from route map |
-| `api-call-then` | `mockApi.calls(operationId)` then assert on returned tuples | Schema validity already enforced (I2); handler asserts presence/count/shape only |
-| `mock-state-then` | `mockApi.inspect<Store>(where?)` then assert | Reads closure store directly; never via DOM |
+| T1 | `route-given` | [`../handlers/route-given.md`](../handlers/route-given.md) |
+| T1 | `viewport-control` | [`../handlers/viewport-control.md`](../handlers/viewport-control.md) |
+| T1 | `mock-state-given` | [`../handlers/mock-state-given.md`](../handlers/mock-state-given.md) |
+| T1 | `time-control` | [`../handlers/time-control.md`](../handlers/time-control.md) |
+| T1 | `ui-action` | [`../handlers/ui-action.md`](../handlers/ui-action.md) |
+| T1 | `success-failure` | [`../handlers/success-failure.md`](../handlers/success-failure.md) |
+| T1 | `ui-readmodel-then` | [`../handlers/ui-readmodel-then.md`](../handlers/ui-readmodel-then.md) |
+| T2 | `api-stub` | [`../handlers/api-stub.md`](../handlers/api-stub.md) |
+| T2 | `url-then` | [`../handlers/url-then.md`](../handlers/url-then.md) |
+| T2 | `api-call-then` | [`../handlers/api-call-then.md`](../handlers/api-call-then.md) |
+| T2 | `mock-state-then` | [`../handlers/mock-state-then.md`](../handlers/mock-state-then.md) |
 
 ## Schema Auto-Gate (Boundary Invariant I2 — Concrete Impl)
 
@@ -179,20 +300,16 @@ Locator derivation rule:
 
 Stories without explicit accessible-name args MUST NOT be bind targets — the Story author must add the args first; otherwise the binding fails legally (missing truth, not legal red).
 
-## Forbidden
+## Forbidden (stack-level only)
 
-- Do not invent route paths outside the project route map.
-- Do not infer request or response field names outside L4 bindings.
-- Do not call production internals from step definitions (no `import` from `src/app/**` or component file directly; only via rendered DOM or `mockApi`).
-- Do not place mock layer code inside the app under test (`src/mocks/**` MUST NOT exist).
-- Do not add `/__test__/*` Route Handlers to the Next.js dev server (deprecated v0 path).
-- Do not import the fixture's mock store from product code (the store is test-process-only).
-- Do not assert UI state in `mock-state-then` (use `ui-readmodel-then` for visible state).
-- Do not assert mock-store state in `ui-readmodel-then` (use `mock-state-then` for non-visible mutation).
-- Do not sleep or read wall-clock time in `time-control` (must go through `page.clock`).
-- Do not register additional `Before` hooks that mutate closure state — closure recreation per test fixture scope is the only legal reset.
-- Do not use raw CSS class selectors or nth-child positional selectors when role / label / test-id is available.
-- Do not configure `NEXT_PUBLIC_API_BASE_URL` to the Next.js dev host (would cause `page.route` to intercept page navigations).
+Handler-level Forbidden items (route invention, field inference, CSS / nth-child selector bans, `time-control` wall-clock ban, `mock-state-then` ↔ `ui-readmodel-then` confusion, extra `Before` hooks, etc.) live in `../handlers/<handler>.md` § Forbidden and MUST NOT be redeclared here. This section keeps only constraints that span the whole `nextjs-playwright` stack:
+
+- Mock layer location — `src/mocks/**` MUST NOT exist; `src/app/__test__/**` MUST NOT exist (deprecated v0 path). The fixture closure is the sole mock SSOT.
+- Mock store import boundary — the fixture's mock store is test-process-only; product code under `src/**` MUST NOT import it.
+- Production internals import boundary — step definitions MUST NOT `import` from `src/app/**` or any component file directly; the only legal channels are the rendered DOM (via `page`) and the fixture API (via `mockApi`).
+- API host separation — `NEXT_PUBLIC_API_BASE_URL` MUST resolve to a host distinct from the Next.js dev server host; otherwise `page.route` glob can intercept page navigations.
+- Fixture re-instantiation — `Given` / `When` / `Then` MUST be imported from `./fixtures`, never directly from `playwright-bdd` (a direct import re-instantiates `createBdd(test)` and breaks fixture sharing).
+- Reset hook ownership — the fixture's per-test closure recreation is the sole legal per-scenario reset (I3); the variant MUST NOT ship additional reset entry points and step files MUST NOT register `Before` / `After` hooks that mutate closure state.
 
 ## Legal Red Expectation
 

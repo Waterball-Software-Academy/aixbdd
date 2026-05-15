@@ -7,14 +7,14 @@
 - `handler-routing.yml` declares 4 boundary-level invariants (I1 cross-process surface, I2 OpenAPI schema auto-gate, I3 per-scenario reset, I4 Storybook contract granularity) at its top comment block; per-handler `l4_requirements` MUST NOT redeclare these invariants.
 - `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `handler-routing.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting `L4.preset.{sentence_part,handler}`.
 - Planner MUST cite the matched route or `(sentence_part, handler)` tuple in the derivation trace; do not keep a parallel generic markdown classification SSOT.
-- `handlers/*.md` documents rendering slots and narrative guidance; it does not override `handler-routing.yml`. Handler narrative docs are future expansion and may be absent in v1.
+- `handlers/*.md` documents rendering slots and narrative guidance; it does not override `handler-routing.yml`. One file per handler id (listed below) MUST exist at `aibdd-core/assets/boundaries/web-frontend/handlers/<handler>.md`.
 - `variants/*.md` defines runner/language/framework rendering contracts for a specific archetype, including the concrete cross-process mechanism required by invariant I1 and the per-scenario reset hook required by invariant I3.
 - `shared-dsl-template.yml` defines canonical boundary-wide shared DSL entries (route precondition, viewport, success/failure feedback, time control).
 - `L4.preset.name` MUST be `web-frontend`.
 - For `web-frontend`, `L4.preset.sentence_part` MUST equal `L4.preset.handler`.
 - Default variant is `nextjs-playwright` unless boundary truth declares another supported variant.
 - `L4.preset.variant` MUST resolve to a file under `aibdd-core/assets/boundaries/web-frontend/variants/`.
-- `L4.preset.handler` MUST be one of the supported handler ids listed below; when `handlers/*.md` is present, the id MUST also resolve to a file under `aibdd-core/assets/boundaries/web-frontend/handlers/`.
+- `L4.preset.handler` MUST be one of the supported handler ids listed below AND MUST resolve to a file under `aibdd-core/assets/boundaries/web-frontend/handlers/`.
 - `L4.preset.sentence_part` MUST be supported by `handler-routing.yml`.
 - Handler routing MUST be resolved from `handler-routing.yml`; handler docs may clarify rendering but MUST NOT override routing.
 - Supported handler ids (Tier-1 — always required by any frontend boundary):
@@ -42,6 +42,19 @@
 - `check_frontend_preset_refs.py` SHOULD validate every DSL entry using `web-frontend` against the core routing file (parallel to `check_backend_preset_refs.py`).
 - Missing `name`, `handler`, or `variant` assets MUST be fail-stop errors in `/aibdd-plan` and `/aibdd-red-execute`.
 
+## Layout SSOT
+
+`aibdd-core/assets/boundaries/web-frontend/` MUST contain the following layout. Both `/aibdd-plan` and `/aibdd-red-execute` enforce this; no consumer may relax or extend it.
+
+| # | Component | Path | Cardinality |
+|---|---|---|---|
+| L1 | Routing SSOT | `handler-routing.yml` at preset root | exactly 1 |
+| L2 | Handler narrative | `handlers/<handler>.md` per handler id referenced by any DSL `L4.preset.handler` | 1 per referenced handler |
+| L3 | Variant rendering contract | `variants/<variant>.md` per variant id referenced by any DSL `L4.preset.variant` | 1 per referenced variant |
+| L4 | Alias resolution | none — preset name MUST resolve to the directory name verbatim | n/a |
+
+A missing component (L1 / L2 / L3) or an alias resolution attempt (L4) is a fail-stop error. Consumers MUST cite this section when enforcing layout.
+
 ### Preset Name Resolution Branches
 
 - IF `L4.preset.name == web-frontend`:
@@ -65,9 +78,8 @@
   - STOP with unsupported handler.
 - IF handler id is a Tier-2 handler and the project test-strategy does not declare its enablement:
   - STOP with Tier-2 not enabled.
-- IF `handlers/<handler>.md` is missing AND boundary policy requires handler narrative:
+- IF `handlers/<handler>.md` is missing:
   - STOP with missing handler documentation.
-  - (v1 default: handler narrative is future expansion; missing narrative is allowed when `boundary.policy.handler_narrative_required == false`.)
 - IF handler doc conflicts with `handler-routing.yml`:
   - TREAT `handler-routing.yml` as SSOT and report the conflict.
 - IF handler id exists but required source kind is absent from the DSL entry:
@@ -86,18 +98,20 @@
 
 ### Variant Resolution Branches
 
-- IF `L4.preset.variant` is present:
+V1 resolution order (highest precedence first):
+
+- IF `L4.preset.variant` is present in the DSL entry:
   - RESOLVE `variants/<variant>.md`.
-- IF `L4.preset.variant` is absent and boundary truth declares a supported default:
-  - USE that boundary default.
-- IF `L4.preset.variant` is absent and no boundary default exists:
-  - USE `nextjs-playwright`.
+- ELSE IF `L4.preset.variant` is absent:
+  - USE `nextjs-playwright` (the only v1 variant for `web-frontend`; selected by `/aibdd-plan` SKILL.md Phase 6 step 8 when `PRESET_KIND == web-frontend`).
 - IF the selected variant file is missing:
   - STOP with missing variant.
 - IF the variant does not support the handler or source kind required by routing:
   - STOP with variant incompatibility.
 - IF the variant does not declare a cross-process mechanism for invariant I1, a per-scenario reset hook for I3, OR a Story-export-aware locator rule for I4:
   - STOP with variant invariant gap.
+
+**V1 caveat — boundary-truth variant default is not implemented.** Neither `boundary.yml` nor `arguments.yml` carries a `variant_default` / `preset.variant` key. Per-DSL-entry override via `L4.preset.variant` is the only declaration site; everything else falls through to the hardcoded `nextjs-playwright` default. A future boundary.yml key `boundary.preset.variant_default` is reserved but not parsed. Until then, projects that need a non-default variant MUST set `L4.preset.variant` on every relevant DSL entry.
 
 ### Binding Boundary Branches
 

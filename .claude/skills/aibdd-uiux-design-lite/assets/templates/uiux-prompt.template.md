@@ -28,7 +28,7 @@ Only draw screens/components selected from `.feature` evidence. Do **not** inven
 
 ## COMPONENT CATALOG ← Story / 測試合約 SSOT（lite）
 
-**Lite rule**: one component = one primary/canonical state only. If you need full state coverage, stop and rerun `/aibdd-uiux-discovery` full version.
+**Lite rule**: one component = one primary/canonical state only. If you need full state coverage, stop and rerun `/aibdd-uiux-design` full version.
 
 {{COMPONENT-CATALOG}}
 
@@ -88,4 +88,4 @@ Interactive components in lite scope must use these exact accessible names:
 1. 存檔為 `design.pen`，放在 `${SPECS_DIR}/${PACKAGE}/design.pen`（package root，與 `spec.md` / `plan.md` 同層）。
 2. 可直接呼叫 `/aibdd-uiux-draw`，由 Pencil MCP 自動把本 lite brief 翻成 `.pen`。
 3. 下一步跑 `/aibdd-plan`。
-4. 若後續要補錯誤、空狀態、loading、rejected 或完整 component states，重跑 `/aibdd-uiux-discovery` full version。
+4. 若後續要補錯誤、空狀態、loading、rejected 或完整 component states，重跑 `/aibdd-uiux-design` full version。

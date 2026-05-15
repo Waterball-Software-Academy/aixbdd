@@ -9,7 +9,7 @@
 | `TypeError: swc.isWasm is not a function` | 用了 `@storybook/nextjs`（webpack/SWC 路徑），與 Next 16 SWC 不相容 | 改用 `@storybook/nextjs-vite` + 加 `vite` dep；framework 名同步改 |
 | Tailwind utility 找不到（如 `bg-accent-cyan` unknown） | `globals.css` 缺 `@import "tailwindcss";` 或 token 沒寫進 `@theme` | 兩者都確認；`@theme { --color-accent-cyan: ... }` 必在 `@import "tailwindcss"` 之後 |
 | `@layer utilities { ... }` 內自訂 utility 完全沒生效 | Tailwind 4 改用 `@utility name { ... }` 語法 | 改成 `@utility scanlines { ... }` 等 |
-| Build 通過但設計與 .pen 不符 | hex code 拷貝錯字、token 大小寫不一 | 重跑 `jq '.variables' design.pen`，逐字 verbatim 寫進 `@theme` |
+| Build 通過但設計與 .pen 不符 | hex code 拷貝錯字、token 大小寫不一 | 重跑 `python3 scripts/python/pen_query.py design.pen --variables`，逐字 verbatim 寫進 `@theme` |
 | `clsx is not defined` | component 用了 `clsx(...)` 但 `package.json` 無此 dep | 兩擇一：加 `clsx` dep、或改回模板字串拼接 |
 | 字型完全沒載入 | Google Font `@import url(...)` 放在 `@import "tailwindcss";` 之後 | 字型 `@import url(...)` 必須在 globals.css **最前** |
 | `swc.isWasm` 但 framework 寫對了 | node_modules 殘留舊 framework；快取沒清 | `rm -rf node_modules .next && npm install` 後重 build |
@@ -49,20 +49,22 @@
 | `as Meta<typeof Component>` | 吞掉 TS 型別檢查 | `satisfies Meta<typeof Component>` |
 | `import { storiesOf }` (CSF2) | Storybook 10 不再支援 | 用 CSF3 named export |
 | 在 module scope 初始化 fetch / mock store | 渲染順序不可預期 | 用 args 表達狀態；mock 屬 `features/steps/fixtures.ts` SSOT |
-| Story 用 CSS class / nth-child 當 locator | 違反「story 是純視覺合約」 | 視覺由 Tailwind utility 表達；BDD locator 屬下游 `aibdd-form-story-spec` |
+| Story 用 CSS class / nth-child 當 locator | 違反 boundary I4（locator 須由 role + accessible name 派生） | 視覺由 Tailwind utility 表達；locator 由下游 `/aibdd-red-execute` 從 `args` 派生 |
 | `play` 內寫業務驗收 assertion | story play 用於視覺 / docs | 業務驗收歸 Cucumber `.feature` + step-def |
 
-## §5 觀察：本 skill 與 `aibdd-form-story-spec` 的職責邊界
+## §5 觀察：本 skill 與 `aibdd-form-story-spec` 的職責邊界（**互斥的平行路徑**）
 
 | 議題 | aibdd-pen-to-storybook | aibdd-form-story-spec |
 |---|---|---|
-| 輸入 | `.pen` 設計檔 | Planner 推理包 |
+| Pipeline | **design-source** (有 `.pen`) | **caller-driven** (無 `.pen`) |
+| 輸入 | `.pen` 設計檔 + `target_dir` | Planner 推理包 + `target_dir` |
 | 抽 component / 數量 | YES（heuristics） | NO（caller 已決定） |
-| 寫 component 檔 | YES | NO |
-| 寫 story 檔 | YES（視覺骨架） | YES（BDD-aware，含 `accessible_name_arg`） |
-| 綁 `getByRole(role, { name })` locator | NO | YES |
+| 寫 `<id>.tsx` | YES（完整 Tailwind + variant conditional） | YES（依 caller `render_hints`） |
+| 寫 `<id>.stories.tsx` | YES（含 boundary I4 `accessible_name_arg`） | YES（含 boundary I4 `accessible_name_arg`） |
+| 綁 `getByRole(role, { name })` locator | 由下游 red-execute 從 `args` 派生 | 由下游 red-execute 從 `args` 派生 |
 | Storybook 版本 | 10 | 10 |
 | Story import path | `@storybook/nextjs-vite` | `@storybook/nextjs-vite` |
+| Frozen visual contract | 是（green 不得編輯）| 是（green 不得編輯）|
 
-兩者不互斥：本 skill 寫完 component + 視覺 story 後，下游可由 `aibdd-form-story-spec` 重寫 story 加上
-BDD binding anchor。
+**兩者互斥**：同一 component 不該兩條路徑同時寫。`/aibdd-plan` Phase 3 step 15.3.5 偵測 `.pen` 存在與否
+分流：有 `.pen` 走本 skill；沒有 `.pen` 走 `/aibdd-form-story-spec`。

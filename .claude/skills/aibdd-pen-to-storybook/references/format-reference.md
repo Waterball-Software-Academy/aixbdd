@@ -6,7 +6,7 @@
 
 ## §1 檔案性質
 
-- `.pen` 為 **UTF-8 plain-text JSON**（非 binary、非 zip）；可用 `jq` / `node` / `cat` 直接讀。
+- `.pen` 為 **UTF-8 plain-text JSON**（非 binary、非 zip）；可用 `python3 scripts/python/pen_query.py` / `node` / `cat` 直接讀。本 skill SOP 一律走 `pen_query.py` wrapper，不再依賴 `jq` 命令。
 - `Document.version` 為 `"2.x"` 字串；新增屬性向後相容。當前文件版本為 `"2.10"`，真實檔案可能已 `"2.11"`+。
 - 任何 `id` **MUST NOT** 含 `/` — slash 在 `ref.descendants` path 內保留。
 

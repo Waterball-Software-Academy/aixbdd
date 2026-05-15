@@ -12,7 +12,8 @@
     "bddgen": "bddgen",
     "test:e2e": "bddgen && playwright test",
     "test:e2e:ui": "bddgen && playwright test --ui",
-    "test:e2e:report": "playwright show-report"
+    "test:e2e:report": "playwright show-report",
+    "schemas:check": "node scripts/check-schema-gate.mjs"
   },
   "dependencies": {
     "next": "16.2.6",

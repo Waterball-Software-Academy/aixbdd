@@ -1,14 +1,14 @@
 ---
-name: aibdd-uiux-discovery-lite
-description: 從 /aibdd-discovery 產出機械推導 happy-path-only 視覺 brief：只納入 .feature 明確提到的畫面，或沒有明確畫面時每個 feature 的第一條 happy/success Scenario；只畫 primary/canonical 狀態，不展開錯誤、拒絕、loading、hover/active 等全狀態矩陣。emit design/uiux-prompt.md + design/style-profile.yml，可交給 /aibdd-uiux-draw 產 minimal design.pen。TRIGGER when 使用者下 /aibdd-uiux-discovery-lite、想先畫 happy path、MVP 視覺草圖、或覺得 /aibdd-uiux-discovery 畫太多情況。SKIP when 需要完整 state coverage、錯誤/空狀態設計、或 feature 未完成。
+name: aibdd-uiux-design-lite
+description: 從 /aibdd-discovery 產出機械推導 happy-path-only 視覺 brief：只納入 .feature 明確提到的畫面，或沒有明確畫面時每個 feature 的第一條 happy/success Scenario；只畫 primary/canonical 狀態，不展開錯誤、拒絕、loading、hover/active 等全狀態矩陣。emit design/uiux-prompt.md + design/style-profile.yml，可交給 /aibdd-uiux-draw 產 minimal design.pen。TRIGGER when 使用者下 /aibdd-uiux-design-lite、想先畫 happy path、MVP 視覺草圖、或覺得 /aibdd-uiux-design 畫太多情況。SKIP when 需要完整 state coverage、錯誤/空狀態設計、或 feature 未完成。
 metadata:
   user-invocable: true
   source: project-level dogfooding
 ---
 
-# aibdd-uiux-discovery-lite
+# aibdd-uiux-design-lite
 
-Happy-path 視覺探索規劃器｜從 `/aibdd-discovery` 產物推導 **feature-mentioned screens only** 的最小 Pencil brief。它保留下游需要的三個合約 section（`COMPONENT CATALOG` / `FRAME COMPOSITION TABLE` / `ANCHOR NAME TABLE`），但把 component state 收斂成 primary/canonical 狀態，避免完整 `/aibdd-uiux-discovery` 的 component × state 展開造成畫面爆炸。
+Happy-path 視覺探索規劃器｜從 `/aibdd-discovery` 產物推導 **feature-mentioned screens only** 的最小 Pencil brief。它保留下游需要的三個合約 section（`COMPONENT CATALOG` / `FRAME COMPOSITION TABLE` / `ANCHOR NAME TABLE`），但把 component state 收斂成 primary/canonical 狀態，避免完整 `/aibdd-uiux-design` 的 component × state 展開造成畫面爆炸。
 
 <!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
 > **Program-like SKILL.md — self-contained notation**
@@ -117,7 +117,7 @@ references:
 
 3. TLB 必須是 frontend；後端 boundary 直接終止。
    3.1 IF `$$runtime_context.TLB.role` ≠ "frontend":
-       3.1.1 EMIT "目前 TLB 不是 frontend，aibdd-uiux-discovery-lite 不適用" to user
+       3.1.1 EMIT "目前 TLB 不是 frontend，aibdd-uiux-design-lite 不適用" to user
        3.1.2 STOP
 
 4. 把 discovery 產物讀進 bundle。
@@ -149,7 +149,7 @@ references:
    3.1 `$$component_inventory` = DERIVE lite component inventory from `$component_candidates` per [`references/lite-selection-rules.md`](references/lite-selection-rules.md) §5
    3.2 ASSERT every `$$component_inventory[*].states` == one of {`idle`, `filled`, `populated`, `visible`, `selected`, `open`, `pristine`, `primary`}
    3.3 IF assertion fails:
-       3.3.1 EMIT "lite component inventory 混入非 primary state；請改跑 full /aibdd-uiux-discovery 或重新收斂 scope" to user
+       3.3.1 EMIT "lite component inventory 混入非 primary state；請改跑 full /aibdd-uiux-design 或重新收斂 scope" to user
        3.3.2 STOP
 
 4. 依 selected frame 組 frame composition；每 frame 只保留一組 canonical state combo。
@@ -171,7 +171,7 @@ references:
    1.2 `$axes` = EDIT `$axes` ← attach `$$lite_scope` / `$$component_inventory` / `$$frame_composition` / `$$anchor_candidates` as context
 
 2. 組成 clarify-loop payload schema。
-   2.1 `$$clarify_payload` = RENDER clarify-loop payload, vars={round_purpose: "aibdd-uiux-discovery-lite happy-path visual scope", questions: `$axes`, update_mode_hint: "sync"}
+   2.1 `$$clarify_payload` = RENDER clarify-loop payload, vars={round_purpose: "aibdd-uiux-design-lite happy-path visual scope", questions: `$axes`, update_mode_hint: "sync"}
    2.2 ASSERT length(`$$clarify_payload.questions`) ≤ 8
 
 ### Phase 4 — DELEGATE /clarify-loop
@@ -233,14 +233,14 @@ references:
    2.1 `$pen_target_path` = COMPUTE `${SPECS_DIR}/${current_package_slug}/design.pen`
    2.2 `$handoff_msg` = DRAFT 下一步指引 ← `$$prompt_path`, `$pen_target_path`, 語言=zh-TW, 內容必含：
        - 跑 `/aibdd-uiux-draw` 可讀同一份 `${$$prompt_path}` + `${$$profile_path}`；因 brief 是 lite mode，draw 只應照 prompt 畫 selected frames + primary states
-       - 若想補錯誤 / 空狀態 / loading / rejected 狀態，再改跑 `/aibdd-uiux-discovery` full 版重產 brief
+       - 若想補錯誤 / 空狀態 / loading / rejected 狀態，再改跑 `/aibdd-uiux-design` full 版重產 brief
        - 不論走 lite 或 full，下一步都跑 `/aibdd-plan`；plan 從 package root 的 `design.pen` 萃取 I4 anchor / DSL L1 / contract
    2.3 EMIT `$handoff_msg` to user
 
 ## §3 CROSS-REFERENCES
 
 - `/aibdd-discovery` — 上游；產出 spec.md / activities / features / atomic-rules 為本 skill 的 INPUT SSOT
-- `/aibdd-uiux-discovery` — full 版；需要完整 component state matrix / error state coverage 時改用它
+- `/aibdd-uiux-design` — full 版；需要完整 component state matrix / error state coverage 時改用它
 - `/clarify-loop` — DELEGATE 對象；本 skill 只問 lite 必要軸
 - `/aibdd-uiux-draw` — 直接下游；讀 `design/uiux-prompt.md` + `design/style-profile.yml`，依 prompt 的 lite mode 產 `.pen`
 - `/aibdd-plan` — 後續下游；從 package root 讀 `design.pen` 萃取 I4 anchor / DSL L1 / contract

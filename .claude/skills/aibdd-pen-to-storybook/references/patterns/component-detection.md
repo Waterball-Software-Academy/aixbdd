@@ -28,7 +28,7 @@
 子節點結構（type / 數量 / 排列）相同，但 `text.content` 不同：
 
 - 推導 `content` prop（或更語義化的 `label` / `title` / `description`）
-- 結構雷同的判定：`jq` 比對 `.type / .children[] | .type` 序列一致
+- 結構雷同的判定：比對 `.type / .children[] | .type` 序列一致（in-memory tree walk；Phase 5+ 操作的是 Phase 2 已 parse 進 `$$pen_doc` 的 dict，不再 shell-out）
 
 ### H5 — 同 subtree 不同 fill / text-color（state pair）
 
