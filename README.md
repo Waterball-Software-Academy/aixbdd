@@ -111,6 +111,10 @@ Each stage feeds the next. Discovery writes the artifacts plan consumes. Plan re
 | `/aibdd-green-execute` + `/aibdd-green-evaluate` | **Green gate** | Drives product code to passing acceptance without letting fake green or hollow fixes slip through. |
 | `/aibdd-refactor-execute` + `/aibdd-refactor-evaluate` | **Refactor gate** | Improves internal structure while preserving strict acceptance and constitution conformance. |
 | `/aibdd-reconcile` | **Change cascade manager** | Repairs upstream truth from the earliest affected planner and propagates the correction forward. |
+| `/aibdd-discovery-uiux` | **Frontend intent extractor** *(In Development)* | Extracts frontend-specific intent from discovery output, emitting an FE intent bundle and brand seed for downstream UI/UX skills. |
+| `/aibdd-frontend-context-analyze` | **Frontend context analyzer** *(In Development)* | Analyzes the existing frontend codebase to surface component conventions, routing shape, and integration constraints before planning begins. |
+| `/aibdd-uiux-design` | **UI/UX visual planner** *(In Development)* | Derives a component inventory and frame composition map from discovery artifacts, then emits a Pencil-ready prompt and style profile for visual exploration. |
+| `/aibdd-uiux-design-lite` | **UI/UX visual planner (lite)** *(Happy Path Only)* | Lightweight variant of `/aibdd-uiux-design` covering the happy-path visual flow only — suitable for early-stage exploration without full state matrix derivation. |
 
 ## Why This Workflow Wins
 
