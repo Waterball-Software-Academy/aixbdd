@@ -102,15 +102,23 @@ metadata:
 
 1. `$docker_endpoint` = TRIGGER bash `docker context inspect --format '{{.Endpoints.docker.Host}}' 2>/dev/null || true`（取當前 docker context 的 endpoint；找不到 docker CLI 或無 active context 時回空字串）。
 2. BRANCH `$docker_endpoint`
-   `空 或 unix:///var/run/docker.sock` → `$$docker_env_written` = COMPUTE `false`；RETURN（runner 用預設 socket 即可，不需寫 .env）
-   `其他值` → GOTO #1.5.3
-3. TRIGGER bash 在 `$$cwd` 將 `DOCKER_HOST=$docker_endpoint` 寫入 `.env`（若已有舊 `DOCKER_HOST` 行則覆蓋，其他行原樣保留）：
+   `空` → `$$docker_env_written` = COMPUTE `false`；RETURN（沒有 docker CLI 或沒設 active context；當前 goal 的 runner 若不需要 docker 即可繼續，需要時會在 Phase 6.5 preflight 直接失敗）
+   `非空` → GOTO #1.5.3（不論是預設 socket 還是自訂 endpoint，下一步都要先確認 daemon 真的活著）
+3. `$daemon_probe` = TRIGGER bash `docker info --format '{{.ServerVersion}}' 2>&1`（`docker context inspect` 只讀 CLI 設定，不會碰 daemon；必須額外打一次 `docker info` 才知道 Docker Desktop / Colima / OrbStack / Rancher Desktop / Podman daemon 是否真的在跑）。
+4. `$daemon_up` = MATCH `$daemon_probe` 為純版本字串（例如 `27.3.1`）且**不含**任何下列字樣：`Cannot connect to the Docker daemon` / `Is the docker daemon running` / `error during connect` / `connection refused` / `permission denied while trying to connect` / `request returned ... Internal Server Error for API route` — 出現任一即視為 daemon down。
+5. BRANCH `$daemon_up`
+   `false` → STOP with EMIT「Docker engine 未啟動（reason: `docker info` 無法連線到 daemon；當前 context endpoint=${$docker_endpoint}；輸出：${$daemon_probe}）— 請手動啟動 Docker Desktop / Colima / OrbStack / Rancher Desktop / Podman machine 等 docker runtime，並等到 `docker info` 能成功回 ServerVersion 後再重跑 /sf-eval-starter。本 skill 不會代為啟動 docker daemon，因為啟動方式因 runtime 而異且通常需要 GUI 互動 / sudo / 額外授權」
+   `true`  → GOTO #1.5.6
+6. BRANCH `$docker_endpoint`
+   `unix:///var/run/docker.sock` → `$$docker_env_written` = COMPUTE `false`；RETURN（daemon 已確認活著且在預設 socket，runner 用預設值即可，不需寫 .env）
+   `其他值` → GOTO #1.5.7
+7. TRIGGER bash 在 `$$cwd` 將 `DOCKER_HOST=$docker_endpoint` 寫入 `.env`（若已有舊 `DOCKER_HOST` 行則覆蓋，其他行原樣保留）：
    ```bash
    touch .env
    { grep -v '^DOCKER_HOST=' .env 2>/dev/null; printf 'DOCKER_HOST=%s\n' "$docker_endpoint"; } > .env.__sf_tmp && mv .env.__sf_tmp .env
    ```
-4. `$$docker_env_written` = COMPUTE `true`.
-5. ASSERT 若 `$$cwd/.env` 不在 git ignore 範圍 worker 必須提示使用者（避免 commit secrets）；本 skill 不自動寫 `.gitignore`。
+8. `$$docker_env_written` = COMPUTE `true`.
+9. ASSERT 若 `$$cwd/.env` 不在 git ignore 範圍 worker 必須提示使用者（避免 commit secrets）；本 skill 不自動寫 `.gitignore`。
 
 ### Phase 2 — GET_NEXT_GOAL
 > produces: `$$current_goal`
