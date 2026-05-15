@@ -83,7 +83,7 @@ mode: "create" | "overwrite"           # 預設 "create"
 ### 上游
 
 Pencil GUI + MCP — 設計者在 Pencil 內 freeze 設計、`File → Save` 產出 `.pen`。
-`/aibdd-uiux-discovery` + `/aibdd-uiux-draw` 為 `.pen` 的形成路徑。
+`/aibdd-uiux-design` + `/aibdd-uiux-draw` 為 `.pen` 的形成路徑。
 
 ### 直接 caller（DELEGATE 入口）
 

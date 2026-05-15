@@ -2,7 +2,7 @@
 
 > 跨 RP 共用的 frontend 軸定義。本檔由 `reasoning/discovery/04b-frontend-axes.md` 引用，作為 UI verb catalog、anchor 命名、state 軸的單一權威。`reasoning/discovery/05-atomic-rules.md` 在 `frontend_lens` 非空時亦消費本檔 §UI Verb Catalog 與 §Anchor Naming Rules 做 ASSERT。
 >
-> **本檔不負責**：component / frame composition / 視覺 token（皆屬 `aibdd-uiux-discovery`）；本檔只負責讓 atomic rule 在出生時就帶 UI 詞性與 anchor 鉤子。
+> **本檔不負責**：component / frame composition / 視覺 token（皆屬 `aibdd-uiux-design`）；本檔只負責讓 atomic rule 在出生時就帶 UI 詞性與 anchor 鉤子。
 
 ---
 
@@ -132,7 +132,7 @@
 
 ## §5 State Axes
 
-> **SSOT note（重要）**：本節 §5.1 / §5.2 推導出的 `state_axes_hint` 為 **hint only**，作用是讓 04b 產出的 atomic rule 攜帶初步 state 線索給 atomic-rules 階段使用。**State matrix 的 SSOT 在 `aibdd-uiux-discovery/references/state-derivation-rules.md §A2`**；下游 uiux-discovery 不消費本檔的 state_axes_hint，會獨立從 `.feature Rule + .activity DECISION` 重推 component state matrix。
+> **SSOT note（重要）**：本節 §5.1 / §5.2 推導出的 `state_axes_hint` 為 **hint only**，作用是讓 04b 產出的 atomic rule 攜帶初步 state 線索給 atomic-rules 階段使用。**State matrix 的 SSOT 在 `aibdd-uiux-design/references/state-derivation-rules.md §A2`**；下游 uiux-discovery 不消費本檔的 state_axes_hint，會獨立從 `.feature Rule + .activity DECISION` 重推 component state matrix。
 >
 > 本檔 §5.1 / §5.2 規則應與 `state-derivation-rules.md §A2` 保持語義一致；若兩者衝突，**以 state-derivation-rules.md 為準**，並開 PR 修正本檔。`state_axes_hint` 與 uiux-discovery 推導結果不一致時不視為失敗——它只是 atomic rule 撰寫時的提示。
 
@@ -157,7 +157,7 @@
 - `populated` — 一般成功路徑、有資料
 - `pristine` — form 初始未編輯狀態（區別於 idle）
 
-### §5.3 不負責的軸（交給 `aibdd-uiux-discovery`）
+### §5.3 不負責的軸（交給 `aibdd-uiux-design`）
 
 下列軸**不**屬本檔範疇；04b 不為 anchor 推這些屬性：
 - viewport（mobile / tablet / desktop）

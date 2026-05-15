@@ -1,12 +1,12 @@
 ---
-name: aibdd-uiux-discovery
-description: 從 /aibdd-discovery 產出（spec.md / *.activity / *.feature skeleton / atomic rules）機械推導 component-first 視覺結構：先抽 component inventory（含 per-component state matrix）再組 frame composition map（每 frame 用哪些 component + canonical state combo），DELEGATE /clarify-loop 與 user 批次澄清視覺方向 / 元件盤點 / 品牌參考，emit Pencil-ready prompt（design/uiux-prompt.md）+ style profile（design/style-profile.yml）。下游可手動畫 .pen 或委派 /aibdd-uiux-draw 走 Pencil MCP 自動繪製。TRIGGER when 使用者下 /aibdd-uiux-discovery、discovery 完成想開始視覺探索、或被 plan 前流程委派。SKIP when discovery 產物缺失、target boundary 為純後端、已有既有 .pen 上游 SSOT、或 user 明示視覺已鎖（直接用既有 design system）。
+name: aibdd-uiux-design
+description: 從 /aibdd-discovery 產出（spec.md / *.activity / *.feature skeleton / atomic rules）機械推導 component-first 視覺結構：先抽 component inventory（含 per-component state matrix）再組 frame composition map（每 frame 用哪些 component + canonical state combo），DELEGATE /clarify-loop 與 user 批次澄清視覺方向 / 元件盤點 / 品牌參考，emit Pencil-ready prompt（design/uiux-prompt.md）+ style profile（design/style-profile.yml）。下游可手動畫 .pen 或委派 /aibdd-uiux-draw 走 Pencil MCP 自動繪製。TRIGGER when 使用者下 /aibdd-uiux-design、discovery 完成想開始視覺探索、或被 plan 前流程委派。SKIP when discovery 產物缺失、target boundary 為純後端、已有既有 .pen 上游 SSOT、或 user 明示視覺已鎖（直接用既有 design system）。
 metadata:
   user-invocable: true
   source: project-level dogfooding
 ---
 
-# aibdd-uiux-discovery
+# aibdd-uiux-design
 
 視覺探索規劃器（component-first v2）｜從 /aibdd-discovery 產出機械推導兩個關鍵結構 — **component inventory（含 per-component state matrix）+ frame composition map（每 frame 用哪些 component + canonical state combo）**；DELEGATE /clarify-loop 補齊使用者未講清楚的視覺維度；emit 一份 Pencil-ready 設計 brief（design/uiux-prompt.md）+ tokens 提案（design/style-profile.yml）。下游可手動畫 `.pen` 或委派 `/aibdd-uiux-draw` 透過 Pencil MCP 自動繪製。
 
@@ -119,7 +119,7 @@ references:
 
 4. TLB 必須是 frontend；後端 boundary 直接終止。
    4.1 IF `$$runtime_context.TLB.role` ≠ "frontend":
-       4.1.1 EMIT "目前 TLB 不是 frontend，aibdd-uiux-discovery 不適用" to user
+       4.1.1 EMIT "目前 TLB 不是 frontend，aibdd-uiux-design 不適用" to user
        4.1.2 STOP
 
 5. 把 discovery 產物全部讀進 bundle。
@@ -173,7 +173,7 @@ references:
    1.2 `$axes` = EDIT `$axes` ← attach `$$component_inventory` / `$$frame_composition` / `$$anchor_candidates` 為各題 context（讓 user 看到目前 derive 的當前資訊再回答）；§3 component inventory 與 §6 frame composition 為 v2 必答軸
 
 2. 組成 clarify-loop payload schema。
-   2.1 `$$clarify_payload` = RENDER clarify-loop payload, vars={round_purpose: "aibdd-uiux-discovery visual axes (component-first)", questions: `$axes`, update_mode_hint: "sync"}
+   2.1 `$$clarify_payload` = RENDER clarify-loop payload, vars={round_purpose: "aibdd-uiux-design visual axes (component-first)", questions: `$axes`, update_mode_hint: "sync"}
    2.2 ASSERT length(`$$clarify_payload.questions`) ≤ 16   # clarify-loop 會自動分 Sub-round（每 round ≤ 4 題）
 
 ### Phase 4 — DELEGATE /clarify-loop

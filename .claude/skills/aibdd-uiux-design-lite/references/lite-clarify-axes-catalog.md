@@ -1,6 +1,6 @@
 # Lite Clarify Axes Catalog
 
-Lite 版澄清題只補足能畫 happy path 的必要資訊。禁止把 full `/aibdd-uiux-discovery` 的 9 軸完整搬回來。
+Lite 版澄清題只補足能畫 happy path 的必要資訊。禁止把 full `/aibdd-uiux-design` 的 9 軸完整搬回來。
 
 ## §1 Scope confirmation
 

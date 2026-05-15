@@ -44,7 +44,7 @@ downstream:
 
 # Frontend Axes 草稿
 
-從 activity actions 機械推導出 atomic-rules 撰寫時可用的 UI 動詞集 + 每個 action 的 anchor 候選；強迫後續 rule 草稿在純前端 boundary 下不退化成 backend command 的轉錄。本 RP **不**承擔視覺設計（component / state matrix / frame composition 由下游 `/aibdd-uiux-discovery` 負責）；本 RP 只負責**讓 rule 出生時就帶 UI 詞性與 anchor 鉤子**。
+從 activity actions 機械推導出 atomic-rules 撰寫時可用的 UI 動詞集 + 每個 action 的 anchor 候選；強迫後續 rule 草稿在純前端 boundary 下不退化成 backend command 的轉錄。本 RP **不**承擔視覺設計（component / state matrix / frame composition 由下游 `/aibdd-uiux-design` 負責）；本 RP 只負責**讓 rule 出生時就帶 UI 詞性與 anchor 鉤子**。
 
 ## 1. Material Sourcing
 

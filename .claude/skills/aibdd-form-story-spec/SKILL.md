@@ -344,7 +344,7 @@ references:
 ## §3 CROSS-REFERENCES
 
 - `/aibdd-discovery` — upstream UI flow 收斂；留下 component / state hint 給前端 component-modeling planner。
-- `/aibdd-uiux-discovery` — **非本 skill 的上游**；該 skill emit `design/uiux-prompt.md` + `design/style-profile.yml` 引導 user 在 Pencil 落 `design.pen` 後，design pipeline 改走 `/aibdd-pen-to-storybook` 一條龍，不走本 skill。
+- `/aibdd-uiux-design` — **非本 skill 的上游**；該 skill emit `design/uiux-prompt.md` + `design/style-profile.yml` 引導 user 在 Pencil 落 `design.pen` 後，design pipeline 改走 `/aibdd-pen-to-storybook` 一條龍，不走本 skill。
 - `/aibdd-pen-to-storybook`（**producer skill** — design pipeline 兄弟）— 與本 skill **互斥的平行路徑**：
   - 該 skill 處理「有 `.pen`」的場景（design-source pipeline），直接從 `.pen` 寫 `<id>.tsx` + `<id>.stories.tsx`
   - 本 skill 處理「無 `.pen`」的場景（caller-driven pipeline），從 Planner 推理包寫雙產出

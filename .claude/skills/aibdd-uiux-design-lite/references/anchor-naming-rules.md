@@ -1,6 +1,6 @@
 # Anchor Naming Rules — lite component-keyed accessible names
 
-Lite 版沿用 full `aibdd-uiux-discovery` 的 component-keyed anchor contract，但只針對 lite scope 內的 interactive components。
+Lite 版沿用 full `aibdd-uiux-design` 的 component-keyed anchor contract，但只針對 lite scope 內的 interactive components。
 
 ## §1 候選來源
 

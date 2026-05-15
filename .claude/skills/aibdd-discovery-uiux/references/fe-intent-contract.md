@@ -17,7 +17,7 @@
 | `scope_inclusion` | list<ScopeDecision> | 對每個 has-ui op 是否納入本輪 FE scope（intent=include / exclude / defer） |
 | `actor_split` | list<ActorSplit> | 同一 BE actor 在 UX 上的人設細分（first-time / returning / suspended 等） |
 | `ux_only_flows` | list<UXOnlyFlow> | raw idea 提到但 BE 無對應 op 的 UX-only userflow（filter / sort / client search） |
-| `brand_seed` | BrandSeed \| null | 為下游 `/aibdd-uiux-discovery` 鋪錨點；可空 |
+| `brand_seed` | BrandSeed \| null | 為下游 `/aibdd-uiux-design` 鋪錨點；可空 |
 | `clarify_payload` | ClarifyPayload | Seam 0 待澄清題組（依 [`aibdd-discovery::references/turn-discipline.md`](aibdd-discovery::references/turn-discipline.md) clarify-loop schema） |
 
 ### §1.1 sub-element shapes
@@ -72,7 +72,7 @@ BrandSeed:
 | `intent-composition` | has-ui ops ≥ 2 且 raw idea 未給組合線索 | 「`${op_id_list}` 要合在同 page 還是分開？」 | one-page / wizard / branch-by-entry / multi-page / OTHER |
 | `intent-actor-split` | BE actor=end-user 但 raw idea 暗示分眾 | 「`end-user` 是否需要 split 成 first-time / returning？」 | yes-list-personas / no-single-persona / OTHER |
 | `intent-state-priority` | raw idea 未提錯誤 / 空狀態 / loading 語氣 | 「error / empty / loading / partial 哪幾類必納入 must-cover？」 | multi-select 4 enum + OTHER |
-| `intent-brand-seed` | 為下游 `/aibdd-uiux-discovery` 鋪錨點且 raw idea 無視覺指引 | 「視覺風格錨點？」 | editorial / brutalism / luxury / neutral / OTHER |
+| `intent-brand-seed` | 為下游 `/aibdd-uiux-design` 鋪錨點且 raw idea 無視覺指引 | 「視覺風格錨點？」 | editorial / brutalism / luxury / neutral / OTHER |
 
 > **invariant**：Seam 0 提問內容只屬「FE 範疇收斂」軸；**禁出現** BE truth 修改類選項（黑名單詞彙見 [`be-gap-handling.md`](be-gap-handling.md) §3）。
 
@@ -102,7 +102,7 @@ BrandSeed:
 | `02-operation-classify` | `scope_inclusion` | classification tie-breaker：intent=exclude ∧ BE has-ui 訊號 → 強制 ambiguous（不得 silent has-ui） |
 | `03-userflow-derive` | `page_composition` / `navigation_topology` / `ux_only_flows` / `actor_split` | userflow N:1 / 1:N 組裝；ux_only_flows 物化為 UATFlow with `be_op_id: null`；actor_split 寫進 UATFlow.actor |
 | `04-fe-atomic-rules` | `state_axis_priority` | coverage matrix 權重；must-cover 缺漏才開 Seam C 題；skip 不入 gap |
-| `06 / Phase 6 report` | `brand_seed` | 報告 pointer，供下游 `/aibdd-uiux-discovery` 參考 |
+| `06 / Phase 6 report` | `brand_seed` | 報告 pointer，供下游 `/aibdd-uiux-design` 參考 |
 
 > **invariant**：下游 RP 不得「跳過 intent」直接套 BE truth；缺 intent 時必須在 reducer 標 `cic` 並回 Seam 0 重跑。
 
@@ -130,4 +130,4 @@ BrandSeed:
 - 「has-ui / no-ui rubric」 — 屬 [`be-to-fe-mapping.md`](be-to-fe-mapping.md)
 - 「Rule 句型 / verification mode」 — 屬 [`verification-semantics-presets.md`](verification-semantics-presets.md)
 - 「coverage gap 細節規則」 — 屬 [`userflow-rule-coverage.md`](userflow-rule-coverage.md)
-- 「`/aibdd-uiux-discovery` 視覺探索」 — 屬該 sibling skill，本檔只提供 brand_seed 鋪錨
+- 「`/aibdd-uiux-design` 視覺探索」 — 屬該 sibling skill，本檔只提供 brand_seed 鋪錨

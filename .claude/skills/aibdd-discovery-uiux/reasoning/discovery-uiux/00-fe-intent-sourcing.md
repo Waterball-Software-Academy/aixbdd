@@ -162,7 +162,7 @@ modeling_element_definition:
         loading: enum
         partial: enum
     BrandSeed:
-      role: "為下游 /aibdd-uiux-discovery 提供視覺探索錨點"
+      role: "為下游 /aibdd-uiux-design 提供視覺探索錨點"
       fields:
         visual_direction: string
         density: enum                    # compact | comfortable | spacious | unknown

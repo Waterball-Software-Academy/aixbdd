@@ -482,7 +482,7 @@ Planner 禁止 self-judge — DELEGATE 至獨立 subagent，依下表 rubric 評
 - 下游 contract 鏡像責任：Phase 1 §6 把 sibling BE `contracts/api.yml` 鏡像進 FE `${SPECS_ROOT_DIR}/${TLB.id}/contracts/api.yml` 並寫 `.source-hash`；`nextjs-storybook-cucumber-e2e` template pre-red §3.0 freshness gate 依賴此鏡像
 - DELEGATE `/aibdd-form-activity` + `/aibdd-form-feature-spec` — 落檔 formulation skills
 - DELEGATE `/clarify-loop` — 7 個觸發點：missing-field（UIUX_BACKEND_BOUNDARY_ID）/ Seam 0' BE-gap FE-side supplementation（Phase 2 §3）/ Seam 0 FE intent（Phase 2 §4）/ Seam A classification（Phase 2 §6）/ Seam B uat-flow+frontend-lens（Phase 2 §8）/ Seam C atomic-rule coverage（Phase 3）/ Phase 5 殘留 sweep；題組沿用既有 schema，每次呼叫前必先落 draft 檔（File-first invariant）。Seam 0' 題型必為 FE-side supplementation；禁 BE-mutation 選項（[`references/be-gap-handling.md`](references/be-gap-handling.md) §3 黑名單）
-- 下游：`/aibdd-plan` 進行 technical plan / DSL proposal planning；frontend 場景常接 `/aibdd-uiux-discovery` 做視覺探索後再 `/aibdd-plan`；視覺探索可消費 `$$fe_intent_bundle.brand_seed` 作為起點
+- 下游：`/aibdd-plan` 進行 technical plan / DSL proposal planning；frontend 場景常接 `/aibdd-uiux-design` 做視覺探索後再 `/aibdd-plan`；視覺探索可消費 `$$fe_intent_bundle.brand_seed` 作為起點
 - 共用 scripts（reuse aibdd-discovery）：`kickoff_path_resolve.py` / `bind_plan_package.py` / `grep_sticky_notes.py` / `check_actor_legality.py` / `check_discovery_phase.py` / `check_operation_wise.py` / `check_raw_artifact_alignment.py`
 - 本 skill 私有 scripts：`check_uiux_intent_alignment.py` / `check_no_be_mutation_leak.py`
 - Registry entry 樣板：`assets/registry/entry.yml`

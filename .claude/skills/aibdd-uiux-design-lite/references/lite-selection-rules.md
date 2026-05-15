@@ -1,6 +1,6 @@
 # Lite Selection Rules — happy-path / feature-mentioned visual scope
 
-本檔定義 `aibdd-uiux-discovery-lite` 如何從 discovery 產物收斂成最小可畫 scope。核心原則：**只畫 `.feature` 明確提到的畫面；若沒有明確畫面，才畫每個 feature 的 happy path 主流程**。
+本檔定義 `aibdd-uiux-design-lite` 如何從 discovery 產物收斂成最小可畫 scope。核心原則：**只畫 `.feature` 明確提到的畫面；若沒有明確畫面，才畫每個 feature 的 happy path 主流程**。
 
 ## §1 Explicit screen extraction
 
@@ -113,4 +113,4 @@ frame_composition:
 - component 來源必須來自 selected steps；禁止從 excluded scenario 補 error component。
 - 每個 component 只保留一個 primary/canonical state，除非 selected step 原文明確提到額外 state。
 - frame `uses_components[*].component_id` 必須存在於 `component_inventory[*].id`。
-- lite mode 不負責完整 UX coverage；error/empty/loading/rejected 應交 full `/aibdd-uiux-discovery`。
+- lite mode 不負責完整 UX coverage；error/empty/loading/rejected 應交 full `/aibdd-uiux-design`。

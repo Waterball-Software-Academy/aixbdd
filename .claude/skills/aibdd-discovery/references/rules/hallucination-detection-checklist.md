@@ -145,7 +145,7 @@ CRM fixture：
 | Anchor 自生 | `rule.anchor_hint.anchor_id` 在 `frontend_lens.anchor_candidates` 中找不到（即沒對應到任何 modeled activity action）→ 觸發 |
 | accessible_name 同義改寫 | `rule.anchor_hint.accessible_name` 與 `frontend_lens` 中對應 anchor 的 `source_quote` 在動詞 lemma 上不一致（正規化規則見 frontend-rule-axes §4.2，僅允許大小寫／全半形／空白／中文動賓順序的標準化，禁止動詞替換、名詞替換、補充修飾語、縮寫展開）→ 觸發 |
 | Role 黑名單 | `rule.anchor_hint.role` ∈ {generic, div, span, presentation, none}（見 frontend-rule-axes §4.4）→ 觸發 |
-| Viewport 自生 | rule 中提及 viewport / breakpoint / screen size，但對應 activity 與 raw idea 皆未提及 → 觸發；推至 `aibdd-uiux-discovery` 處理 |
+| Viewport 自生 | rule 中提及 viewport / breakpoint / screen size，但對應 activity 與 raw idea 皆未提及 → 觸發；推至 `aibdd-uiux-design` 處理 |
 
 ### 4.3 觸發後輸出
 

@@ -308,7 +308,7 @@ references:
 
 ## §3 CROSS-REFERENCES
 
-- 上游：Pencil GUI + MCP（探索期）— 設計者 freeze 後產出 `.pen`；`/aibdd-uiux-discovery` ＋ `/aibdd-uiux-draw` 為 `.pen` 的形成路徑。
+- 上游：Pencil GUI + MCP（探索期）— 設計者 freeze 後產出 `.pen`；`/aibdd-uiux-design` ＋ `/aibdd-uiux-draw` 為 `.pen` 的形成路徑。
 - 直接 caller（DELEGATE 入口）：
   - **`/aibdd-plan` Phase 3 design pipeline** — frontend boundary 的 design-source path 改為直接 DELEGATE 本 skill 一條龍。caller payload 含 `pen_path` / `screen_id` / `target_dir`（= `${TRUTH_BOUNDARY_ROOT}/contracts/components/`） / `mode`；本 skill 一次寫完 `<id>.tsx` + `<id>.stories.tsx` 給每個偵測到的 component。
 - 直接下游（消費本 skill 產物）：

@@ -1,6 +1,6 @@
 ---
 name: aibdd-uiux-draw
-description: 從 /aibdd-uiux-discovery 產出的 `design/uiux-prompt.md` + `design/style-profile.yml`，透過 Pencil MCP 自動繪 `.pen`：先 set design tokens 進 document variables，再逐 component scene 畫全 state 變體，再依 frame composition table 組裝 frame scene，並透過 snapshot + screenshot 自檢；偵錯 loop ≤ 3 輪，最後 export 到 `${SPECS_DIR}/${current_package_slug}/design.pen`（package root）。TRIGGER when 使用者下 /aibdd-uiux-draw、或 /aibdd-uiux-discovery 結尾選路徑 A（自動繪製）。SKIP when 上游 brief 缺失（COMPONENT CATALOG / FRAME COMPOSITION / ANCHOR NAME TABLE 任一 ASSERT 不過）、Pencil MCP 不可用、或 user 明示要手動畫（路徑 B）。
+description: 從 /aibdd-uiux-design 產出的 `design/uiux-prompt.md` + `design/style-profile.yml`，透過 Pencil MCP 自動繪 `.pen`：先 set design tokens 進 document variables，再逐 component scene 畫全 state 變體，再依 frame composition table 組裝 frame scene，並透過 snapshot + screenshot 自檢；偵錯 loop ≤ 3 輪，最後 export 到 `${SPECS_DIR}/${current_package_slug}/design.pen`（package root）。TRIGGER when 使用者下 /aibdd-uiux-draw、或 /aibdd-uiux-design 結尾選路徑 A（自動繪製）。SKIP when 上游 brief 缺失（COMPONENT CATALOG / FRAME COMPOSITION / ANCHOR NAME TABLE 任一 ASSERT 不過）、Pencil MCP 不可用、或 user 明示要手動畫（路徑 B）。
 metadata:
   user-invocable: true
   source: project-level dogfooding
@@ -8,7 +8,7 @@ metadata:
 
 # aibdd-uiux-draw
 
-Pencil MCP 自動繪製器（component-first）｜把 `aibdd-uiux-discovery` 產的 brief 翻成 `.pen` design file。每個 component 一個 scene 含全 state 變體；每個 frame 一張組合圖（canonical state combo）；不展開 frame × state，因為下游 `<ComponentId>.stories.tsx` 才是 binding anchor SSOT。
+Pencil MCP 自動繪製器（component-first）｜把 `aibdd-uiux-design` 產的 brief 翻成 `.pen` design file。每個 component 一個 scene 含全 state 變體；每個 frame 一張組合圖（canonical state combo）；不展開 frame × state，因為下游 `<ComponentId>.stories.tsx` 才是 binding anchor SSOT。
 
 <!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
 > **Program-like SKILL.md — self-contained notation**
@@ -102,7 +102,7 @@ references:
    2.2 `$profile_path` = COMPUTE `${SPECS_DIR}/${current_package_slug}/design/style-profile.yml`
    2.3 ASSERT path_exists(`$prompt_path`) ∧ path_exists(`$profile_path`)
    2.4 IF assertion fails:
-       2.4.1 EMIT "uiux brief 缺失；請先跑 /aibdd-uiux-discovery" to user
+       2.4.1 EMIT "uiux brief 缺失；請先跑 /aibdd-uiux-design" to user
        2.4.2 STOP
 
 3. 載入 brief 並對齊上游 v2 結構（必須含三個必達 section）。
@@ -110,7 +110,7 @@ references:
    3.2 `$$profile` = READ `$profile_path`
    3.3 ASSERT `$$brief` contains `## COMPONENT CATALOG` ∧ `## FRAME COMPOSITION TABLE` ∧ `## ANCHOR NAME TABLE`
    3.4 IF assertion fails:
-       3.4.1 EMIT "brief 不是 component-first v2 結構；請重跑 /aibdd-uiux-discovery 再來" to user
+       3.4.1 EMIT "brief 不是 component-first v2 結構；請重跑 /aibdd-uiux-design 再來" to user
        3.4.2 STOP
 
 4. TLB 必須是 frontend；否則終止。
@@ -141,7 +141,7 @@ references:
    5.1 ASSERT `$$anchor_table[*].component_id` ⊆ `$$component_specs[*].component_id`
    5.2 ASSERT `$$frame_specs[*].uses[*].component_id` ⊆ `$$component_specs[*].component_id`
    5.3 IF any assertion fails:
-       5.3.1 EMIT "brief 內三個 table 的 component_id 命名空間不一致；請回 /aibdd-uiux-discovery 重出 brief" to user
+       5.3.1 EMIT "brief 內三個 table 的 component_id 命名空間不一致；請回 /aibdd-uiux-design 重出 brief" to user
        5.3.2 STOP
 
 ### Phase 3 — INIT Pencil document + load tokens
@@ -260,7 +260,7 @@ references:
 
 ## §3 CROSS-REFERENCES
 
-- `/aibdd-uiux-discovery` — 直接上游；產出 `design/uiux-prompt.md` + `design/style-profile.yml` 為本 skill 的 INPUT SSOT
+- `/aibdd-uiux-design` — 直接上游；產出 `design/uiux-prompt.md` + `design/style-profile.yml` 為本 skill 的 INPUT SSOT
 - `/aibdd-plan` — 下游；讀本 skill 產的 `design.pen` 萃取 I4 anchor / DSL L1 / contract
 - `/aibdd-pen-to-storybook` — 下下游 **producer skill**；負責 `.pen → <ComponentId>.tsx + <ComponentId>.stories.tsx` 一條龍翻譯（含完整 Tailwind 4 className 與 variant-conditional 渲染）。`/aibdd-form-story-spec` 為平行路徑（caller-driven，無 `.pen`），本 skill 出來後不走它。
 
