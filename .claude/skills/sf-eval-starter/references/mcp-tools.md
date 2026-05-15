@@ -18,7 +18,22 @@
 
 ### `project_path` 參數
 
-Worker 當前 CWD 的 absolute path。MCP `initialize` handshake 只帶 `clientInfo`，不帶 project context；server 用此參數路由到對應 evaluator session。每個 project 至多一個 active evaluator，跨 project 不會互相串台。傳錯／傳到沒有 evaluator 的 project → 回 `NO_ACTIVE_EVALUATOR_SESSION` tool error；缺漏 → 回 `MISSING_PROJECT_PATH` tool error。
+Worker 當前 CWD 的 absolute path。MCP `initialize` handshake 只帶 `clientInfo`，不帶 project context；server 用此參數路由到對應 evaluator session。每個 project 至多一個 active evaluator，跨 project 不會互相串台。
+
+支援的形式（server 端 `normalizeProjectPath` 會把後兩種 POSIX-shaped Windows 路徑折回 native Windows 形式後再比對，三種寫法都會匹配到同一個 evaluator session）：
+
+| 來源 shell | 命令 | 範例 |
+|---|---|---|
+| Windows PowerShell | `(Get-Location).Path` | `C:\Users\foo\proj` |
+| POSIX shell（bash / zsh / Git Bash） | `pwd` | `/Users/foo/proj`（macOS / Linux）／ `/c/Users/foo/proj`（Windows Git Bash） |
+| WSL | `pwd` | `/mnt/c/Users/foo/proj` |
+
+其他 shell 的格式（cmd `cd` 的 `Microsoft.PowerShell.Core\FileSystem::` provider prefix、Cygwin `/cygdrive/c/...`、UNC `\\server\share\...`、相對路徑、含 `..` segment）一律不支援，server 會回 `INVALID_PROJECT_PATH` tool error。
+
+錯誤碼一覽：
+- 缺漏 → `MISSING_PROJECT_PATH`
+- 格式不支援（含 ` `、`..`、相對路徑、不認得的 shell 形式）→ `INVALID_PROJECT_PATH`
+- 形式合法但該 project 沒有 active evaluator → `NO_ACTIVE_EVALUATOR_SESSION`
 
 ### Output 形態
 

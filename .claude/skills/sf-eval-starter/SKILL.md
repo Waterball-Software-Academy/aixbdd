@@ -92,7 +92,16 @@ metadata:
    `true`  → GOTO #1.7
    `false` → GOTO #1.6
 6. STOP with EMIT "SF MCP 未就緒（reason: aibdd-*-execute sub-skill 不存在於 worker project 的 .claude/skills/）".
-7. `$$cwd` = TRIGGER `pwd`（一次取得 absolute path，後續 phases 重用）；ASSERT 為 absolute path（以 `/` 開頭），on failure STOP with EMIT "SF MCP 未就緒（reason: 取得 worker CWD 失敗，無法路由到對應 evaluator session）".
+7. `$$cwd` = TRIGGER 取得 worker CWD 的 absolute path（後續 phases 重用）。依當前 shell 選對應命令：
+   - POSIX shell（bash / zsh / Git Bash / WSL）→ `pwd`
+   - Windows PowerShell → `(Get-Location).Path`
+
+   ASSERT 結果為下列三種 absolute path 形式之一（server 端 `normalizeProjectPath` 會把後兩種折回 native Windows 形式，三種寫法都可被 MCP 路由）：
+   - POSIX 絕對路徑 `/...`（macOS / Linux pwd、或 Windows Git Bash pwd 的 `/c/...` 形式）
+   - Windows 原生 `${letter}:\...`（PowerShell `(Get-Location).Path`）
+   - WSL `/mnt/${letter}/...`（WSL pwd）
+
+   on failure STOP with EMIT "SF MCP 未就緒（reason: 取得 worker CWD 失敗，無法路由到對應 evaluator session）".
 8. `$$boot_ok` = COMPUTE `true`.
 
 ### Phase 1.5 — DOCKER_ENV_PREP
