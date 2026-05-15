@@ -1,465 +1,62 @@
----
-name: aibdd-plan
-description: Technical planning orchestrator for the new AIBDD packing model. Reads Discovery truth, updates owner-scoped boundary truth, plans external/internal implementation, synthesizes local/shared DSL truth, and hands off exact inputs to /aibdd-spec-by-example-analyze. DSL physical mapping is handled as an internal reasoning phase.
-metadata:
-  user-invocable: true
-  source: project-level dogfooding
-  skill-type: planner
----
+# AIxBDD - Plan
 
-# aibdd-plan
+嚴格遵照底下 Principles 來執行 SOP。
 
-Plan technical boundary truth and red-usable DSL mappings from accepted Discovery artifacts without creating shadow truth.
+## PRINCIPLE: CWD 為產出錨點
 
-<!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
-> **Program-like SKILL.md — self-contained notation**
->
-> **3 verb classes** (type auto-derived from verb name):
-> - **D** = Deterministic — no LLM judgment required; future scripting candidate
-> - **S** = Semantic — LLM reasoning required
-> - **I** = Interactive — yields turn to user
->
-> **Yield discipline** (executor 鐵律): **ONLY** `I` verbs yield turn to the user. `D` and `S` verbs MUST NOT pause for user reaction. In particular:
-> - `EMIT $x to user` is **fire-and-forget** — continue immediately to the next step; do not wait for acknowledgment.
-> - `WRITE` / `CREATE` / `DELETE` are side effects, **not** phase boundaries — execution continues to the next sub-step.
-> - Phase transitions (Phase N → Phase N+1) and sub-step transitions are **non-yielding**.
-> - Mid-SOP messages of the form 「要繼續嗎？」/「先 review 一下？」/「先 checkpoint？」/「先停下來確認？」/「want me to proceed?」/「should I continue?」are **FORBIDDEN**. The ONLY way to ask the user is an `[USER INTERACTION] $reply = ASK ...` step.
-> - `STOP` / `RETURN` are terminations, not yields — no next step follows.
->
-> **SSA bindings**: `$x = VERB args` (productive steps name their output);
-> `$x` is phase-local; `$$x` crosses phases (declared in phase header's `> produces:` line).
->
-> **Side effect**: `VERB target ← $payload` — `←` arrow = "write into target".
->
-> **Control flow**: `BRANCH $check ? then : else` (binary) or indented arms (multi);
-> `GOTO #N.M` = jump to Phase N step M (literal `#phase.step`).
->
-> **Canonical verb table** (T = D / S / I):
->
-> | Verb | T | Meaning |
-> |---|---|---|
-> | READ | D | 讀檔 → bytes / text |
-> | WRITE | D | 寫檔（內容已備好） |
-> | CREATE | D | 建立目錄 / 空檔 |
-> | DELETE | D | 刪檔（rollback） |
-> | COMPUTE | D | 純運算 |
-> | DERIVE | D | 從既定規則推算 |
-> | PARSE | D | 字串 → in-memory 結構 |
-> | RENDER | D | template + vars → string |
-> | ASSERT | D | 斷言 invariant；fail-stop |
-> | MATCH | D | regex / pattern 比對 |
-> | TRIGGER | D | 啟動 process / subagent / tool / script；output 可 bind |
-> | DELEGATE | D | 呼叫其他 skill |
-> | MARK | D | 紀錄狀態（譬如 TodoWrite） |
-> | BRANCH | D | 分支（吃 `$check` / `$kind` binding） |
-> | GOTO | D | 跳 `#phase.step` literal |
-> | IF / ELSE / END IF | D | 條件 sub-step |
-> | LOOP / END LOOP | D | 迴圈（必標 budget + exit） |
-> | RETURN | D | 提前結束 phase |
-> | STOP | D | 終止整個 skill |
-> | EMIT | D | 輸出已生成資料（fire-and-forget；**不 yield**，continue 下一 step） |
-> | WAIT | D | 等待已 spawn 的 process |
-> | THINK | S | 內部判斷（不印 user） |
-> | CLASSIFY | S | 多類別分類 → enum 之一 |
-> | JUDGE | S | 二元語意判斷 |
-> | DECIDE | S | 從 user reply / context 推結論 |
-> | DRAFT | S | 生成 prose / 訊息 |
-> | EDIT | S | LLM 推 patch 改既有檔 |
-> | PARAPHRASE | S | 改寫 / 翻譯 prose |
-> | CRITIQUE | S | 批評 / 建議 |
-> | SUMMARIZE | S | 抽取重點 |
-> | EXPLAIN | S | 對 user 解釋 why |
-> | ASK | I | 問 user 等回應（仍配 `[USER INTERACTION]` tag）；**唯一允許 yield turn 給 user 的 verb**。**Planner-level skill** 對 user 的提問**必須 `DELEGATE /clarify-loop`**，不得直接 `ASK`（其他角色的 skill 自決）。 |
-<!-- VERB-GLOSSARY:END -->
+- 本 skill 與其 sub-SOP **所有經授權產生或修改的 artifact**，**一律**落在當次執行的工作目錄 **`CWD`** 所涵蓋之專案／規格樹內（相對路徑自 **`CWD`** 解析；本檔所列 `${SPECS_ROOT_DIR}`、`${CURRENT_PLAN_PACKAGE}`、`${TRUTH_BOUNDARY_ROOT}`、`${TRUTH_FUNCTION_PACKAGE}`、`${BOUNDARY_PACKAGE_DSL}`、`${BOUNDARY_SHARED_DSL}`、`${TEST_STRATEGY_FILE}` 等皆以 **`CWD`** 為錨。
+- 【嚴禁】把應屬本流程的產物寫到 **`CWD` 外**的任意絕對路徑，或以「方便」為由落到未載明於當步 SOP 的其他根目錄。
 
-## §1 REFERENCES
+## PRINCIPLE: Artifact output contract（硬限制）
 
-```yaml
-references:
-  - path: references/role-and-contract.md
-    purpose: Role, inputs, outputs, explicit non-goals, and completion contract.
-  - path: references/path-contract.md
-    purpose: arguments.yml keys, resolved paths, fallback rules, and no-overload path contract.
-  - path: references/truth-ownership.md
-    purpose: Owner-scoped truth writes and no-shadow-truth rules.
-  - path: references/technical-truth-rules.md
-    purpose: Boundary map, provider contract, data/state, and test strategy rules.
-  - path: references/implementation-planning-rules.md
-    purpose: Sequence diagram and internal structure planning rules.
-  - path: references/dsl-output-contract.md
-    purpose: DSL L1-L4, bindings, external stub, fixture upload, and red-usability contract.
-  - path: references/impacted-feature-files-contract.md
-    purpose: Defines how plan.md records the current plan package's impacted feature files for downstream task planning.
-  - path: references/forbidden-mutations.md
-    purpose: Artifacts and responsibilities this skill must not mutate.
-  - path: references/quality-gate-contract.md
-    purpose: Self-contained semantic quality gate rubric and verdict shape.
-  - path: references/backend-preset-contract.md
-    purpose: 本 skill 對 web-backend boundary 的 preset 使用契約（指向 aibdd-core SSOT）。
-  - path: references/frontend-preset-contract.md
-    purpose: 本 skill 對 web-frontend boundary 的 preset 使用契約（指向 aibdd-core SSOT）。
-  - path: references/sentence-parts-framework.md
-    purpose: Legacy tombstone — sentence-parts SSOT 已搬到 aibdd-core/assets/boundaries/web-backend/handler-routing.yml；保留以避免重新發明。
-  - path: assets/templates/plan-md.template.md
-    purpose: Plan package technical plan template.
-  - path: assets/templates/research-md.template.md
-    purpose: Planning research and trade-off record template.
-  - path: assets/templates/dsl-entry.template.yml
-    purpose: DSL entry skeleton used when rendering local/shared DSL truth.
-  - path: ../aibdd-reconcile/references/planner-handoff-contract.md
-    purpose: Optional reconcile caller payload schema for `plan.md` narrative injection.
-  - path: aibdd-core::spec-package-paths.md
-    purpose: Boundary-aware plan/truth path semantics and argument keys.
-  - path: aibdd-core::physical-first-principle.md
-    purpose: Physical mapping discipline for DSL L4 surfaces.
-  - path: aibdd-core::preset-contract/web-backend.md
-    purpose: Preset rule instance；物理 routing SSOT：aibdd-core/assets/boundaries/web-backend/handler-routing.yml。
-  - path: aibdd-core::preset-contract/web-frontend.md
-    purpose: Preset rule instance；物理 routing SSOT：aibdd-core/assets/boundaries/web-frontend/handler-routing.yml。
-  - path: aibdd-core::diagram-file-naming.md
-    purpose: Mermaid compound extensions for sequence/class diagram filenames.
-  - path: aibdd-core::boundary-profile-contract.md
-    purpose: Boundary type profile, state specifier, and operation contract specifier dispatch.
-```
+- 本 SOP **唯一允許產生或修改**的 artifact，**只能**來自於下述 SOP 中透過 CREATE / WRITE / UPDATE / DELEGATE 明確標注的產出物。
+- 【嚴禁】除上述 target 外，**其他任何 READ / SEARCH / THINK / DERIVE 所觀察到的路徑，都只可作為分析依據，不得被順手建立、寫入、更新或補骨架。**
 
-| ID | Path | Phase scope | Purpose |
-|---|---|---|---|
-| R1 | `aibdd-core::spec-package-paths.md` | global | Boundary-aware plan/truth path semantics and argument keys. |
-| R2 | `aibdd-core::physical-first-principle.md` | Phase 6 | Physical mapping discipline for DSL L4 surfaces. |
-| R3 | `references/role-and-contract.md` | global | Role, inputs, outputs, explicit non-goals, and completion contract. |
-| R4 | `references/path-contract.md` | Phase 1 | `arguments.yml` keys, resolved paths, fallback rules, and no-overload path contract. |
-| R5 | `references/truth-ownership.md` | Phase 3 + Phase 6 | Owner-scoped truth writes and no-shadow-truth rules. |
-| R6 | `references/technical-truth-rules.md` | Phase 3 + Phase 4 | Boundary map, provider contract, data/state, and test strategy rules. |
-| R7 | `references/implementation-planning-rules.md` | Phase 5 | Sequence diagram and internal structure planning rules. |
-| R8 | `references/dsl-output-contract.md` | Phase 6 + Phase 7 | DSL L1-L4, bindings, external stub, fixture upload, and red-usability contract. |
-| R9 | `references/impacted-feature-files-contract.md` | Phase 3 + Phase 8 | Defines how plan.md records the current plan package's impacted feature files for downstream task planning. |
-| R10 | `aibdd-core::preset-contract/web-backend.md` | Phase 6 | Preset rule instance；物理 routing SSOT：`aibdd-core/assets/boundaries/web-backend/handler-routing.yml`。 |
-| R10F | `aibdd-core::preset-contract/web-frontend.md` | Phase 6 | Preset rule instance（frontend 對偶）；物理 routing SSOT：`aibdd-core/assets/boundaries/web-frontend/handler-routing.yml`。 |
-| R11 | `references/forbidden-mutations.md` | global | Artifacts and responsibilities this skill must not mutate. |
-| R12 | `references/quality-gate-contract.md` | Phase 7 | Self-contained semantic quality gate rubric and verdict shape. |
-| R13 | `assets/templates/plan-md.template.md` | Phase 3 + Phase 8 | Plan package technical plan template. |
-| R14 | `assets/templates/research-md.template.md` | Phase 3 + Phase 8 | Planning research and trade-off record template. |
-| R15 | `assets/templates/dsl-entry.template.yml` | Phase 6 | DSL entry skeleton used when rendering local/shared DSL truth. |
-| R16 | `aibdd-core::diagram-file-naming.md` | Phase 5 | Mermaid compound extensions for sequence/class diagram filenames. |
-| R17 | `aibdd-core::boundary-profile-contract.md` | Phase 2 + Phase 3 | Boundary type profile, state specifier, operation contract specifier, and component contract specifier dispatch. |
-| R17S | `.claude/skills/aibdd-form-story-spec/references/role-and-contract.md` | Phase 3 (step 15.5) | Caller payload schema for `/aibdd-form-story-spec` DELEGATE (used when component_contract_specifier.skill = /aibdd-form-story-spec). v2 schema：`target_dir` 取代 `target_path`；`component.props` + `component.render_hints` 為新必填欄位。 |
-| R20  | `reasoning/aibdd-plan/07-component-design-merge.md` | Phase 3 (step 15.3) | Component design × spec merge reasoning artifact；frontend boundary 跑此 RP 把 features × activities × design.pen (adapter) × uiux-prompt 合成 enriched `$$boundary_delta.components`，供 step 15.5 DELEGATE form-story-spec 使用。 |
-| R21  | `aibdd-pen-to-storybook` (adapter skill) | Phase 3 (step 15.3) | Read-only Pencil .pen adapter；step 15.3.5 透過 DELEGATE 取 `component_table + tokens` 作 reasoning/07 的 design 來源輸入。 |
-| R18 | `.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml` | Phase 6 | Boundary preset routing SSOT（routes keyword → sentence_part/handler，`handlers.*` L4 binding 要求）；DSL 合成前必讀。 |
-| R18F | `.claude/skills/aibdd-core/assets/boundaries/web-frontend/handler-routing.yml` | Phase 6 | Boundary preset routing SSOT（frontend 對偶；含 4 條 boundary-level invariants I1–I4）；DSL 合成前必讀。 |
-| R19 | `.claude/skills/aibdd-reconcile/references/planner-handoff-contract.md` | Phase 1 + Phase 3 | Optional reconcile caller payload schema for `plan.md` narrative injection. |
+## PRINCIPLE: 不重畫 Discovery 真相
 
-## §2 SOP
+- Discovery 已 accepted 的 `${ACTIVITIES_DIR}/**`、rule-only `${FEATURE_SPECS_DIR}/**`、actor 目錄、`${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${PLAN_SPEC}` 之需求全文 **為唯讀輸入**；本 skill **不得**改寫任何 activity／feature 內容、不得改 atomic rule 文字、不得新增 Scenario／Background／Examples。
+- 若發現上游真相不足以推導技術計畫，必須**回頭委派** `/clarify-loop`（profile=`aibdd-plan`），由 Discovery owner 修正後再續跑；**禁止**就地補洞、**禁止**寫弱 placeholder DSL 讓下游 bypass。
 
-### Phase 1 — BIND planning context
-> produces: `$$skill_dir`, `$$workspace_root`, `$$args_path`, `$$args`, `$$paths`, `$$current_plan_package`, `$$truth_function_package`, `$$reconcile_context`
+## PRINCIPLE: 真相格式委派 specifier skills
 
-1. `$$skill_dir` = COMPUTE current skill directory path
-2. `$$workspace_root` = COMPUTE current workspace directory path
-3. `$caller_payload` = READ caller payload if provided
-4. `$$args_path` = DERIVE absolute arguments path from `$caller_payload.arguments_path` else `${$$workspace_root}/.aibdd/arguments.yml`
-5. `$args_exists` = MATCH path_exists(`$$args_path`)
-6. BRANCH `$args_exists` ? GOTO #1.7 : GOTO #1.6.1
-   6.1 `$missing_args_msg` = RENDER "`.aibdd/arguments.yml` 不存在；請先完成 /aibdd-kickoff"
-   6.2 EMIT `$missing_args_msg` to user
-   6.3 STOP
-7. `$args_text` = READ `$$args_path`
-8. `$$args` = PARSE `$args_text`, schema=`yaml`
-   8.1 `$$reconcile_context` = PARSE optional reconcile payload from `$caller_payload` per [`.claude/skills/aibdd-reconcile/references/planner-handoff-contract.md`](.claude/skills/aibdd-reconcile/references/planner-handoff-contract.md) else empty map
-   8.2 IF `$$reconcile_context` is non-empty:
-       8.2.1 ASSERT `$$reconcile_context` contains `session_id`, `earliest_planner`, `cascade_chain`, `archive_path`
-       8.2.2 IF assertion fails:
-           8.2.2.1 EMIT "reconcile payload 缺必要欄位；拒絕寫入不完整的 reconcile 敘事" to user
-           8.2.2.2 STOP
-9. ASSERT `$$args` includes `SPECS_ROOT_DIR`, `PLAN_SPEC`, `PLAN_REPORTS_DIR`, `TRUTH_BOUNDARY_ROOT`, `TRUTH_BOUNDARY_PACKAGES_DIR`, `BOUNDARY_PACKAGE_DSL`, `BOUNDARY_SHARED_DSL`, `TEST_STRATEGY_FILE`
-   9.1 IF assertion fails:
-       9.1.1 `$args_msg` = RENDER missing key list and "回到 /aibdd-kickoff 或 /aibdd-discovery 綁定路徑"
-       9.1.2 EMIT `$args_msg` to user
-       9.1.3 STOP
-10. `$$paths` = TRIGGER `python3 "${$$skill_dir}/scripts/python/resolve_plan_paths.py" "${$$args_path}"`
-11. `$paths_ok` = MATCH `$$paths.exit_code == 0`
-12. BRANCH `$paths_ok` ? GOTO #1.13 : GOTO #1.12.1
-    12.1 `$paths_msg` = RENDER path resolver stderr/stdout summary
-    12.2 EMIT `$paths_msg` to user
-    12.3 STOP
-13. `$$current_plan_package` = PARSE `$$paths.stdout.current_plan_package`
-14. `$$truth_function_package` = PARSE `$$paths.stdout.truth_function_package`
-15. `$function_package_bound` = MATCH `$$truth_function_package` is non-empty and path_exists(parent(`$$truth_function_package`))
-16. BRANCH `$function_package_bound` ? GOTO #2.1 : GOTO #1.16.1
-    16.1 `$bind_msg` = RENDER "TRUTH_FUNCTION_PACKAGE 尚未綁定；請先由 /aibdd-discovery 綁定功能模組 package"
-    16.2 EMIT `$bind_msg` to user
-    16.3 STOP
+- Boundary profile 宣告之 `operation_contract_specifier.skill`／`state_specifier.skill`／`component_contract_specifier.skill`，是寫入 `${TRUTH_BOUNDARY_ROOT}/contracts/**`／`${TRUTH_BOUNDARY_ROOT}/data/**`／Story export 之**唯一合法管道**。
+- 本 skill **不得**手寫任何 OpenAPI／DBML／`.stories.tsx`／`.tsx` 檔；只負責 DERIVE caller payload 並以 **`DELEGATE`** 把 payload 交給對應 specifier skill。一個 slice／一個 entity／一個 component 為一次 DELEGATE。
+- 違者視為 ownership 違規，**立即 STOP**。
 
-### Phase 2 — LOAD discovery, profile, and truth inputs
-> produces: `$$plan_spec`, `$$discovery_report`, `$$activity_truth`, `$$feature_truth`, `$$boundary_profile`, `$$truth_bundle`, `$$code_skeleton`
+## PRINCIPLE: 澄清只委派 clarify-loop
 
-1. `$$plan_spec` = READ `${PLAN_SPEC}`
-2. ASSERT `$$plan_spec` exists and includes `Discovery Sourcing Summary`
-   2.1 IF assertion fails:
-       2.1.1 `$spec_msg` = RENDER "PLAN_SPEC 缺 Discovery Sourcing Summary；請先完成 /aibdd-discovery"
-       2.1.2 EMIT `$spec_msg` to user
-       2.1.3 STOP
-3. `$$discovery_report` = READ `${PLAN_REPORTS_DIR}/discovery-sourcing.md`
-4. ASSERT `$$discovery_report` exists
-5. `$activities_dir` = DERIVE activities directory from `$$paths.stdout.activities_dir` or `${$$truth_function_package}/activities`
-6. `$features_dir` = DERIVE features directory from `$$paths.stdout.features_dir` or `${$$truth_function_package}/features`
-7. `$$activity_truth` = READ all `*.activity` under `$activities_dir`
-8. `$$feature_truth` = READ all `*.feature` under `$features_dir`
-9. ASSERT `$$activity_truth` non-empty
-10. ASSERT `$$feature_truth` non-empty
-11. `$boundary_yml` = READ `${BOUNDARY_YML}` from `$$args`
-12. `$boundary_type` = PARSE target boundary `type` from `$boundary_yml`
-13. `$$boundary_profile` = READ `aibdd-core::boundary-type-profiles/${$boundary_type}.profile.yml`
-14. ASSERT `$$boundary_profile` satisfies `aibdd-core::boundary-profile-contract.md`
-15. `$boundary_map` = READ `${TRUTH_BOUNDARY_ROOT}/boundary-map.yml` if exists else empty skeleton
-16. `$contracts` = READ `${TRUTH_BOUNDARY_ROOT}/contracts/` if exists else empty bundle
-17. `$data_truth` = READ `${TRUTH_BOUNDARY_ROOT}/data/` if exists else empty bundle
-18. `$shared_dsl` = READ `${BOUNDARY_SHARED_DSL}` if exists else empty DSL registry
-19. `$local_dsl` = READ `${BOUNDARY_PACKAGE_DSL}` if exists else empty DSL registry
-20. `$test_strategy` = READ `${TEST_STRATEGY_FILE}` if exists else empty strategy
-21. `$$truth_bundle` = DERIVE bundle from `$boundary_map`, `$contracts`, `$data_truth`, `$shared_dsl`, `$local_dsl`, `$test_strategy`, `$$boundary_profile`
-22. `$$code_skeleton` = DERIVE code skeleton index from project files, excluding ignored directories and non-primary worktrees
-23. ASSERT no input path points to plan package when truth path is required
+- 凡須向使用者做**結構化澄清**（locale 選擇、scope 模糊、上游真相缺洞、specifier 不支援等），各 sub-SOP 僅用 **一行 `DELEGATE /clarify-loop`**，並帶 **`delegated_intake`**（`profile=aibdd-plan`，形狀與展開規則見 sibling `clarify-loop/references/intake-expanders/aibdd-plan.md`）。
+- **禁止**在 sub-SOP 內 inline classify／branch user reply；**禁止**聊天逐題代替。
 
-### Phase 3 — PLAN technical boundary truth
-> produces: `$$boundary_delta` (incl. `components` for frontend boundaries), `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$impacted_feature_files`, `$$plan_doc`, `$$research_doc`
+## PRINCIPLE: STRICT SOP
 
-1. `$truth_rules` = PARSE [`references/technical-truth-rules.md`](references/technical-truth-rules.md)
-2. `$ownership` = PARSE [`references/truth-ownership.md`](references/truth-ownership.md)
-3. `$$boundary_delta` = THINK per [`reasoning/aibdd-plan/02-technical-boundary-dispatch.md`](reasoning/aibdd-plan/02-technical-boundary-dispatch.md), input=`$$plan_spec`, `$$discovery_report`, `$$activity_truth`, `$$feature_truth`, `$$truth_bundle`, `$truth_rules`, `$ownership`
-4. `$$contract_delta` = THINK per [`reasoning/aibdd-plan/03-external-boundary-surface.md`](reasoning/aibdd-plan/03-external-boundary-surface.md), input=`$$boundary_delta`, `$$truth_bundle`, `$$boundary_profile`, `$$code_skeleton`, `$truth_rules`
-5. `$$data_delta` = THINK per [`reasoning/aibdd-plan/02-technical-boundary-dispatch.md`](reasoning/aibdd-plan/02-technical-boundary-dispatch.md), focus=`data-state-persistence`, input=`$$boundary_delta`, `$$contract_delta`, `$$truth_bundle`, `$$boundary_profile`, `$truth_rules`
-6. `$$strategy_delta` = THINK per [`reasoning/aibdd-plan/03-external-boundary-surface.md`](reasoning/aibdd-plan/03-external-boundary-surface.md), focus=`test-double-policy`, input=`$$boundary_delta`, `$$contract_delta`, `$$truth_bundle`, `$truth_rules`
-7. `$$impacted_feature_files` = THINK per [`references/impacted-feature-files-contract.md`](references/impacted-feature-files-contract.md), input=`$$plan_spec`, `$$feature_truth`, `$$boundary_delta`, `$$contract_delta`, `$$truth_bundle`
-8. ASSERT `$$boundary_delta` maps every impacted atomic rule exactly once
-9. ASSERT every path in `$$impacted_feature_files` resolves under `${FEATURE_SPECS_DIR}`
-10. ASSERT `$$contract_delta` targets only `${TRUTH_BOUNDARY_ROOT}/contracts/` and matches `$$boundary_profile.operation_contract_specifier`
-11. ASSERT `$$data_delta` targets only `${TRUTH_BOUNDARY_ROOT}/data/` and matches `$$boundary_profile.state_specifier`
-12. ASSERT `$$strategy_delta` writes only `${TEST_STRATEGY_FILE}`
-13. WRITE `${TRUTH_BOUNDARY_ROOT}/boundary-map.yml` ← rendered boundary map from `$$boundary_delta`
-14. BRANCH `$$boundary_profile.operation_contract_specifier.skill`
-    `/aibdd-form-api-spec` → DELEGATE `/aibdd-form-api-spec` with `slice_list` from `$$contract_delta` and target paths under `${TRUTH_BOUNDARY_ROOT}/contracts/`
-    empty/none             → ASSERT `$$contract_delta.contracts` empty
-    other                  → STOP with unsupported operation contract specifier message
-15. BRANCH `$$boundary_profile.state_specifier.skill`
-    `/aibdd-form-entity-spec` → DELEGATE `/aibdd-form-entity-spec` with entity/state reasoning from `$$data_delta` and target paths under `${TRUTH_BOUNDARY_ROOT}/data/`
-    empty/none                → ASSERT `$$data_delta.files` empty
-    other                     → STOP with unsupported state specifier message
-15.3 BRANCH `$$boundary_profile.component_contract_specifier.skill` non-empty
-    true  → GOTO #15.3.1   # frontend boundary：跑 design × spec merge，enrich `$$boundary_delta.components`
-    false → GOTO #15.5     # backend boundary：跳過 component-design merge
-   15.3.1 `$design_pen_path` = COMPUTE `${CURRENT_PLAN_PACKAGE}/design.pen`
-   15.3.2 `$design_style_profile_path` = COMPUTE `${CURRENT_PLAN_PACKAGE}/design/style-profile.yml`
-   15.3.3 `$design_uiux_prompt_path` = COMPUTE `${CURRENT_PLAN_PACKAGE}/design/uiux-prompt.md`
-   15.3.4 `$design_source` = COMPUTE
-       IF path_exists(`$design_pen_path`):
-         `{ kind: "pen", path: $design_pen_path, screen_id: null, style_profile_path: ($design_style_profile_path if path_exists else null) }`
-       ELSE:
-         `{ kind: "none" }`
-   15.3.5 BRANCH path_exists(`$design_pen_path`)
-       true:
-           15.3.5.1 `$adapter_payload` = DRAFT `{ pen_path: $design_pen_path, screen_id: null }`
-           15.3.5.2 `$design_adapter` = DELEGATE `/aibdd-pen-to-storybook` with `$adapter_payload`
-           15.3.5.3 ASSERT `$design_adapter.status == "completed"` AND `$design_adapter.mode == "adapter"`
-       false:
-           15.3.5.4 `$design_adapter` = COMPUTE `{ component_table: { rows: [] }, tokens: [] }`
-   15.3.6 BRANCH path_exists(`$design_uiux_prompt_path`)
-       true:  `$uiux_prompt` = READ `$design_uiux_prompt_path`
-       false: `$uiux_prompt` = COMPUTE empty
-   15.3.7 `$$boundary_delta.components` = THINK per [`reasoning/aibdd-plan/07-component-design-merge.md`](reasoning/aibdd-plan/07-component-design-merge.md), input=`$$boundary_delta.components`, `$$activity_truth`, `$$feature_truth`, `$design_adapter`, `$uiux_prompt`
-   15.3.8 ASSERT every entry in `$$boundary_delta.components` has `identifier`, `title`, `props` (list), `render_hints` (object with `root_element` + `children_layout`), and non-empty `stories[]` with `export_name`, `role`, `accessible_name`, `accessible_name_arg` per [`.claude/skills/aibdd-form-story-spec/references/role-and-contract.md`](.claude/skills/aibdd-form-story-spec/references/role-and-contract.md) §2
-   15.3.9 IF reasoning/07 returns `cross_validation_warnings` non-empty: log warnings to plan.md research section（不 block）
-15.5 BRANCH `$$boundary_profile.component_contract_specifier.skill`
-    `/aibdd-form-story-spec` → GOTO #15.5.1
-    empty/none                → GOTO #15.5.5
-    other                     → STOP with unsupported component contract specifier message
-   15.5.1 LOOP per `$component` in `$$boundary_delta.components`
-       15.5.1.1 `$story_target_dir` = RENDER `${TRUTH_BOUNDARY_ROOT}/contracts/components/${$component.identifier}/`
-                # 對齊 contract-as-SSOT 慣例：component .tsx 與 stories.tsx 都落到 boundary contracts/components/<id>/
-                # tsconfig path alias `@/components/* → specs/<TLB>/contracts/components/*` 由 aibdd-auto-starter template 設定
-       15.5.1.2 `$story_payload` = DERIVE form-story-spec caller payload from `$component` per [`.claude/skills/aibdd-form-story-spec/references/role-and-contract.md`](.claude/skills/aibdd-form-story-spec/references/role-and-contract.md) §2
-                # payload 必含 component.props (list) + component.render_hints (object)；由 reasoning/07 enrich 進 `$$boundary_delta.components` 後直接取用
-       15.5.1.3 DELEGATE `/aibdd-form-story-spec` with target_dir=`$story_target_dir`, mode="create", design_source=`$design_source`, reasoning.component_modeling=`$story_payload`
-                # 注意：target_path / format 已被 target_dir 取代；form-story-spec 寫雙檔（<id>.tsx + <id>.stories.tsx）到該目錄
-       15.5.1.4 IF DELEGATE returns `incomplete`:
-           15.5.1.4.1 EMIT "component modeling 推理包不完整：${$component.identifier}" to user
-           15.5.1.4.2 STOP
-       END LOOP
-   15.5.5 ASSERT `$$boundary_delta.components` is empty OR every entry is marked `deferred: true`; on violation STOP with "component_contract_specifier=none but boundary_delta.components non-empty"
-16. WRITE `${TEST_STRATEGY_FILE}` ← rendered strategy from `$$strategy_delta`
-17. `$plan_template` = READ [`assets/templates/plan-md.template.md`](assets/templates/plan-md.template.md)
-18. `$research_template` = READ [`assets/templates/research-md.template.md`](assets/templates/research-md.template.md)
-19. `$$plan_doc` = RENDER `$plan_template` with `$$boundary_delta`, `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$impacted_feature_files`, `$$reconcile_context`
-20. `$$research_doc` = RENDER `$research_template` with planning decisions and trade-offs
-21. WRITE `${CURRENT_PLAN_PACKAGE}/plan.md` ← `$$plan_doc`
-22. WRITE `${CURRENT_PLAN_PACKAGE}/research.md` ← `$$research_doc`
+1. **依序不漏步**：自底下列 SOP 逐一執行；每做一步，在訊息中**明示該步編號**。
+2. **限縮延長推理**：僅當 sub-SOP 當步**明文**標示須 **`THINK / REASONING`** 時，才拉長內省與推演；否則以**最直接**可做之 `READ`／`PARSE`／`DERIVE`／`WRITE`／`UPDATE`／`DELEGATE`／`TRIGGER` 工具呼叫達成該步，省略與該步授權範圍無關的冗長鋪墊，以降低往返等待時間。
 
-### Phase 4 — PLAN external boundary surface
-> produces: `$$external_surface_model`
+## PRINCIPLE: 長流程待辦（兩層）
 
-1. `$external_rules` = PARSE [`references/technical-truth-rules.md`](references/technical-truth-rules.md) §External Boundary Surface
-2. `$$external_surface_model` = THINK per [`reasoning/aibdd-plan/03-external-boundary-surface.md`](reasoning/aibdd-plan/03-external-boundary-surface.md), input=`$$boundary_delta`, `$$contract_delta`, `$$strategy_delta`, `$$truth_bundle`, `$external_rules`
-3. ASSERT every provider boundary has contract reference or explicit non-contract reason
-4. ASSERT every mockable consumer→provider edge has test double policy
-5. ASSERT no edge marks same-boundary internal collaborator as mock target
-6. IF `$$external_surface_model` includes 3rd-party providers:
-   6.1 ASSERT each provider has external stub candidate for DSL Phase 6
-   6.2 ASSERT each stub has payload and response binding source
+長流程會跨多輪對話；在 **conversation compact**（對話摘要壓縮）之後，執行者仍要靠**同一套待辦**還原：目前卡在哪個 **phase**，該 phase 內細項又到哪一格。底下為**兩層**約定：**外層只列 phase**，**進入該 phase** 再把該 sub-SOP 第一層編號步驟拆成子項。尚未開始的 phase 不必預先展開成檔案級細項，以免待辦與實際 `SOP.md` 脫節。
 
-### Phase 5 — PLAN internal implementation
-> produces: `$$implementation_model`, `$$sequence_paths`, `$$internal_structure`
+- **必須工具化**：Tier 0／Tier 1 對應的勾選項，**要以執行環境提供的任務／待辦建立與更新能力實體化**（例如 **`TODOCREATE`**、**`TASKCREATE`** 等 tool；或宿主 IDE／Agent 內與之等效的待辦 API），在跑 sub-SOP **當下**就建好清單並隨步驟推進更新狀態。**禁止**只靠聊天裡口頭列點、不經工具建立的「心裡待辦」——壓縮後無法還原，也無法核對漏步。
+- **Tier 0（phase）**：對應本檔 `# SOP` 最外層每一項；每一項對應一個 sub-SOP 目錄（例：`01-bind-and-load/`）。這一層的勾選語意是「該 phase 的細項已全部展開**且**依 `SOP.md` 跑完」。
+- **Tier 1（phase 內細項）**：僅在目前執行中的 phase 建立；對應該 phase `SOP.md` 裡**第一層編號步驟**拆解出的動作（`READ`／`WRITE`／`DERIVE`／`DELEGATE`／`TRIGGER` 等）。編號建議：`(phase序)`、`(phase序-子序)`（例：`1`、`1-1`）；**進入該 phase 時**以 **`TODOCREATE`／`TASKCREATE`（或等效）** 補齊子項。
 
-1. `$impl_rules` = PARSE [`references/implementation-planning-rules.md`](references/implementation-planning-rules.md)
-2. CREATE `${CURRENT_PLAN_PACKAGE}/implementation`
-3. CREATE `${CURRENT_PLAN_PACKAGE}/implementation/sequences`
-4. `$$implementation_model` = THINK per [`reasoning/aibdd-plan/04-internal-implementation.md`](reasoning/aibdd-plan/04-internal-implementation.md), input=`$$activity_truth`, `$$feature_truth`, `$$boundary_delta`, `$$contract_delta`, `$$data_delta`, `$$external_surface_model`, `$$code_skeleton`, `$impl_rules`
-5. LOOP per `$path` in `$$implementation_model.paths`
-   5.1 `$sequence_doc` = RENDER [`assets/templates/sequence.template.mmd`](assets/templates/sequence.template.mmd) with `$path`
-   5.2 WRITE `${CURRENT_PLAN_PACKAGE}/implementation/sequences/${$path.slug}.${$path.kind}.sequence.mmd` ← `$sequence_doc`
-   END LOOP
-6. `$$sequence_paths` = COMPUTE written sequence diagram paths
-7. `$$internal_structure` = RENDER [`assets/templates/internal-structure.class.template.mmd`](assets/templates/internal-structure.class.template.mmd) with structural union of `$$implementation_model.paths`
-8. WRITE `${CURRENT_PLAN_PACKAGE}/implementation/internal-structure.class.mmd` ← `$$internal_structure`
-9. ASSERT each major happy/alternative/error path has implementation target or explicit blocked reason
+**(1)** 的子項全部完成後，以 **`TODOCREATE`／`TASKCREATE`（或等效）** 將 Tier 0 之 **(1)** 標為完成，再對 **(2)** 重複「展開 → 跑完」，依序往後。**未完成當前 phase** 前，**不要**為後續 phase 預開檔案層級的細項。
 
-### Phase 6 — SYNTHESIZE DSL truth
-> produces: `$$dsl_delta`, `$$dsl_written_paths`, `$$dsl_quality_seed`, `$$dsl_key_locale`
+# SOP
 
-1. `$locale_override` = READ `DSL_KEY_LOCALE` from `$$args` if present
-2. BRANCH `$locale_override`
-   `prefer_spec_language` → `$$dsl_key_locale` = COMPUTE `prefer_spec_language` GOTO #6.7
-   `zh-hant`              → `$$dsl_key_locale` = COMPUTE `zh-hant` GOTO #6.7
-   `zh-hans`              → `$$dsl_key_locale` = COMPUTE `zh-hans` GOTO #6.7
-   `en-us`                → `$$dsl_key_locale` = COMPUTE `en-us` GOTO #6.7
-   `ja-jp`                → `$$dsl_key_locale` = COMPUTE `ja-jp` GOTO #6.7
-   `ko-kr`                → `$$dsl_key_locale` = COMPUTE `ko-kr` GOTO #6.7
-   empty/invalid          → GOTO #6.3
-3. `$lang_sources` = DERIVE up to 40 path basenames from `$features_dir`, `$activities_dir`, and `${PLAN_SPEC}` path (filenames only)
-4. `$script_profile` = CLASSIFY `$lang_sources` as `latin-heavy | non_latin-heavy` via non-ASCII codepoint proportion heuristic on basenames（多數檔名為英文與數字 → `latin-heavy`）
-5. BRANCH `$script_profile`
-   latin-heavy     → `$$dsl_key_locale` = COMPUTE `en-us` GOTO #6.7
-   non_latin-heavy → GOTO #6.6
-6. `$dsl_key_payload` = DERIVE clarify-loop batch payload with one question id `q-dsl-key-locale`, kind `CON`, context = "規格檔案檔名以非英文為主。`{參數鍵}` 與 `param_bindings`／`assertion_bindings` 的鍵名要不要跟規格自然語言一致？（contracts／data／response 技術欄位鍵維持英文）", question = "DSL `{參數鍵}` 與 binding 鍵名要走規格語感還是維持英文？", options = `prefer_spec_language | en-us`（label 分別為「跟規格語感（允許中英混合：`旅程 ID`、`stage ID`）」與「維持英文鍵」）, recommendation = `prefer_spec_language`, recommendation_rationale = "規格檔名為主非英文時，DSL 鍵跟著規格語感讓 BDD 句型更貼近領域語言"
-   6.0 [USER INTERACTION] `$dsl_key_reply` = DELEGATE `/clarify-loop` with `$dsl_key_payload`
-   6.1 `$locale_choice` = CLASSIFY `$dsl_key_reply` as `prefer_spec_language | en-us`
-   6.2 BRANCH `$locale_choice`
-       prefer_spec_language → `$$dsl_key_locale` = COMPUTE `prefer_spec_language` GOTO #6.7
-       en-us                → `$$dsl_key_locale` = COMPUTE `en-us` GOTO #6.7
-7. `$dsl_contract` = PARSE `${DSL_OUTPUT_CONTRACT_REF}`
-8. `$preset_kind` = COMPUTE `${PRESET_KIND}`（default `web-backend` when key missing — backward compat for existing backend projects）
-   8.1 BRANCH `$preset_kind`
-       web-backend  → `$preset_contract_path`  = COMPUTE `${BACKEND_PRESET_CONTRACT_REF}`
-                      `$boundary_assets_dir`   = COMPUTE `aibdd-core/assets/boundaries/web-backend/`
-                      `$default_variant`       = COMPUTE `python-e2e`
-                      `$external_stub_handler` = COMPUTE `external-stub`
-       web-frontend → `$preset_contract_path`  = COMPUTE `${FRONTEND_PRESET_CONTRACT_REF}`
-                      `$boundary_assets_dir`   = COMPUTE `aibdd-core/assets/boundaries/web-frontend/`
-                      `$default_variant`       = COMPUTE `nextjs-playwright`
-                      `$external_stub_handler` = COMPUTE `api-stub`
-       other        → EMIT "PRESET_KIND `${$preset_kind}` not supported by /aibdd-plan v1（supported: web-backend, web-frontend）" to user
-                      STOP
-   8.2 `$persistence_handler` = COMPUTE `$$boundary_profile.persistence_handler.handler_id` per [`aibdd-core::boundary-profile-contract.md`](aibdd-core::boundary-profile-contract.md) — value comes from the boundary profile (Phase 2 step 13), not from a per-preset hardcoded branch.
-   8.3 `$persistence_state_ref_pattern` = COMPUTE `$$boundary_profile.persistence_handler.state_ref_pattern`
-   8.4 `$persistence_coverage_gate` = COMPUTE `$$boundary_profile.persistence_handler.coverage_gate`
-   8.5 `$persistence_ownership_required` = COMPUTE `$persistence_coverage_gate == "not-null-columns"`
-   8.6 ASSERT `$persistence_handler` non-empty AND `$persistence_state_ref_pattern` non-empty AND `$persistence_coverage_gate ∈ {"not-null-columns", "deferred-v1", "none"}`
-       8.6.1 IF assertion fails: EMIT "boundary profile missing or invalid persistence_handler — see aibdd-core/references/boundary-profile-contract.md" to user; STOP
-9. `$preset_contract` = PARSE `$preset_contract_path`
-   9.1 `$handler_routing_policy` = READ `${$boundary_assets_dir}/handler-routing.yml`（對齊 `L4.preset.name: ${$preset_kind}`；routes + handlers SSOT）
-10. `$$dsl_delta` = THINK per [`reasoning/aibdd-plan/05-dsl-truth-synthesis.md`](reasoning/aibdd-plan/05-dsl-truth-synthesis.md), input=`$$activity_truth`, `$$feature_truth`, `$$boundary_delta`, `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$external_surface_model`, `$$implementation_model`, `$handler_routing_policy`, `$dsl_contract`, `$preset_contract`, `$$dsl_key_locale`
-11. ASSERT every changed DSL entry has L1, L2, L3, L4
-12. ASSERT every L1 placeholder has exactly one binding in exactly one of (`L4.param_bindings`, `L4.assertion_bindings`)
-13. ASSERT every Then expected value has `L4.assertion_bindings`
-14. ASSERT every operation required input is covered by exactly one of (`L4.param_bindings`, `L4.datatable_bindings`, `L4.default_bindings`) after transport-header exclusions
-15. ASSERT operation-backed entries have <= 3 L1 sentence parameters and <= 6 datatable parameters after defaults
-16. ASSERT every L4 binding target uses allowed source prefix: `contracts/`, `data/`, `response`, `fixture`, `stub_payload`, `literal`
-17. ASSERT every `L4.default_bindings` item has target, value, atomic-rule reason, and override policy
-18. ASSERT operation entries reference `${$preset_kind}` handler and variant, defaulting to `${$default_variant}`
-19. ASSERT external dependency entries use `${$external_stub_handler}` surface kind and do not reference same-boundary internal collaborator
-19.A IF `$persistence_ownership_required`:
-     ASSERT every aggregate-root entity declared in `${TRUTH_BOUNDARY_ROOT}/data/` AND listed under `boundary-map.yml#persistence_ownership` has at least one DSL entry where `L4.preset.handler == ${$persistence_handler}` AND `L4.source_refs.data` 指向該 entity 的 primary table — **每個聚合根都必須有獨立的 persistence builder**；composite builder（單條 entry 同時 seed 多個 entity rows，例如 `student-assigned` 同時牽涉 student / journey / stage / assignment）**不豁免** base-entity builder 的獨立存在義務。Missing entity coverage 視為 plan-level gap，**禁止**寫弱 placeholder DSL，**禁止**讓下游 `/aibdd-spec-by-example-analyze` 自行用 CiC(GAP) bypass，必須在本 phase STOP。
-     ELSE: # frontend boundary — persistence-ownership coverage gate is future work (see web-frontend preset README §"Future Expansion"); skip this assertion in v1.
-    19.A.1 IF assertion fails:
-        19.A.1.1 `$missing_builder_msg` = RENDER list of persistence_ownership entities lacking aggregate-given DSL builder
-        19.A.1.2 EMIT `$missing_builder_msg` to user
-        19.A.1.3 STOP
-19.B IF `$persistence_ownership_required`:
-     ASSERT every `L4.preset.handler == ${$persistence_handler}` DSL entry **100% 覆蓋**對應 DBML table 的 NOT-NULL 欄位集合：對每條 builder 從 `L4.source_refs.data` 解析出 `data/<file>.dbml#<table>`，把該 table 所有 `[not null]`（含 `[pk]`）欄位收成 `required_columns`；把 `param_bindings + datatable_bindings + default_bindings` 中 target 形如 `data/<file>.dbml#<table>.<column>` 的 column 收成 `bound_columns`；要求 `required_columns ⊆ bound_columns`，唯一豁免清單為 (a) `[pk, increment]` 自增欄位，(b) DBML 顯式宣告 `[default: ...]` 欄位。`created_at` / `updated_at` 等慣例 timestamp **沒有** DBML 預設就**不**自動豁免——若想豁免必須在 DBML 加 `[default: ...]` modifier。FK NOT-NULL 欄位（譬如 `responses.assignment_id`、`appointments.assignment_id`、`retention_letters.assignment_id`、`responses.stage_id`）**不得**用 lookup-chain 推論豁免——builder 必須有直接 binding。違反屬於 plan-level gap，**禁止**寫弱 placeholder DSL，必須 STOP。
-     ELSE: # frontend boundary — Zod-schema-based mock-state coverage gate is future work; skip this assertion in v1.
-    19.B.1 IF assertion fails:
-        19.B.1.1 `$missing_columns_msg` = RENDER per-builder list of unbound NOT-NULL columns（含 table、column、type、reason "missing param/datatable/default binding"）
-        19.B.1.2 EMIT `$missing_columns_msg` to user
-        19.B.1.3 STOP
-20. IF any contract indicates file upload:
-    20.1 ASSERT DSL includes fixture catalog/path, loader or wrapper, upload invocation, response verifier, state or file-store verifier, and missing-file behavior
-21. `$local_entries` = DERIVE entries scoped to `${BOUNDARY_PACKAGE_DSL}` from `$$dsl_delta`
-22. `$shared_entries` = DERIVE entries scoped to `${BOUNDARY_SHARED_DSL}` from `$$dsl_delta`
-22.1 `$shared_template_entries` = DERIVE missing canonical shared entries from `${$boundary_assets_dir}/shared-dsl-template.yml`, resolving `<backend-variant-id>` / `<frontend-variant-id>` to `${$default_variant}`, when `${BOUNDARY_SHARED_DSL}` lacks the boundary's canonical shared entries (web-backend: success/failure + time-control; web-frontend: route-given + viewport-control + success/failure + time-control)
-22.2 `$shared_entries` = UNION `$shared_entries`, `$shared_template_entries`
-23. IF `$local_entries` non-empty:
-    23.1 WRITE `${BOUNDARY_PACKAGE_DSL}` ← merged local DSL registry
-24. IF `$shared_entries` non-empty:
-    24.1 WRITE `${BOUNDARY_SHARED_DSL}` ← merged shared DSL registry
-25. IF `$local_entries` empty and `$shared_entries` empty:
-    25.1 ASSERT `$$dsl_delta.no_op_reason` is non-empty
-26. `$$dsl_written_paths` = COMPUTE changed DSL paths
-27. `$$dsl_quality_seed` = DERIVE quality input for Phase 7 from `$$dsl_delta`, `$$dsl_written_paths`
+請執行到哪讀到哪，千萬不要提早閱讀後續文件，這會讓用戶起始體驗到的延遲度很久，SOP 寫啥就做啥，沒叫你 [THINK/REASONING] 就絕對不准啟用 EXTENDED THINKING。
 
-### Phase 7 — ASSERT quality gates
-> produces: `$$script_verdict`, `$$semantic_verdict`, `$$quality_verdict`
+0. 在 CWD 底下 grep 搜尋 `**/arguments.yml` 檔案，做 parameters binding for all following phases，這些參數後續每一 phase 都會用到。此檔案一定存在，如不存在請直接停止執行，向使用者回報：「我在 ${CWD} 底下找不到 **/arguments.yml 檔案，你是否已經執行過 /aibdd-kickoff 了？」
 
-1. `$forbidden` = PARSE [`references/forbidden-mutations.md`](references/forbidden-mutations.md)
-2. `$plan_phase_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_plan_phase.py" "${$$args_path}"`
-3. `$impacted_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_impacted_feature_files.py" "${$$args_path}"`
-4. `$ownership_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_truth_ownership.py" "${$$args_path}"`
-5. `$dsl_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_dsl_entries.py" "${$$args_path}"`
-6. `$routing_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_handler_routing_consistency.py" "${$boundary_assets_dir}/handler-routing.yml"`
-7. BRANCH `$preset_kind`
-   web-backend  → `$preset_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_backend_preset_refs.py" "${$boundary_assets_dir}/handler-routing.yml" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`
-   web-frontend → `$preset_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_frontend_preset_refs.py" "${$boundary_assets_dir}/handler-routing.yml" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`  # script body deferred — fail-loud signals scaffolding incomplete
-8. `$mock_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_external_mock_policy.py" "${TRUTH_BOUNDARY_ROOT}/boundary-map.yml" "${TEST_STRATEGY_FILE}" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`
-9. `$fixture_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_fixture_upload_mapping.py" "${TRUTH_BOUNDARY_ROOT}/contracts" "${BOUNDARY_PACKAGE_DSL}" "${BOUNDARY_SHARED_DSL}"`
-10. `$sequence_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_sequence_diagrams.py" "${$$args_path}"`
-11. `$shared_dsl_out` = TRIGGER `python3 "${$$skill_dir}/scripts/python/check_shared_dsl_template.py" "${$$args_path}"`
-12. `$$script_verdict` = PARSE merged JSON of `$plan_phase_out`, `$impacted_out`, `$ownership_out`, `$dsl_out`, `$routing_out`, `$preset_out`, `$mock_out`, `$fixture_out`, `$sequence_out`, `$shared_dsl_out`
-13. BRANCH `$$script_verdict.ok` ? GOTO #7.14 : GOTO #7.13.1
-   13.1 `$script_fail_msg` = RENDER script violations with rule_id, file, message
-   13.2 EMIT `$script_fail_msg` to user
-   13.3 STOP
-14. `$quality_contract` = PARSE [`references/quality-gate-contract.md`](references/quality-gate-contract.md)
-15. `$$semantic_verdict` = JUDGE per `$quality_contract`, input=`SKILL.md`, `$$boundary_delta`, `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$implementation_model`, `$$dsl_delta`, `$$dsl_quality_seed`, `$$impacted_feature_files`
-16. ASSERT `$$semantic_verdict.verdict != VETO`
-    16.1 IF assertion fails:
-        16.1.1 `$semantic_fail_msg` = RENDER semantic gate vetoes
-        16.1.2 EMIT `$semantic_fail_msg` to user
-        16.1.3 STOP
-17. `$$quality_verdict` = DERIVE combined verdict from `$$script_verdict`, `$$semantic_verdict`
-18. CREATE `${CURRENT_PLAN_PACKAGE}/reports`
-19. WRITE `${CURRENT_PLAN_PACKAGE}/reports/aibdd-plan-quality.md` ← rendered quality summary including actual script verdict evidence
+1. EXECUTE the sub-sop: `01-bind-and-load/SOP.md`
 
-### Phase 8 — REPORT downstream handoff
+2. EXECUTE the sub-sop: `02-boundary-truth/SOP.md`
 
-1. `$handoff_graph` = THINK per [`reasoning/aibdd-plan/06-handoff-graph.md`](reasoning/aibdd-plan/06-handoff-graph.md), input=`$$plan_doc`, `$$research_doc`, `$$boundary_delta`, `$$contract_delta`, `$$data_delta`, `$$strategy_delta`, `$$implementation_model`, `$$dsl_delta`, `$$quality_verdict`
-2. ASSERT `$handoff_graph` lists plan, research, impacted feature files, contracts, data/test strategy, local/shared DSL, sequence diagrams, internal structure, blocking gaps, and Git diff review focus
-3. ASSERT `$handoff_graph` does not require `/aibdd-test-plan`
-4. `$summary` = DRAFT user-facing summary from `$handoff_graph`
-5. EMIT `$summary` to user
-   5.1 IF EMIT fails:
-       5.1.1 WRITE `${CURRENT_PLAN_PACKAGE}/reports/aibdd-plan-report.md` ← `$summary`
-       5.1.2 STOP
+3. EXECUTE the sub-sop: `03-implementation-plan/SOP.md`
 
-### Phase 9 — HANDLE failure contracts
+4. EXECUTE the sub-sop: `04-dsl-synthesis/SOP.md`
 
-- IF Discovery artifacts are missing: STOP and instruct caller to run `/aibdd-discovery`.
-- IF target function package is not bound: STOP and instruct caller to bind via `/aibdd-discovery`; do not invent a boundary id from the backend name.
-- IF owner-scoped truth write would touch an artifact owned by another skill: STOP and report owner conflict.
-- IF DSL output needs a contract/data/test-strategy item that is missing: STOP and report the exact planning gap; do not write a weak DSL placeholder.
-- IF file upload contract is detected but fixture convention is absent: STOP and report fixture-testability gap.
-- IF quality gate fails: do not weaken the rubric; return to the phase that produced the failing model.
+5. EXECUTE the sub-sop: `05-plan-doc-and-handoff/SOP.md`
 
-### Phase 10 — REPORT cross references
-
-- Upstream: `/aibdd-discovery` produces plan package summary, activities, rule-only features, actor truth, and function package binding.
-- Internal responsibility: DSL physical mapping is implemented by Phase 6 in this skill.
-- Downstream: `/aibdd-spec-by-example-analyze` consumes plan, truth DSL, contracts, implementation diagrams, and quality reports; `/aibdd-tasks` may optionally consume the plan package's impacted feature list and implementation diagrams.
-- Explicitly out of scope: `/aibdd-test-plan`, `speckit-aibdd-test-plan`, `/aibdd-implement`, `/aibdd-red`, `/aibdd-green`, `/aibdd-refactor`.
+6. 和用戶說道（可使用不同詞彙但維持語意）：「OK 基本上 /aibdd-plan 所有技術計畫都做完了。boundary-map／contracts／data／test-strategy 已落到 boundary 真相，DSL 已物理化、可被 red 端使用，sequence diagrams 與 internal-structure 已寫入 plan package，plan.md 已列出本輪 Impacted Feature Files。如沒問題，可以執行 /aibdd-spec-by-example-analyze，來把 atomic rules 展成 Scenario Outline 與 Examples。」
