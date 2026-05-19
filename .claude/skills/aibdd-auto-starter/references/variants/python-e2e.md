@@ -73,7 +73,7 @@ ${PROJECT_ROOT}/
 │       ├── shared/
 │       │   └── dsl.yml                    # boundary shared DSL truth
 │       ├── test-strategy.yml
-│       └── packages/                      # Discovery late-bind `NN-<功能模組描述>/`
+│       └── packages/                      # caller-context 提供 slug；Discovery 建 `NN-<slug>/`
 ├── requirements.txt
 ├── pyproject.toml
 ├── behave.ini

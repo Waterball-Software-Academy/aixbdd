@@ -90,12 +90,14 @@ BDD_CONSTITUTION_PATH: ${AIBDD_CONFIG_DIR}/bdd-stack/project-bdd-axes.md
 
 # -----------------------------------------------------------------------------
 # 3. CURRENT_SPEC_PACKAGE
-# kickoff 還沒有 raw idea，也沒有 Discovery Session；此處只放 plan package placeholder，
-# 讓下游知道 plan-side 檔案的預設展開方式，不代表已有功能包 truth。
+# 借位區：CURRENT_PLAN_PACKAGE 是 slot（一對多並存）；filesystem 上多個 plan
+# package 同時存在，caller 在呼叫 plan / tasks / implement 等 skill 時透過
+# CLI arg 或 caller payload 指定當前 plan slug，arguments.yml 不追蹤 active。
+# 下列 derived keys 經 ${CURRENT_PLAN_PACKAGE} 繼承 slot 語意。
 # -----------------------------------------------------------------------------
 
-# CURRENT_PLAN_PACKAGE — 當前功能規格包根目錄；kickoff 後仍是 placeholder，Discovery 會改寫。
-CURRENT_PLAN_PACKAGE: ${PLAN_PACKAGES_DIR}/000-kickoff-placeholder
+# CURRENT_PLAN_PACKAGE — 當前 plan package 根目錄；slot 形式，由 caller-context 提供具體 slug。
+CURRENT_PLAN_PACKAGE: ${PLAN_PACKAGES_DIR}/<<NNN-plan-slug>>
 
 # PLAN_SPEC — 規格本文路徑。
 PLAN_SPEC: ${CURRENT_PLAN_PACKAGE}/spec.md
@@ -164,17 +166,18 @@ BOUNDARY_SHARED_DSL: ${TRUTH_BOUNDARY_SHARED_DIR}/dsl.yml
 TEST_STRATEGY_FILE: ${TRUTH_BOUNDARY_ROOT}/test-strategy.yml
 
 # -----------------------------------------------------------------------------
-# 6. FUNCTION_PACKAGE_TRUTH（late-bound by /aibdd-discovery）
-# kickoff 絕對不建立、選擇、或啟用 NN-<功能模組描述>。
-# 下列 key 只能在 raw idea sourcing + package slug selection 後由 /aibdd-discovery 寫入；
-# 因此在 kickoff after fixture 內必須維持註解，不得變成有效 YAML key。
+# 6. FUNCTION_PACKAGE_TRUTH
+# 借位區：TRUTH_FUNCTION_PACKAGE 是 slot（一對多並存）；同 boundary 下 NN-*
+# 多個 functional module 同時存在。kickoff 不建立 NN-<slug>/ 目錄、不追蹤
+# active；各 skill 由 caller-context 取得當前 functional module slug。下列
+# derived keys 經 ${TRUTH_FUNCTION_PACKAGE} 繼承 slot 語意。
 # -----------------------------------------------------------------------------
 
-# TRUTH_FUNCTION_PACKAGE: ${TRUTH_BOUNDARY_PACKAGES_DIR}/NN-<功能模組描述>
-# FEATURE_SPECS_DIR: ${TRUTH_FUNCTION_PACKAGE}/features
-# ACTIVITIES_DIR: ${TRUTH_FUNCTION_PACKAGE}/activities
-# TRUTH_TEST_PLAN_DIR: ${TRUTH_FUNCTION_PACKAGE}/test-plan
-# BOUNDARY_PACKAGE_DSL: ${TRUTH_FUNCTION_PACKAGE}/dsl.yml
+TRUTH_FUNCTION_PACKAGE: ${TRUTH_BOUNDARY_PACKAGES_DIR}/<<NN-functional-module>>
+FEATURE_SPECS_DIR: ${TRUTH_FUNCTION_PACKAGE}/features
+ACTIVITIES_DIR: ${TRUTH_FUNCTION_PACKAGE}/activities
+TRUTH_TEST_PLAN_DIR: ${TRUTH_FUNCTION_PACKAGE}/test-plan
+BOUNDARY_PACKAGE_DSL: ${TRUTH_FUNCTION_PACKAGE}/dsl.yml
 
 # -----------------------------------------------------------------------------
 # 7. NEXTJS_PLAYWRIGHT_STARTER_OUTPUT_PATHS — starter 產物路徑綁定

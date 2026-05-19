@@ -107,9 +107,9 @@ references:
 3. ASSERT every core ref path exists and is read from path, not basename.
 4. `$$runtime_refs` = READ `ACCEPTANCE_RUNNER_RUNTIME_REF`, `STEP_DEFINITIONS_RUNTIME_REF`, `FIXTURES_RUNTIME_REF`, and `FEATURE_ARCHIVE_RUNTIME_REF`.
 5. ASSERT every runtime ref exists and declares command, glob, fixture, archive, or visibility behavior it owns.
-6. `$backend_root` = COMPUTE parent directory of `.aibdd/` resolved from `$$arguments_path`.
+6. `$boundary_codebase_root` = COMPUTE parent directory of `.aibdd/` resolved from `$$arguments_path`.
 7. ASSERT `$$config` contains non-empty `RED_PREHANDLING_HOOK_REF`; on failure STOP with `missing_red_prehandling_hook_ref`.
-8. `$$pre_hook_doc` = READ resolved absolute path `join($backend_root, resolved($$config.RED_PREHANDLING_HOOK_REF))`; ASSERT file exists and is non-empty; on failure STOP route project BDD stack configuration.
+8. `$$pre_hook_doc` = READ resolved absolute path `join($boundary_codebase_root, resolved($$config.RED_PREHANDLING_HOOK_REF))`; ASSERT file exists and is non-empty; on failure STOP route project BDD stack configuration.
 9. ASSERT Worker completes Pre-Red gate described in `$$pre_hook_doc` before Phase 3; on NO-GO STOP with `pre_red_gate_blocked`.
 10. `$snapshot` = DERIVE runtime ref paths and content fingerprints including `RED_PREHANDLING_HOOK_REF`.
 

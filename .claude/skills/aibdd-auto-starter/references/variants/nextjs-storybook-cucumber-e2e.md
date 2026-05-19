@@ -51,7 +51,7 @@ ${PROJECT_ROOT}/
 │       ├── shared/
 │       │   └── dsl.yml
 │       ├── test-strategy.yml
-│       └── packages/                       # Discovery late-bind `NN-<功能模組描述>/`
+│       └── packages/                       # caller-context 提供 slug；Discovery 建 `NN-<slug>/`
 ├── package.json                            # next/react/vite/storybook/playwright/vitest 依賴
 ├── tsconfig.json                           # strict、bundler resolution、@/* alias
 ├── next.config.ts                          # Next.js 16 config

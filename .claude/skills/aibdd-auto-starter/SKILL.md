@@ -160,8 +160,8 @@ Generate a walking skeleton from kickoff arguments and starter templates. The va
 12. `$same_repo_args` = MATCH normalized_path(`$$arguments_path`) == normalized_path(`$expected_args_path`)
 13. BRANCH `$same_repo_args` ? GOTO #4.1 : GOTO #3.13.1
     13.1 `$repo_role_label` = DERIVE label from `$$variant_kind`
-        backend  → `backend`（kickoff layout = `${PROJECT_ROOT}/${BACKEND_SUBDIR}`）
-        frontend → `frontend`（kickoff layout = `${PROJECT_ROOT}/${FRONTEND_SUBDIR}`）
+        backend  → `backend`（kickoff layout = `${PROJECT_ROOT}/${BOUNDARY_CODEBASE_SUBDIR}`）
+        frontend → `frontend`（kickoff layout = `${PROJECT_ROOT}/${BOUNDARY_CODEBASE_SUBDIR}`）
     13.2 `$repo_msg` = RENDER "starter 只讀同 repo 內既有 AIBDD project config；請在已 kickoff 的 ${$repo_role_label} root 執行，且 arguments.yml 必須位於 `${project_dir}/${AIBDD_ARGUMENTS_PATH}`。若 layout 不對，請重跑 /aibdd-kickoff 並選擇正確的根目錄。"
     13.3 EMIT `$repo_msg` to user
     13.4 STOP
