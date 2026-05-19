@@ -3,7 +3,7 @@
 緣由：把 `/aibdd-plan` 後續所有 sub-SOP 賴以決策的真相一次 bind 起來——arguments 鍵齊不齊、Discovery 是否已 accepted、本輪 boundary type 該載入哪份 profile、既有 truth bundle 與 code skeleton 形狀為何。沒在這裡 ASSERT 完，後續 specifier 派遣與 DSL 推導會在假設不成立下 silently 產出對不上 SSOT 的 contracts／sequence／DSL。
 
 1. ASSERT arguments 必備鍵齊全
-   - 對上層已 PARSE 之 `${ARGUMENTS_FILE}` 逐項檢查下列鍵存在：`SPECS_ROOT_DIR`、`PLAN_SPEC`、`PLAN_REPORTS_DIR`、`TRUTH_BOUNDARY_ROOT`、`TRUTH_BOUNDARY_PACKAGES_DIR`、`TRUTH_FUNCTION_PACKAGE`、`CONTRACTS_DIR`、`DATA_DIR`、`BOUNDARY_PACKAGE_DSL`、`BOUNDARY_SHARED_DSL`、`TEST_STRATEGY_FILE`、`BOUNDARY_YML`、`ACTIVITIES_DIR`、`FEATURE_SPECS_DIR`；`DSL_KEY_LOCALE` 為選填。
+   - 對上層已 PARSE 之 `${AIBDD_ARGUMENTS_PATH}` 逐項檢查下列鍵存在：`SPECS_ROOT_DIR`、`PLAN_SPEC`、`PLAN_REPORTS_DIR`、`TRUTH_BOUNDARY_ROOT`、`TRUTH_BOUNDARY_PACKAGES_DIR`、`TRUTH_FUNCTION_PACKAGE`、`CONTRACTS_DIR`、`DATA_DIR`、`BOUNDARY_PACKAGE_DSL`、`BOUNDARY_SHARED_DSL`、`TEST_STRATEGY_FILE`、`BOUNDARY_YML`、`ACTIVITIES_DIR`、`FEATURE_SPECS_DIR`；`DSL_KEY_LOCALE` 為選填。
    - 任一缺鍵 → 列出缺鍵，提示使用者回 `/aibdd-kickoff` 或 `/aibdd-discovery` 補綁後再執行本 skill，STOP。本步禁止順手補建 arguments.yml 任何欄位。
 
 2. ASSERT Discovery 真相已 accepted（READ-ONLY）
