@@ -60,7 +60,7 @@
 
 1. EXECUTE the sub-sop: `01-sourcing-and-packaging/SOP.md`
 
-2. EXECUTE the sub-sop: `02-activity-analyze/SOP.md`
+2. EXECUTE the sub-sop: `02b-feature-file-list-analyze/SOP.md`
 
 3. EXECUTE the sub-sop: `03-atomic-rules-analyze/SOP.md`
 
