@@ -6,15 +6,14 @@
 
 | 參數 | 預設值 |
 |------|--------|
-| STARTER_VARIANT | `python-e2e`、`java-e2e`、或 `nextjs-storybook-cucumber-e2e`（由 Q1 決定） |
+| STARTER_VARIANT | `python-e2e` 或 `java-e2e`（由 Q1 決定） |
 | PROJECT_SPEC_LANGUAGE | zh-hant |
 | DSL_KEY_LOCALE | prefer_spec_language |
-| BACKEND_SUBDIR | `""` | （backend stack 專用：`python-e2e` / `java-e2e`） |
-| FRONTEND_SUBDIR | `""` | （frontend stack 專用：`nextjs-storybook-cucumber-e2e`） |
+| BOUNDARY_CODEBASE_SUBDIR | `""` |
 | AIBDD_CONFIG_DIR | .aibdd |
 | AIBDD_ARGUMENTS_PATH | ${AIBDD_CONFIG_DIR}/arguments.yml |
 | SPECS_ROOT_DIR | specs |
-| PLAN_PACKAGES_DIR | ${SPECS_ROOT_DIR} |
+| PLAN_PACKAGES_DIR | ${SPECS_ROOT_DIR}/plans |
 | CURRENT_PLAN_PACKAGE | ${PLAN_PACKAGES_DIR}/<NNN-slug> |
 | ACTIVITY_EXT | .activity |
 | DEV_CONSTITUTION_PATH | .aibdd/dev-constitution.md |
@@ -31,36 +30,38 @@
 
 ### Backend Root 組合規則
 
-`BACKEND_SUBDIR` 控制後端程式碼是否放在 repo root 的子目錄：
+`BOUNDARY_CODEBASE_SUBDIR` 控制後端程式碼是否放在 repo root 的子目錄：
 
-- `BACKEND_SUBDIR = ""`（預設）→ `${BACKEND_ROOT} = ${PROJECT_ROOT}`（backend 與 specs/ 都直接掛在 repo 最外層）
-- `BACKEND_SUBDIR = "<name>"`（例如 `backend`）→ `${BACKEND_ROOT} = ${PROJECT_ROOT}/${BACKEND_SUBDIR}`
+- `BOUNDARY_CODEBASE_SUBDIR = ""`（預設）→ `${BOUNDARY_CODEBASE_ROOT} = ${PROJECT_ROOT}`（backend 與 specs/ 都直接掛在 repo 最外層）
+- `BOUNDARY_CODEBASE_SUBDIR = "<name>"`（例如 `backend`）→ `${BOUNDARY_CODEBASE_ROOT} = ${PROJECT_ROOT}/${BOUNDARY_CODEBASE_SUBDIR}`
 
-所有 path 變數（`AIBDD_ARGUMENTS_PATH`、`SPECS_ROOT_DIR`、`PY_APP_DIR`、`PY_TEST_FEATURES_DIR`、`ALEMBIC_VERSIONS_DIR` 等）都解析為 `${BACKEND_ROOT}/<value>`。下游 `/aibdd-auto-starter` 的 same-repo guard 會以 `${BACKEND_ROOT}/${AIBDD_ARGUMENTS_PATH}` 為唯一合法 args 位置。
+所有 path 變數（`AIBDD_ARGUMENTS_PATH`、`SPECS_ROOT_DIR`、`PY_APP_DIR`、`PY_TEST_FEATURES_DIR`、`ALEMBIC_VERSIONS_DIR` 等）都解析為 `${BOUNDARY_CODEBASE_ROOT}/<value>`。下游 `/aibdd-auto-starter` 的 same-repo guard 會以 `${BOUNDARY_CODEBASE_ROOT}/${AIBDD_ARGUMENTS_PATH}` 為唯一合法 args 位置。
 
 ### Frontend Root 組合規則
 
-`FRONTEND_SUBDIR` 控制前端程式碼是否放在 repo root 的子目錄（語意與 `BACKEND_SUBDIR` 對稱）：
+`BOUNDARY_CODEBASE_SUBDIR` 控制前端程式碼是否放在 repo root 的子目錄（語意與 `BOUNDARY_CODEBASE_SUBDIR` 對稱）：
 
-- `FRONTEND_SUBDIR = ""`（預設）→ `${FRONTEND_ROOT} = ${PROJECT_ROOT}`（frontend 與 specs/ 都直接掛在 repo 最外層）
-- `FRONTEND_SUBDIR = "<name>"`（例如 `oxo`）→ `${FRONTEND_ROOT} = ${PROJECT_ROOT}/${FRONTEND_SUBDIR}`
+- `BOUNDARY_CODEBASE_SUBDIR = ""`（預設）→ `${BOUNDARY_CODEBASE_ROOT} = ${PROJECT_ROOT}`（frontend 與 specs/ 都直接掛在 repo 最外層）
+- `BOUNDARY_CODEBASE_SUBDIR = "<name>"`（例如 `oxo`）→ `${BOUNDARY_CODEBASE_ROOT} = ${PROJECT_ROOT}/${BOUNDARY_CODEBASE_SUBDIR}`
 
-所有 path 變數（`AIBDD_ARGUMENTS_PATH`、`SPECS_ROOT_DIR`、`FE_APP_DIR`、`FE_FEATURES_DIR` 等）都解析為 `${FRONTEND_ROOT}/<value>`。下游 `/aibdd-auto-frontend-starter` 的 same-repo guard 會以 `${FRONTEND_ROOT}/${AIBDD_ARGUMENTS_PATH}` 為唯一合法 args 位置。
+所有 path 變數（`AIBDD_ARGUMENTS_PATH`、`SPECS_ROOT_DIR`、`FE_APP_DIR`、`FE_FEATURES_DIR` 等）都解析為 `${BOUNDARY_CODEBASE_ROOT}/<value>`。下游 `/aibdd-auto-frontend-starter` 的 same-repo guard 會以 `${BOUNDARY_CODEBASE_ROOT}/${AIBDD_ARGUMENTS_PATH}` 為唯一合法 args 位置。
 
-### truth（佔位符：`<boundary>`；function package late-bound）
+### truth（function package late-bound）
 
 | 參數 | 預設值 |
 |------|--------|
 | TRUTH_ARCHITECTURE_DIR | ${SPECS_ROOT_DIR}/architecture |
-| TRUTH_BOUNDARY_ROOT | ${SPECS_ROOT_DIR}/\<boundary\> |
+| TRUTH_BOUNDARY_ROOT | ${SPECS_ROOT_DIR} |
 | TRUTH_BOUNDARY_SHARED_DIR | ${TRUTH_BOUNDARY_ROOT}/shared |
 | TRUTH_BOUNDARY_PACKAGES_DIR | ${TRUTH_BOUNDARY_ROOT}/packages |
 
-`<boundary>` 由 `${BOUNDARY_YML}` 的唯一 kickoff boundary `id` 展開。**Kickoff 不得**宣告 active `TRUTH_FUNCTION_PACKAGE`、`FEATURE_SPECS_DIR`、`ACTIVITIES_DIR`、`TRUTH_TEST_PLAN_DIR`、`BOUNDARY_PACKAGE_DSL`。這些鍵只能在 `/aibdd-discovery` 完成 raw idea sourcing 並選定 `NN-<功能模組描述>` 後 **late-bind** 寫入 `arguments.yml`。
+One specs root = one boundary。`${TRUTH_BOUNDARY_ROOT}` 等於 `${SPECS_ROOT_DIR}`。`${BOUNDARY_YML}` 為單一 boundary 宣告，其 `id` 僅作 component-diagram metadata 與 `boundary-map.yml` 標記的語意 tag。
 
-### boundary-aware（由 truth 變數推導；kickoff 只保證到 boundary root）
+Kickoff 不得宣告 active `TRUTH_FUNCTION_PACKAGE`、`FEATURE_SPECS_DIR`、`ACTIVITIES_DIR`、`TRUTH_TEST_PLAN_DIR`、`BOUNDARY_PACKAGE_DSL`。這些鍵只能在 `/aibdd-discovery` 完成 raw idea sourcing 並選定 `NN-<功能模組描述>` 後 late-bind 寫入 `arguments.yml`。
 
-Kickoff 只建立一個 L1 backend boundary。`<boundary>` 必須直接解析為 boundary `id`，所以唯一 boundary root 是 `${SPECS_ROOT_DIR}/<id>`。**功能模組行為 truth**（activities / features / test-plan / package `dsl.yml`）只能在 Discovery 綁定 `TRUTH_FUNCTION_PACKAGE` 後，透過對應變數取得；不得在 kickoff 後假設任一 `packages/NN-*` 已存在。
+### boundary-aware（boundary root 即 specs root）
+
+Kickoff 只建立一個 L1 boundary 並把它登記到 `${BOUNDARY_YML}`；boundary 在檔案系統上的 truth root 就是 `${SPECS_ROOT_DIR}` 本身。功能模組行為 truth（activities / features / test-plan / package `dsl.yml`）只能在 Discovery 綁定 `TRUTH_FUNCTION_PACKAGE` 後，透過對應變數取得；kickoff 後不得假設任一 `packages/NN-*` 已存在。
 
 每個變數有 scope，skill 使用前做 scope 驗證。
 
@@ -68,6 +69,7 @@ Kickoff 只建立一個 L1 backend boundary。`<boundary>` 必須直接解析為
 |------|--------|-------|---------|
 | BOUNDARY_YML | ${TRUTH_ARCHITECTURE_DIR}/boundary.yml | global | — |
 | COMPONENT_DIAGRAM | ${TRUTH_ARCHITECTURE_DIR}/component-diagram.class.mmd | global | — |
+| BOUNDARY_MAP_FILE | ${SPECS_ROOT_DIR}/boundary-map.yml | global | written by `/aibdd-plan` |
 | CONTRACTS_DIR | ${TRUTH_BOUNDARY_ROOT}/contracts | backend | — |
 | DATA_DIR | ${TRUTH_BOUNDARY_ROOT}/data | backend | — |
 | BOUNDARY_SHARED_DSL | ${TRUTH_BOUNDARY_SHARED_DIR}/dsl.yml | backend | written by `/aibdd-plan`（必要時）與 promotion 流程 |
@@ -131,11 +133,11 @@ scope 值意義：
 
 ## Unsupported Variants
 
-其他 frontend 框架（Vue / Svelte 等）、Unit Test only、Mobile 在 kickoff 互動中只可顯示為「尚未支援」，不得寫入 artifact plan 或 `arguments.yml`。TypeScript / Next.js 已透過 `stack=nextjs_playwright` 支援；其他 TypeScript 後端（Nest / Hono 等）尚未支援。
+其他 frontend 框架（Vue / Svelte 等）、Unit Test only、Mobile 在 kickoff 互動中只可顯示為「尚未支援」，不得寫入 artifact plan 或 `arguments.yml`。其他 TypeScript 後端（Nest / Hono 等）尚未支援。
 
 ## arguments.yml 範例
 
-範例分三個 stack，分別由 `assets/templates/arguments.template.yml`（python-e2e）、`assets/templates/arguments.template.java-e2e.yml`（java-e2e）與 `assets/templates/arguments.template.nextjs-playwright.yml`（nextjs-playwright）渲染：
+Kickoff Q1 範例分兩個 stack，分別由 `assets/templates/arguments.template.yml`（python-e2e）與 `assets/templates/arguments.template.java-e2e.yml`（java-e2e）渲染。另有 `assets/templates/arguments.template.nextjs-playwright.yml` 供 Phase 4 internal headless branch，不走 kickoff Q1。
 
 ### Python E2E
 
@@ -144,11 +146,11 @@ scope 值意義：
 STARTER_VARIANT: python-e2e
 PROJECT_SPEC_LANGUAGE: zh-hant
 DSL_KEY_LOCALE: prefer_spec_language
-BACKEND_SUBDIR: ""
+BOUNDARY_CODEBASE_SUBDIR: ""
 AIBDD_CONFIG_DIR: .aibdd
 AIBDD_ARGUMENTS_PATH: ${AIBDD_CONFIG_DIR}/arguments.yml
 SPECS_ROOT_DIR: specs
-PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}
+PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}/plans
 CURRENT_PLAN_PACKAGE: ${PLAN_PACKAGES_DIR}/<NNN-slug>
 MAX_QUESTIONS_PER_ROUND: 10
 ACTIVITY_EXT: .activity
@@ -166,7 +168,7 @@ CLARIFY_DIR: ${CURRENT_PLAN_PACKAGE}/clarify
 
 # ── truth ─────────────────────────────────────────────
 TRUTH_ARCHITECTURE_DIR: ${SPECS_ROOT_DIR}/architecture
-TRUTH_BOUNDARY_ROOT: ${SPECS_ROOT_DIR}/<boundary>
+TRUTH_BOUNDARY_ROOT: ${SPECS_ROOT_DIR}
 TRUTH_BOUNDARY_SHARED_DIR: ${TRUTH_BOUNDARY_ROOT}/shared
 TRUTH_BOUNDARY_PACKAGES_DIR: ${TRUTH_BOUNDARY_ROOT}/packages
 
@@ -181,6 +183,7 @@ TRUTH_BOUNDARY_PACKAGES_DIR: ${TRUTH_BOUNDARY_ROOT}/packages
 
 BOUNDARY_YML: ${TRUTH_ARCHITECTURE_DIR}/boundary.yml
 COMPONENT_DIAGRAM: ${TRUTH_ARCHITECTURE_DIR}/component-diagram.class.mmd
+BOUNDARY_MAP_FILE: ${SPECS_ROOT_DIR}/boundary-map.yml
 CONTRACTS_DIR: ${TRUTH_BOUNDARY_ROOT}/contracts
 DATA_DIR: ${TRUTH_BOUNDARY_ROOT}/data
 BOUNDARY_SHARED_DSL: ${TRUTH_BOUNDARY_SHARED_DIR}/dsl.yml
@@ -224,11 +227,11 @@ ALEMBIC_VERSIONS_DIR: alembic/versions
 STARTER_VARIANT: java-e2e
 PROJECT_SPEC_LANGUAGE: zh-hant
 DSL_KEY_LOCALE: prefer_spec_language
-BACKEND_SUBDIR: ""
+BOUNDARY_CODEBASE_SUBDIR: ""
 AIBDD_CONFIG_DIR: .aibdd
 AIBDD_ARGUMENTS_PATH: ${AIBDD_CONFIG_DIR}/arguments.yml
 SPECS_ROOT_DIR: specs
-PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}
+PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}/plans
 CURRENT_PLAN_PACKAGE: ${PLAN_PACKAGES_DIR}/<NNN-slug>
 MAX_QUESTIONS_PER_ROUND: 10
 ACTIVITY_EXT: .activity
@@ -237,7 +240,7 @@ BDD_CONSTITUTION_PATH: .aibdd/bdd-stack/project-bdd-axes.md
 
 # ── truth ─────────────────────────────────────────────
 TRUTH_ARCHITECTURE_DIR: ${SPECS_ROOT_DIR}/architecture
-TRUTH_BOUNDARY_ROOT: ${SPECS_ROOT_DIR}/<boundary>
+TRUTH_BOUNDARY_ROOT: ${SPECS_ROOT_DIR}
 TRUTH_BOUNDARY_SHARED_DIR: ${TRUTH_BOUNDARY_ROOT}/shared
 TRUTH_BOUNDARY_PACKAGES_DIR: ${TRUTH_BOUNDARY_ROOT}/packages
 
@@ -245,6 +248,7 @@ TRUTH_BOUNDARY_PACKAGES_DIR: ${TRUTH_BOUNDARY_ROOT}/packages
 
 BOUNDARY_YML: ${TRUTH_ARCHITECTURE_DIR}/boundary.yml
 COMPONENT_DIAGRAM: ${TRUTH_ARCHITECTURE_DIR}/component-diagram.class.mmd
+BOUNDARY_MAP_FILE: ${SPECS_ROOT_DIR}/boundary-map.yml
 CONTRACTS_DIR: ${TRUTH_BOUNDARY_ROOT}/contracts
 DATA_DIR: ${TRUTH_BOUNDARY_ROOT}/data
 BOUNDARY_SHARED_DSL: ${TRUTH_BOUNDARY_SHARED_DIR}/dsl.yml
@@ -282,22 +286,21 @@ DB_PORT: "5432"
 
 ## Boundary Path Resolution（consumer 側）
 
-`.aibdd/arguments.yml` 不列舉具體 boundary id；skill 依 `${BOUNDARY_YML}` 動態取得唯一 kickoff boundary：
+One specs root = one boundary。`${BOUNDARY_YML}` 為單一 boundary 宣告（top-level `id` / `level` / `role` / `type` / `description`，非 array），其 `id` 作為語意 tag（給 component-diagram metadata、boundary-map.yml 用），不對應 filesystem 子目錄：
 
 ```yaml
 # specs/architecture/boundary.yml（由 /aibdd-kickoff 產出）
 version: 2
-boundaries:
-  - id: backend
-    level: 1
-    role: backend
-    type: web-service
-    description: backend Python FastAPI backend service
+id: backend
+level: 1
+role: backend
+type: web-service
+description: backend Python FastAPI backend service
 ```
 
-下游 skill 在 kickoff 專案中以 `boundary.id` 替換 `<boundary>`。因此 `TRUTH_BOUNDARY_ROOT` 會解析為 `specs/backend`，`TRUTH_BOUNDARY_PACKAGES_DIR` 會解析為 `specs/backend/packages`。在 Discovery 綁定前，`TRUTH_FUNCTION_PACKAGE` / `FEATURE_SPECS_DIR` / `ACTIVITIES_DIR` **不存在於** `.aibdd/arguments.yml`，不得被推斷為 `specs/backend/packages/01-<id>`。scope 驗證規則見本表 scope 列與 `aibdd-core::spec-package-paths.md`。
+`TRUTH_BOUNDARY_ROOT` 展開為 `specs`，`TRUTH_BOUNDARY_PACKAGES_DIR` 為 `specs/packages`，`CONTRACTS_DIR` 為 `specs/contracts`，依此類推。在 Discovery 綁定前，`TRUTH_FUNCTION_PACKAGE` / `FEATURE_SPECS_DIR` / `ACTIVITIES_DIR` 不存在於 `.aibdd/arguments.yml`，不得被推斷為 `specs/packages/01-<id>`。scope 驗證規則見本表 scope 列與 `aibdd-core::spec-package-paths.md`。
 
-注意：以上 `specs/` 為相對路徑，實際檔案系統位置為 `${BACKEND_ROOT}/specs/`，其中 `${BACKEND_ROOT} = ${PROJECT_ROOT}/${BACKEND_SUBDIR}`（`BACKEND_SUBDIR = ""` 時退化為 `${PROJECT_ROOT}`）。
+注意：以上 `specs/` 為相對路徑，實際檔案系統位置為 `${BOUNDARY_CODEBASE_ROOT}/specs/`，其中 `${BOUNDARY_CODEBASE_ROOT} = ${PROJECT_ROOT}/${BOUNDARY_CODEBASE_SUBDIR}`（`BOUNDARY_CODEBASE_SUBDIR = ""` 時退化為 `${PROJECT_ROOT}`）。
 
 ## Starter Skill 對照表
 

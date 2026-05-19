@@ -1,7 +1,6 @@
 version: 2
-boundaries:
-  - id: {{TLB_ID}}
-    level: 1
-    role: backend
-    type: web-service
-    description: {{TLB_ID}} Python FastAPI backend service
+id: "{{TLB_ID}}"
+level: 1
+role: backend
+type: web-service
+description: "{{TLB_ID}} Python FastAPI backend service"

@@ -1,5 +1,5 @@
 ---
-description: 專案初始化引導；支援 Python E2E、Java E2E、Next.js + Playwright 三個 stack，收集唯一 TLB 名稱（backend 或 frontend），產出 arguments.yml、boundary.yml、component-diagram.class.mmd 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Vue/Svelte 等其他 frontend 框架、Unit Test only、Mobile，或其他尚未支援的 stack。
+description: 專案初始化引導；支援 Python E2E、Java E2E 兩個 stack，收集唯一 TLB 名稱，產出 arguments.yml、boundary.yml、component-diagram.class.mmd 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Vue/Svelte 等其他 frontend 框架、Unit Test only、Mobile，或其他尚未支援的 stack。
 metadata:
   skill-type: planner
   source: project-level
@@ -93,11 +93,11 @@ references:
   - path: aibdd-core::diagram-file-naming.md
     purpose: "Mermaid compound extension：*.class.mmd／*.sequence.mmd（COMPONENT_DIAGRAM 檔名合約）"
   - path: assets/templates/arguments.template.yml
-    purpose: "arguments.yml 的 byte-deterministic 模板（python-e2e）；占位符 {{TLB_ID}}、{{PROJECT_SPEC_LANGUAGE}}、{{BACKEND_SUBDIR}}"
+    purpose: "arguments.yml 的 byte-deterministic 模板（python-e2e）；占位符 {{TLB_ID}}、{{PROJECT_SPEC_LANGUAGE}}、{{BOUNDARY_CODEBASE_SUBDIR}}"
   - path: assets/templates/arguments.template.java-e2e.yml
-    purpose: "arguments.yml 的 byte-deterministic 模板（java-e2e）；占位符 {{PROJECT_SPEC_LANGUAGE}}、{{BACKEND_SUBDIR}}、{{GROUP_ID}}、{{ARTIFACT_ID}}、{{BASE_PACKAGE}}、{{JAVA_VERSION}}、{{SPRING_BOOT_VERSION}}、{{CUCUMBER_VERSION}}、{{JJWT_VERSION}}、{{POSTGRES_IMAGE_VERSION}}、{{DB_NAME}}"
+    purpose: "arguments.yml 的 byte-deterministic 模板（java-e2e）；占位符 {{PROJECT_SPEC_LANGUAGE}}、{{BOUNDARY_CODEBASE_SUBDIR}}、{{GROUP_ID}}、{{ARTIFACT_ID}}、{{BASE_PACKAGE}}、{{JAVA_VERSION}}、{{SPRING_BOOT_VERSION}}、{{CUCUMBER_VERSION}}、{{JJWT_VERSION}}、{{POSTGRES_IMAGE_VERSION}}、{{DB_NAME}}"
   - path: assets/templates/arguments.template.nextjs-playwright.yml
-    purpose: "arguments.yml 的 byte-deterministic 模板（nextjs-playwright）；占位符 {{PROJECT_SPEC_LANGUAGE}}、{{FRONTEND_SUBDIR}}、{{PROJECT_SLUG}}"
+    purpose: "arguments.yml 的 byte-deterministic 模板（nextjs-playwright）；占位符 {{PROJECT_SPEC_LANGUAGE}}、{{BOUNDARY_CODEBASE_SUBDIR}}、{{PROJECT_SLUG}}"
   - path: assets/templates/boundary.template.yml
     purpose: "boundary.yml 的 byte-deterministic 模板；占位符 {{TLB_ID}}"
   - path: assets/templates/component-diagram.class.template.mmd
@@ -157,16 +157,16 @@ This skill is **planner-level** and **File First**. The executor MUST NOT:
    cancel  → STOP
 13. `$$plan_mode` = COMPUTE `new`
 
-Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q3-backend-layout 答案後再算（解析 `$$backend_root = ${$$project_root}/${$$backend_subdir}`，`$$backend_subdir` 為空時退化為 `${$$project_root}`）。
+Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q4-codebase-layout 答案後再算（解析 `$$boundary_codebase_root = ${$$project_root}/${$$boundary_codebase_subdir}`，`$$boundary_codebase_subdir` 為空時退化為 `${$$project_root}`）。
 
 ### Phase 2 — WRITE kickoff plan
 > produces: `$$plan_doc`
 
 1. `$template` = READ [`assets/templates/kickoff-plan.template.md`](assets/templates/kickoff-plan.template.md)
 2. `$question_set` = DERIVE backend question records from [`references/question-catalog.md`](references/question-catalog.md) and [`references/kickoff-plan-contract.md`](references/kickoff-plan-contract.md)
-3. ASSERT `q1-tech-stack` has exactly the three selectable options `python_e2e`, `java_e2e`, and `nextjs_playwright`, and no `Other`
+3. ASSERT `q1-tech-stack` has exactly the two selectable options `python_e2e` and `java_e2e`, and no `Other`
    3.1 IF assertion fails:
-       3.1.1 `$q1_msg` = RENDER "Q1 tech stack contract violation: must offer python_e2e and java_e2e only"
+       3.1.1 `$q1_msg` = RENDER "Q1 tech stack contract violation: must offer exactly python_e2e and java_e2e"
        3.1.2 EMIT `$q1_msg` to user
        3.1.3 STOP
 4. `$artifact_plan` = DERIVE files and folders from the stack-specific packing reference — `python_e2e` → [`references/python-backend-packing.md`](references/python-backend-packing.md), `java_e2e` → [`references/java-backend-packing.md`](references/java-backend-packing.md), `nextjs_playwright` → [`references/nextjs-frontend-packing.md`](references/nextjs-frontend-packing.md) — with unresolved placeholders; ASSERT no plan package path, no boundary root `actors/`, no boundary root `features/`, no `coverage/`, no `entities/`, no `sub-boundaries/`. Stack-specific packing is finalised once Q1 is answered in Phase 3
@@ -182,7 +182,7 @@ Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q3-backend-layo
        7.1.2 `$contract_msg` = RENDER "KICKOFF_PLAN.md required sections contract violation"
        7.1.3 EMIT `$contract_msg` to user
        7.1.4 STOP
-8. ASSERT path_exists(`$$plan_path`) AND `$$plan_doc` includes question records for `q1-tech-stack`, `q2-project-spec-language`, `q3-backend-service-name`, `q4-backend-layout` — File First invariant：四題必須都已落檔
+8. ASSERT path_exists(`$$plan_path`) AND `$$plan_doc` includes question records for `q1-tech-stack`, `q2-project-spec-language`, `q3-backend-service-name`, `q4-codebase-layout` — File First invariant：四題必須都已落檔
    8.1 IF assertion fails:
        8.1.1 `$invariant_msg` = RENDER "File First invariant violated: KICKOFF_PLAN.md must contain all four question records before Phase 3 may delegate clarify-loop"
        8.1.2 EMIT `$invariant_msg` to user
@@ -230,58 +230,59 @@ Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q3-backend-layo
 19. GOTO #3.1
 
 ### Phase 4 — EXECUTE artifact plan
-> produces: `$$artifact_set`, `$$backend_subdir`, `$$backend_root`, `$$args_path`
+> produces: `$$artifact_set`, `$$boundary_codebase_subdir`, `$$boundary_codebase_root`, `$$args_path`
 
 0. BRANCH `$$non_interactive`
-   true  → `$decisions` = DERIVE defaults `{stack: python_e2e, test_strategy: e2e, project_spec_language: zh-hant, tlb_id: backend, boundary_role: backend, boundary_type: web-service, backend_subdir: ""}` (non-interactive 預設走 python_e2e；要在 headless 模式跑 java_e2e，caller payload 必須帶 `stack: java_e2e`)
+   true  → `$decisions` = DERIVE defaults `{stack: python_e2e, test_strategy: e2e, project_spec_language: zh-hant, tlb_id: backend, boundary_role: backend, boundary_type: web-service, boundary_codebase_subdir: ""}` (non-interactive 預設走 python_e2e；headless 要跑 java_e2e，caller payload 必須帶 `stack: java_e2e`；headless nextjs 走 Phase 4 internal branch，見 §1 REFERENCES)
        0.1 GOTO #4.4
    false → GOTO #4.1
 1. `$execution_plan` = READ `$$plan_path`
 2. `$decisions` = PARSE Resolved Decisions from `$execution_plan`
 3. `$artifact_plan` = PARSE Artifact Plan from `$execution_plan`
-4. `$$backend_subdir` = DERIVE `$decisions.backend_subdir` (default `""` if absent)
-5. `$$backend_root` = COMPUTE `${$$project_root}` if `$$backend_subdir` is empty else `${$$project_root}/${$$backend_subdir}`
-6. `$$args_path` = COMPUTE `${$$backend_root}/.aibdd/arguments.yml`
-7. IF `$$backend_subdir` is non-empty:
-   7.1 CREATE `$$backend_root`
+4. `$$boundary_codebase_subdir` = DERIVE `$decisions.boundary_codebase_subdir` (default `""` if absent)
+5. `$$boundary_codebase_root` = COMPUTE `${$$project_root}` if `$$boundary_codebase_subdir` is empty else `${$$project_root}/${$$boundary_codebase_subdir}`
+6. `$$args_path` = COMPUTE `${$$boundary_codebase_root}/.aibdd/arguments.yml`
+7. IF `$$boundary_codebase_subdir` is non-empty:
+   7.1 CREATE `$$boundary_codebase_root`
    7.2 IF CREATE fails:
-       7.2.1 `$backend_root_msg` = RENDER permission or parent-directory error for `$$backend_root`
-       7.2.2 EMIT `$backend_root_msg` to user
+       7.2.1 `$boundary_codebase_root_msg` = RENDER permission or parent-directory error for `$$boundary_codebase_root`
+       7.2.2 EMIT `$boundary_codebase_root_msg` to user
        7.2.3 STOP
    END IF
-8. CREATE `${$$backend_root}/.aibdd/`
+8. CREATE `${$$boundary_codebase_root}/.aibdd/`
    8.1 IF CREATE fails:
-       8.1.1 `$config_create_msg` = RENDER permission or parent-directory error for `${$$backend_root}/.aibdd/`
+       8.1.1 `$config_create_msg` = RENDER permission or parent-directory error for `${$$boundary_codebase_root}/.aibdd/`
        8.1.2 EMIT `$config_create_msg` to user
        8.1.3 STOP
-8.2 CREATE `${$$backend_root}/specs/`
+8.2 CREATE `${$$boundary_codebase_root}/specs/`
    8.2.1 IF CREATE fails:
-       8.2.1.1 `$specs_create_msg` = RENDER permission or parent-directory error for `${$$backend_root}/specs/`
+       8.2.1.1 `$specs_create_msg` = RENDER permission or parent-directory error for `${$$boundary_codebase_root}/specs/`
        8.2.1.2 EMIT `$specs_create_msg` to user
        8.2.1.3 STOP
-9. CREATE `${$$backend_root}/specs/architecture/`
+9. CREATE `${$$boundary_codebase_root}/specs/architecture/`
    9.1 IF CREATE fails:
-       9.1.1 `$arch_create_msg` = RENDER permission or parent-directory error for `${$$backend_root}/specs/architecture/`
+       9.1.1 `$arch_create_msg` = RENDER permission or parent-directory error for `${$$boundary_codebase_root}/specs/architecture/`
        9.1.2 EMIT `$arch_create_msg` to user
        9.1.3 STOP
 10. BRANCH `$decisions.stack`
-    python_e2e → GOTO #4.10.A
-    java_e2e   → GOTO #4.10.B
-    other      → GOTO #4.10.X
+    python_e2e       → GOTO #4.10.A
+    java_e2e         → GOTO #4.10.B
+    nextjs_playwright → GOTO #4.10.C
+    other            → GOTO #4.10.X
     10.A `$args_template` = READ [`assets/templates/arguments.template.yml`](assets/templates/arguments.template.yml)
-        10.A.1 `$yaml` = RENDER `$args_template` substituting `{{TLB_ID}} := $decisions.tlb_id`, `{{PROJECT_SPEC_LANGUAGE}} := $decisions.project_spec_language`, `{{BACKEND_SUBDIR}} := $$backend_subdir`
+        10.A.1 `$yaml` = RENDER `$args_template` substituting `{{TLB_ID}} := $decisions.tlb_id`, `{{PROJECT_SPEC_LANGUAGE}} := $decisions.project_spec_language`, `{{BOUNDARY_CODEBASE_SUBDIR}} := $$boundary_codebase_subdir`
         10.A.2 GOTO #4.11
     10.B `$args_template` = READ [`assets/templates/arguments.template.java-e2e.yml`](assets/templates/arguments.template.java-e2e.yml)
         10.B.1 `$java_artifact_id` = COMPUTE `$decisions.tlb_id` (kebab-case 直接作為 Maven artifactId)
         10.B.2 `$java_group_id` = DERIVE `$decisions.group_id` if present else `com.example`
         10.B.3 `$java_base_package` = DERIVE `$decisions.base_package` if present else `${$java_group_id}.<artifact_id with hyphens removed>` (例：`course-api` → `com.example.courseapi`)
         10.B.4 `$java_db_name` = DERIVE `$decisions.db_name` if present else `$java_artifact_id`
-        10.B.5 `$yaml` = RENDER `$args_template` substituting `{{PROJECT_SPEC_LANGUAGE}} := $decisions.project_spec_language`, `{{BACKEND_SUBDIR}} := $$backend_subdir`, `{{GROUP_ID}} := $java_group_id`, `{{ARTIFACT_ID}} := $java_artifact_id`, `{{BASE_PACKAGE}} := $java_base_package`, `{{JAVA_VERSION}} := 25`, `{{SPRING_BOOT_VERSION}} := 4.0.6`, `{{CUCUMBER_VERSION}} := 7.34.3`, `{{JJWT_VERSION}} := 0.12.6`, `{{POSTGRES_IMAGE_VERSION}} := 18`, `{{DB_NAME}} := $java_db_name`
+        10.B.5 `$yaml` = RENDER `$args_template` substituting `{{PROJECT_SPEC_LANGUAGE}} := $decisions.project_spec_language`, `{{BOUNDARY_CODEBASE_SUBDIR}} := $$boundary_codebase_subdir`, `{{GROUP_ID}} := $java_group_id`, `{{ARTIFACT_ID}} := $java_artifact_id`, `{{BASE_PACKAGE}} := $java_base_package`, `{{JAVA_VERSION}} := 25`, `{{SPRING_BOOT_VERSION}} := 4.0.6`, `{{CUCUMBER_VERSION}} := 7.34.3`, `{{JJWT_VERSION}} := 0.12.6`, `{{POSTGRES_IMAGE_VERSION}} := 18`, `{{DB_NAME}} := $java_db_name`
         10.B.6 GOTO #4.11
     10.C `$args_template` = READ [`assets/templates/arguments.template.nextjs-playwright.yml`](assets/templates/arguments.template.nextjs-playwright.yml)
-        10.C.1 `$frontend_subdir` = COMPUTE `$decisions.frontend_subdir` (default `""` if absent; mirrors `BACKEND_SUBDIR` semantics)
+        10.C.1 `$boundary_codebase_subdir` = COMPUTE `$decisions.boundary_codebase_subdir` (default `""` if absent; mirrors `BOUNDARY_CODEBASE_SUBDIR` semantics)
         10.C.2 `$project_slug` = COMPUTE `$decisions.tlb_id` (TLB id 同時作為 `PROJECT_SLUG` for `${PROJECT_SLUG}-sb-mcp` MCP tools)
-        10.C.3 `$yaml` = RENDER `$args_template` substituting `{{PROJECT_SPEC_LANGUAGE}} := $decisions.project_spec_language`, `{{FRONTEND_SUBDIR}} := $frontend_subdir`, `{{PROJECT_SLUG}} := $project_slug`
+        10.C.3 `$yaml` = RENDER `$args_template` substituting `{{PROJECT_SPEC_LANGUAGE}} := $decisions.project_spec_language`, `{{BOUNDARY_CODEBASE_SUBDIR}} := $boundary_codebase_subdir`, `{{PROJECT_SLUG}} := $project_slug`
         10.C.4 GOTO #4.11
     10.X `$stack_msg` = RENDER "未知 stack `${$decisions.stack}`；只支援 `python_e2e`、`java_e2e`、`nextjs_playwright`"
         10.X.1 EMIT `$stack_msg` to user
@@ -290,16 +291,17 @@ Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q3-backend-layo
     11.1 `$boundary_doc` = RENDER `$boundary_template` substituting `{{TLB_ID}} := $decisions.tlb_id`
 12. `$diagram_template` = READ [`assets/templates/component-diagram.class.template.mmd`](assets/templates/component-diagram.class.template.mmd)
     12.1 `$diagram_doc` = RENDER `$diagram_template` substituting `{{TLB_ID}} := $decisions.tlb_id` — output path MUST obey `aibdd-core::diagram-file-naming.md`
-13. `$folder_plan` = DERIVE boundary truth folder skeleton from `$decisions` per the stack-specific packing reference (`python_e2e` → [`references/python-backend-packing.md`](references/python-backend-packing.md), `java_e2e` → [`references/java-backend-packing.md`](references/java-backend-packing.md), `nextjs_playwright` → [`references/nextjs-frontend-packing.md`](references/nextjs-frontend-packing.md)) §Boundary Folder Skeleton — MUST be exactly `[specs/${tlb_id}/contracts, specs/${tlb_id}/data, specs/${tlb_id}/shared, specs/${tlb_id}/packages]` (relative to `$$backend_root`)；boundary truth skeleton 與 stack 無關，因此三個 packing 檔對此節的規範一致
+13. `$folder_plan` = DERIVE boundary truth folder skeleton from `$decisions` per the stack-specific packing reference (`python_e2e` → [`references/python-backend-packing.md`](references/python-backend-packing.md), `java_e2e` → [`references/java-backend-packing.md`](references/java-backend-packing.md), `nextjs_playwright` → [`references/nextjs-frontend-packing.md`](references/nextjs-frontend-packing.md)) §Boundary Folder Skeleton — MUST be exactly `[specs/contracts, specs/data, specs/shared, specs/packages, specs/plans]` (relative to `$$boundary_codebase_root`)；boundary truth skeleton 與 stack 無關，因此三個 packing 檔對此節的規範一致
 14. `$placeholder_file_plan` = DERIVE placeholder files:
     - `${TRUTH_BOUNDARY_ROOT}/shared/dsl.yml`
     - `${TRUTH_BOUNDARY_ROOT}/test-strategy.yml`
     - `${TRUTH_BOUNDARY_ROOT}/contracts/.gitkeep`
     - `${TRUTH_BOUNDARY_ROOT}/data/.gitkeep`
     - `${TRUTH_BOUNDARY_ROOT}/packages/.gitkeep`
+    - `${TRUTH_BOUNDARY_ROOT}/plans/.gitkeep`
     （不得宣告 package-level `dsl.yml`／`dsl.md`；不得宣告 boundary root `actors/`、`features/`、`coverage/`、`entities/`、`step-defs/`、`sub-boundaries/`）
-15. ASSERT `$folder_plan` root equals `specs/${$decisions.tlb_id}` relative to `$$backend_root`
-16. ASSERT no path in `$folder_plan` contains `${$decisions.tlb_id}/${$decisions.tlb_id}` or `${$decisions.tlb_id}/${$decisions.boundary_type}`
+15. ASSERT `$folder_plan` root equals `specs` relative to `$$boundary_codebase_root`
+16. ASSERT no path in `$folder_plan` contains `specs/${$decisions.tlb_id}/` or `specs/${$decisions.boundary_type}/`
 17. ASSERT no path in `$folder_plan` contains boundary root `actors/`, boundary root `features/`, `coverage/`, `entities/`, `step-defs/`, or `sub-boundaries/`
 18. WRITE `$$args_path` ← `$yaml`
     18.1 IF WRITE fails:
@@ -307,15 +309,15 @@ Note: `$$args_path` 與 `$$artifact_paths` 延後到 Phase 4 等 q3-backend-layo
         18.1.2 `$args_write_msg` = RENDER path and error summary for `$$args_path`
         18.1.3 EMIT `$args_write_msg` to user
         18.1.4 STOP
-19. WRITE `${$$backend_root}/specs/architecture/boundary.yml` ← `$boundary_doc`
+19. WRITE `${$$boundary_codebase_root}/specs/architecture/boundary.yml` ← `$boundary_doc`
     19.1 IF WRITE fails:
-        19.1.1 DELETE `${$$backend_root}/specs/architecture/boundary.yml`
+        19.1.1 DELETE `${$$boundary_codebase_root}/specs/architecture/boundary.yml`
         19.1.2 `$boundary_write_msg` = RENDER path and error summary for `boundary.yml`
         19.1.3 EMIT `$boundary_write_msg` to user
         19.1.4 STOP
-20. WRITE `${$$backend_root}/specs/architecture/component-diagram.class.mmd` ← `$diagram_doc`
+20. WRITE `${$$boundary_codebase_root}/specs/architecture/component-diagram.class.mmd` ← `$diagram_doc`
     20.1 IF WRITE fails:
-        20.1.1 DELETE `${$$backend_root}/specs/architecture/component-diagram.class.mmd`
+        20.1.1 DELETE `${$$boundary_codebase_root}/specs/architecture/component-diagram.class.mmd`
         20.1.2 `$diagram_write_msg` = RENDER path and error summary for `component-diagram.class.mmd`
         20.1.3 EMIT `$diagram_write_msg` to user
         20.1.4 STOP

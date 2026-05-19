@@ -31,24 +31,24 @@ Kickoff 永遠只建立一筆 frontend boundary。多 TLB / backend / external p
 
 ## Boundary Root Rule
 
-Kickoff 的唯一 boundary root 永遠是 `${SPECS_ROOT_DIR}/${id}/`。
+One specs root = one boundary。Boundary truth root 直接就是 `${SPECS_ROOT_DIR}/`。`id` 只寫入 `boundary.yml` 作為 boundary metadata（語意 tag），不對應 filesystem 子目錄。
 
-`type` 只寫入 `boundary.yml` 作為 boundary metadata。Kickoff **不得**自動建立 `${SPECS_ROOT_DIR}/${id}/packages/NN-*`。Functional package 目錄與對應的 `arguments.yml` 鍵只在 `/aibdd-discovery` 綁定後出現。禁止產生 `${SPECS_ROOT_DIR}/${id}/${id}/`、或 `${SPECS_ROOT_DIR}/${id}/${id}/${type}/` 這類多層 root。
+Kickoff 不得自動建立 `${SPECS_ROOT_DIR}/packages/NN-*`。Functional package 目錄與對應的 `arguments.yml` 鍵只在 `/aibdd-discovery` 綁定後出現。禁止產生 `${SPECS_ROOT_DIR}/${id}/`、`${SPECS_ROOT_DIR}/${type}/` 等多層 root。
 
 ## Artifact Pack
 
 | Artifact | Path | Shape |
 |---|---|---|
-| `arguments.yml` | `${FRONTEND_ROOT}/.aibdd/arguments.yml` | `STARTER_VARIANT: nextjs-playwright` + `PRESET_KIND: web-frontend` + `PROJECT_SPEC_LANGUAGE` + `PROJECT_SLUG` + config root + strategy refs + runtime refs + common parameters + Next.js / Playwright parameters only（mirror python；用 `FE_*` 鍵取代 `PY_*`，用 `FRONTEND_PRESET_CONTRACT_REF` 取代 `BACKEND_PRESET_CONTRACT_REF`） |
+| `arguments.yml` | `${BOUNDARY_CODEBASE_ROOT}/.aibdd/arguments.yml` | `STARTER_VARIANT: nextjs-playwright` + `PRESET_KIND: web-frontend` + `PROJECT_SPEC_LANGUAGE` + `PROJECT_SLUG` + config root + strategy refs + runtime refs + common parameters + Next.js / Playwright parameters only（mirror python；用 `FE_*` 鍵取代 `PY_*`，用 `FRONTEND_PRESET_CONTRACT_REF` 取代 `BACKEND_PRESET_CONTRACT_REF`） |
 | `boundary.yml` | `${ARCHITECTURE_DIR}/boundary.yml` | `version: 2` with one frontend `web-app` boundary |
 | `component-diagram.class.mmd` | `${ARCHITECTURE_DIR}/component-diagram.class.mmd` | Mermaid `classDiagram` with one `<<web-app>>` class（檔名副檔名見 `aibdd-core::diagram-file-naming.md`） |
-| boundary root | `${SPECS_ROOT_DIR}/${id}/` | truth skeleton for the only frontend boundary |
+| boundary root | `${SPECS_ROOT_DIR}/` | truth skeleton for the only boundary |
 
-注意：上表中的 `${FRONTEND_ROOT}` 等於 `${PROJECT_ROOT}/${FRONTEND_SUBDIR}`；當 `FRONTEND_SUBDIR == ""`（預設），退化為 `${PROJECT_ROOT}`。`${ARCHITECTURE_DIR}` / `${SPECS_ROOT_DIR}` 都是 frontend_root 相對的子路徑（與 backend packing 的 `convention-mapping.md` §Backend Root 組合規則同形態）。
+注意：上表中的 `${BOUNDARY_CODEBASE_ROOT}` 等於 `${PROJECT_ROOT}/${BOUNDARY_CODEBASE_SUBDIR}`；當 `BOUNDARY_CODEBASE_SUBDIR == ""`（預設），退化為 `${PROJECT_ROOT}`。`${ARCHITECTURE_DIR}` / `${SPECS_ROOT_DIR}` 都是 boundary_codebase_root 相對的子路徑（與 backend packing 的 `convention-mapping.md` §Backend Root 組合規則同形態）。
 
 ## Boundary Folder Skeleton
 
-Frontend stack 沿用 backend 的 4-folder boundary skeleton（**不另開 frontend-專屬 layout**），維持 plan / red-execute pipeline 對 boundary skeleton 的單一 SSOT：
+Frontend stack 沿用 backend 的 boundary skeleton（不另開 frontend-專屬 layout），維持 plan / red-execute pipeline 對 boundary skeleton 的單一 SSOT。所有資料夾路徑相對 `${SPECS_ROOT_DIR}/`：
 
 | Folder | Purpose for `web-app` boundary |
 |---|---|
@@ -56,6 +56,7 @@ Frontend stack 沿用 backend 的 4-folder boundary skeleton（**不另開 front
 | `data/` | boundary state truth root（**Zod schema spec 引用**）；kickoff writes `data/.gitkeep` placeholder。前端用此目錄存放 Zod schema 文件指引（指向 `${FE_SCHEMAS_DIR}` 內具體 .ts），對偶 backend 的 DBML 角色 |
 | `shared/` | boundary-level shared assets；kickoff creates `shared/dsl.yml` placeholder（其後由 `/aibdd-plan` Phase 6 從 `aibdd-core/assets/boundaries/web-frontend/shared-dsl-template.yml` 補入 `route-given` / `viewport-control` / `operation-response-success-and-failure` / `time-control` 等 boundary-shared entries） |
 | `packages/` | functional package **root only**；kickoff writes `packages/.gitkeep`；**不包含**任一 `packages/NN-*/` |
+| `plans/` | plan package root；kickoff writes `plans/.gitkeep`；plan packages 由 `/aibdd-discovery` 在 `plans/NNN-<slug>/` 下建立 |
 
 Kickoff writes `.gitkeep` in `contracts/`, `data/`, and `packages/` so that the empty boundary skeleton survives `git add -A` and fixture filesystem comparison. `.gitkeep` is an empty file. Any non-empty file in these directories is the responsibility of downstream skills (`/aibdd-form-api-spec`, `/aibdd-plan`, `/aibdd-discovery`).
 

@@ -11,8 +11,8 @@
 | Field | Value |
 |---|---|
 | Project root | `{{PROJECT_ROOT}}` |
-| Backend subdir | `{{BACKEND_SUBDIR}}` |
-| Backend root | `{{BACKEND_ROOT}}` |
+| Boundary codebase subdir | `{{BOUNDARY_CODEBASE_SUBDIR}}` |
+| Boundary codebase root | `{{BOUNDARY_CODEBASE_ROOT}}` |
 | Plan path | `{{PLAN_PATH}}` |
 | Arguments path | `{{ARGS_PATH}}` |
 | Boundary path | `{{BOUNDARY_YML_PATH}}` |
@@ -25,12 +25,12 @@
 
 ### q1-tech-stack
 
-Prompt: 要建立哪一種後端 stack？
+Prompt: 要建立哪一種 stack？
 
 Context:
 - python_e2e：Python + FastAPI + SQLAlchemy + Alembic + Behave E2E。
 - java_e2e：Java + Spring Boot 4 + JdbcClient + Flyway + Cucumber E2E。
-- TypeScript、Frontend Only、Unit Test 尚未支援。
+- Vue / Svelte 等其他 frontend 框架、Unit Test only、Mobile 尚未支援。
 
 Options:
 | Option | Meaning |
@@ -40,7 +40,7 @@ Options:
 
 Ask payload:
 - title: Tech stack
-- prompt: 要建立哪一種後端 stack？
+- prompt: 要建立哪一種 stack？
 - options: [`python_e2e`, `java_e2e`]
 - allow_other: false
 
@@ -96,21 +96,22 @@ Status: {{Q2_STATUS}}
 
 ### q3-backend-service-name
 
-Prompt: 這個後端服務要叫什麼名字？
+Prompt: 這個 專案 要叫什麼名字？
 
 Context:
 - 這個名稱會成為唯一 top-level boundary id。
 - 名稱必須是 kebab-case，例如 `course-api`；若未指定，預設為 `backend`。
+- Java stack 下，此名稱會直接作為 Maven `<artifactId>`。
 
 Options:
 | Option | Meaning |
 |---|---|
-| `backend` | 使用預設名稱 |
+| `backend` | 後端 stack 預設名稱 |
 | `custom` | 使用自訂 kebab-case 名稱 |
 
 Ask payload:
-- title: Backend service name
-- prompt: 這個後端服務要叫什麼名字？
+- title: Service name
+- prompt: 這個 service 要叫什麼名字？
 - options: [`backend`, `<custom-kebab-case>`]
 
 Answer:
@@ -127,24 +128,24 @@ Resolved decision:
 
 Status: {{Q3_STATUS}}
 
-### q4-backend-layout
+### q4-codebase-layout
 
-Prompt: 後端程式碼要放在 repo root 還是子目錄？
+Prompt: 程式碼要放在 repo root 還是子目錄？
 
 Context:
-- 預設 `repo_root`：backend 與 specs/ 直接掛在 repo root（`BACKEND_SUBDIR=""`，`BACKEND_ROOT == PROJECT_ROOT`）。
-- 選 `subdir`：必須提供子目錄名（kebab-case，例如 `backend`），所有 backend code 與 specs/ 都掛在 `${PROJECT_ROOT}/${BACKEND_SUBDIR}/`。
+- 預設 `repo_root`：程式碼與 specs/ 直接掛在 repo root（`BOUNDARY_CODEBASE_SUBDIR=""`，`BOUNDARY_CODEBASE_ROOT == PROJECT_ROOT`）。
+- 選 `subdir`：必須提供子目錄名（kebab-case，例如 `backend`），所有程式碼與 specs/ 都掛在 `${PROJECT_ROOT}/${BOUNDARY_CODEBASE_SUBDIR}/`。
 - 此決定影響 `arguments.yml` 寫入位置與 `/aibdd-auto-starter` same-repo guard。
 
 Options:
 | Option | Meaning |
 |---|---|
-| `repo_root` | backend 在 repo root；BACKEND_SUBDIR="" |
-| `subdir` | backend 在子目錄；後續以自由輸入提供 BACKEND_SUBDIR 值 |
+| `repo_root` | 程式碼在 repo root；BOUNDARY_CODEBASE_SUBDIR="" |
+| `subdir` | 程式碼在子目錄；後續以自由輸入提供 BOUNDARY_CODEBASE_SUBDIR 值 |
 
 Ask payload:
-- title: Backend layout
-- prompt: 後端程式碼要放在 repo root 還是子目錄？
+- title: Codebase layout
+- prompt: 程式碼要放在 repo root 還是子目錄？
 - options: [`repo_root`, `subdir`]
 - allow_other: false（若選 `subdir`，使用批次回答格式 `Q4: subdir:<kebab-case-dir>`）
 
@@ -153,12 +154,12 @@ Answer:
 - received_at: {{Q4_RECEIVED_AT}}
 
 Resolved decision:
-- key: backend_subdir
-- value: {{Q4_RESOLVED_BACKEND_SUBDIR}}
+- key: boundary_codebase_subdir
+- value: {{Q4_RESOLVED_BOUNDARY_CODEBASE_SUBDIR}}
 - affects:
   - arguments.yml location
   - all path-derived directories under specs/
-  - all PY_* code/test directories
+  - all stack-specific code/test directories
   - starter same-repo guard
 
 Status: {{Q4_STATUS}}
@@ -172,7 +173,7 @@ project_spec_language: {{RESOLVED_PROJECT_SPEC_LANGUAGE}}
 tlb_id: {{RESOLVED_TLB_ID}}
 boundary_role: backend
 boundary_type: web-service
-backend_subdir: {{RESOLVED_BACKEND_SUBDIR}}
+boundary_codebase_subdir: {{RESOLVED_BOUNDARY_CODEBASE_SUBDIR}}
 ```
 
 ## Artifact Plan
@@ -189,6 +190,7 @@ Folders:
 - `{{TRUTH_BOUNDARY_ROOT}}/data/`
 - `{{TRUTH_BOUNDARY_ROOT}}/shared/`
 - `{{TRUTH_BOUNDARY_PACKAGES_DIR}}/` （僅 functional package root，不預先建立 `NN-<功能模組描述>/`）
+- `{{TRUTH_BOUNDARY_ROOT}}/plans/` （plan package root；plan packages 由 `/aibdd-discovery` 在此下建立 `NNN-<slug>/`）
 
 Note: `TRUTH_FUNCTION_PACKAGE` / package 內 `activities`/`features`/`test-plan`/`dsl.yml` 由 `/aibdd-discovery` 在 sourcing 後 late-bind。
 

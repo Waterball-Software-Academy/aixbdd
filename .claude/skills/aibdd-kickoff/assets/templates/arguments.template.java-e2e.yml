@@ -31,11 +31,11 @@ DSL_KEY_LOCALE: prefer_spec_language
 #   - ko-kr — 韓文
 PROJECT_SPEC_LANGUAGE: {{PROJECT_SPEC_LANGUAGE}}
 
-# BACKEND_SUBDIR — 後端根目錄相對 repo 的路徑段；空字串表示後端即 repo 根。
+# BOUNDARY_CODEBASE_SUBDIR — 後端根目錄相對 repo 的路徑段；空字串表示後端即 repo 根。
 # 值域：
 #   - "" — 後端在 repo 根
 #   - <segment> — 單一路徑段（例：backend/）
-BACKEND_SUBDIR: '{{BACKEND_SUBDIR}}'
+BOUNDARY_CODEBASE_SUBDIR: '{{BOUNDARY_CODEBASE_SUBDIR}}'
 
 # MAX_QUESTIONS_PER_ROUND — clarify 每輪最多提問數。
 # 值域：非負整數
@@ -55,14 +55,14 @@ AIBDD_ARGUMENTS_PATH: ${AIBDD_CONFIG_DIR}/arguments.yml
 # 1. PROJECT_ROOTS
 # -----------------------------------------------------------------------------
 
-# SPECS_ROOT_DIR — specs 樹根目錄（相對路徑 token）。
+# SPECS_ROOT_DIR — specs 樹根目錄；同時是 boundary truth root（one specs root = one boundary）。
 SPECS_ROOT_DIR: specs
 
-# PLAN_PACKAGES_DIR — plan package 根目錄。
-PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}
+# PLAN_PACKAGES_DIR — plan package 根目錄；plan packages 落在 specs/plans/NNN-<slug>/。
+PLAN_PACKAGES_DIR: ${SPECS_ROOT_DIR}/plans
 
 # -----------------------------------------------------------------------------
-# 2. CONSTITUTIONS（相對 BACKEND_ROOT）
+# 2. CONSTITUTIONS（相對 BOUNDARY_CODEBASE_ROOT）
 # -----------------------------------------------------------------------------
 
 # DEV_CONSTITUTION_PATH — 開發治理憲法路徑；由 /aibdd-auto-starter 產生，kickoff 只宣告路徑。
@@ -73,12 +73,14 @@ BDD_CONSTITUTION_PATH: ${AIBDD_CONFIG_DIR}/bdd-stack/project-bdd-axes.md
 
 # -----------------------------------------------------------------------------
 # 3. CURRENT_SPEC_PACKAGE
-# kickoff 還沒有 raw idea，也沒有 Discovery Session；此處只放 plan package placeholder，
-# 讓下游知道 plan-side 檔案的預設展開方式，不代表已有功能包 truth。
+# 借位區：CURRENT_PLAN_PACKAGE 是 slot（一對多並存）；filesystem 上多個 plan
+# package 同時存在，caller 在呼叫 plan / tasks / implement 等 skill 時透過
+# CLI arg 或 caller payload 指定當前 plan slug，arguments.yml 不追蹤 active。
+# 下列 derived keys 經 ${CURRENT_PLAN_PACKAGE} 繼承 slot 語意。
 # -----------------------------------------------------------------------------
 
-# CURRENT_PLAN_PACKAGE — 當前功能規格包根目錄；kickoff 後仍是 placeholder，Discovery 會改寫。
-CURRENT_PLAN_PACKAGE: ${PLAN_PACKAGES_DIR}/000-kickoff-placeholder
+# CURRENT_PLAN_PACKAGE — 當前 plan package 根目錄；slot 形式，由 caller-context 提供具體 slug。
+CURRENT_PLAN_PACKAGE: ${PLAN_PACKAGES_DIR}/<<NNN-plan-slug>>
 
 # PLAN_SPEC — 規格本文路徑。
 PLAN_SPEC: ${CURRENT_PLAN_PACKAGE}/spec.md
@@ -117,14 +119,16 @@ BOUNDARY_YML: ${TRUTH_ARCHITECTURE_DIR}/boundary.yml
 # COMPONENT_DIAGRAM — 元件圖路徑；由 /aibdd-kickoff 產生。
 COMPONENT_DIAGRAM: ${TRUTH_ARCHITECTURE_DIR}/component-diagram.class.mmd
 
+# BOUNDARY_MAP_FILE — boundary 與 module / package 的對應地圖；由 /aibdd-plan 寫。
+BOUNDARY_MAP_FILE: ${SPECS_ROOT_DIR}/boundary-map.yml
+
 # -----------------------------------------------------------------------------
-# 5. BOUNDARY_TRUTH（boundary-scoped 示意片段）
-# <boundary> 不是每輪 Discovery Session 要填入的動態參數；它表示此組路徑規則
-# 可套用到 boundary.yml 中的任一 boundary。本骨架的唯一 boundary id 即 tlb_id。
+# 5. BOUNDARY_TRUTH
+# boundary.yml 的 id 為語意 tag，不對應 filesystem 子目錄。
 # -----------------------------------------------------------------------------
 
-# TRUTH_BOUNDARY_ROOT — 任一 boundary 下 specs 根目錄的路徑樣式。
-TRUTH_BOUNDARY_ROOT: ${SPECS_ROOT_DIR}/<boundary>
+# TRUTH_BOUNDARY_ROOT — boundary truth root；等於 specs root。
+TRUTH_BOUNDARY_ROOT: ${SPECS_ROOT_DIR}
 
 # TRUTH_BOUNDARY_SHARED_DIR — boundary 內 shared 目錄。
 TRUTH_BOUNDARY_SHARED_DIR: ${TRUTH_BOUNDARY_ROOT}/shared
@@ -145,17 +149,18 @@ BOUNDARY_SHARED_DSL: ${TRUTH_BOUNDARY_SHARED_DIR}/dsl.yml
 TEST_STRATEGY_FILE: ${TRUTH_BOUNDARY_ROOT}/test-strategy.yml
 
 # -----------------------------------------------------------------------------
-# 6. FUNCTION_PACKAGE_TRUTH（late-bound by /aibdd-discovery）
-# kickoff 絕對不建立、選擇、或啟用 NN-<功能模組描述>。
-# 下列 key 只能在 raw idea sourcing + package slug selection 後由 /aibdd-discovery 寫入；
-# 因此在 kickoff after fixture 內必須維持註解，不得變成有效 YAML key。
+# 6. FUNCTION_PACKAGE_TRUTH
+# 借位區：TRUTH_FUNCTION_PACKAGE 是 slot（一對多並存）；同 boundary 下 NN-*
+# 多個 functional module 同時存在。kickoff 不建立 NN-<slug>/ 目錄、不追蹤
+# active；各 skill 由 caller-context 取得當前 functional module slug。下列
+# derived keys 經 ${TRUTH_FUNCTION_PACKAGE} 繼承 slot 語意。
 # -----------------------------------------------------------------------------
 
-# TRUTH_FUNCTION_PACKAGE: ${TRUTH_BOUNDARY_PACKAGES_DIR}/NN-<功能模組描述>
-# FEATURE_SPECS_DIR: ${TRUTH_FUNCTION_PACKAGE}/features
-# ACTIVITIES_DIR: ${TRUTH_FUNCTION_PACKAGE}/activities
-# TRUTH_TEST_PLAN_DIR: ${TRUTH_FUNCTION_PACKAGE}/test-plan
-# BOUNDARY_PACKAGE_DSL: ${TRUTH_FUNCTION_PACKAGE}/dsl.yml
+TRUTH_FUNCTION_PACKAGE: ${TRUTH_BOUNDARY_PACKAGES_DIR}/<<NN-functional-module>>
+FEATURE_SPECS_DIR: ${TRUTH_FUNCTION_PACKAGE}/features
+ACTIVITIES_DIR: ${TRUTH_FUNCTION_PACKAGE}/activities
+TRUTH_TEST_PLAN_DIR: ${TRUTH_FUNCTION_PACKAGE}/test-plan
+BOUNDARY_PACKAGE_DSL: ${TRUTH_FUNCTION_PACKAGE}/dsl.yml
 
 # -----------------------------------------------------------------------------
 # 7. JAVA_E2E_STARTER_OUTPUT_PATHS — starter 產物路徑綁定
