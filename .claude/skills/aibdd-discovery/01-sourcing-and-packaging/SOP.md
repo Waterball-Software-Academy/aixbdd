@@ -20,7 +20,23 @@
 
 0.5 READ [`rules/specs-root-layout.md`](rules/specs-root-layout.md) 作為本 sub-SOP 內所有 `${PLAN_PACKAGES_DIR}` / `${TRUTH_BOUNDARY_ROOT}` / `${TRUTH_BOUNDARY_PACKAGES_DIR}` / `${CONTRACTS_DIR}` / `${DATA_DIR}` 目錄結構路徑的 SSOT。
 
-0.6 DERIVE `$package_naming_language`：從 ${PROJECT_SPEC_LANGUAGE} 直接決定使用目錄名稱之語系。若無慣例則依需求原文主體用字決定。後續 slug 須與該語系一致，禁止無理由中英檔名混拼。若無法判斷則 /clarify-loop 詢問用戶。
+0.6 DERIVE `$package_naming_language`：
+
+- SOURCE：`$package_naming_language` = ${PROJECT_SPEC_LANGUAGE}（zh-hant / zh-hans / en-us / ja-jp / ko-kr 等 BCP-47 值；同 `${FILENAME_AXES_TITLE_LANGUAGE_REF}` 所指 i18n reference）。
+- 後續所有 `$plan_package_slug`（`NNN-<slug>`）與 `$function_package_slug`（`NN-<slug>`）之 `<slug>` 主體**必須以該語系自然書寫**。
+- 技術名詞（API field、DSL token、operationId、domain acronym 如 CRM／SOP／API／OAuth）**可保留英文原文**；其餘 slug body 不得整段翻成英文。
+- **【嚴禁】以 romanization（漢語拼音／注音／粵拼）、kana、romaji 等 transliteration 充當「為避該語系字元」的 fallback**。落到 filesystem 的 slug 必須讀得懂、可直接還原為該語系文字。
+- IF `$package_naming_language` == `zh-hant`：
+  - ✅ Good：`001-會員登入記錄登入時間`、`001-CRM學員旅程階段SOP`、`packages/01-會員登入`
+  - ❌ Bad（romanization）：`001-yi-a2b-mo-wang-fang`、`001-hui-yuan-deng-ru`
+  - ❌ Bad（整段英譯，無此需求）：`001-member-login-last-login-at`
+- IF `$package_naming_language` == `zh-hans`：規則同 zh-hant，但用簡體字形。
+- IF `$package_naming_language` == `en-us`：slug 以英文撰寫，使用 kebab-case。
+  - ✅ Good：`001-member-login-last-login-at`、`packages/01-member-login`
+- IF `$package_naming_language` == `ja-jp`：以日文書寫，禁止以 romaji 取代漢字／假名。
+- IF `$package_naming_language` == `ko-kr`：以韓文（Hangul）書寫，禁止以 romaja 取代。
+- **禁止無理由中英檔名混拼**（半中半英的 slug，如 `001-會員-login`，除非含上述技術 token 例外）。
+- 若 `${PROJECT_SPEC_LANGUAGE}` 缺失或無法判斷，**不得**自行 fallback 為英文或 romanization，須 DELEGATE `/clarify-loop` 詢問用戶。
 
 1. ANCHOR + SEARCH（本步僅 READ／SEARCH／WRITE `${PLAN_SPEC}`；`${TRUTH_BOUNDARY_ROOT}` 下 truth 不寫入；`arguments.yml` 不寫入）
    - 1.1 若當前 plan slug 尚未由 caller-context 提供：DERIVE `$plan_package_slug`（`NNN-<slug>`）→ CREATE `${PLAN_PACKAGES_DIR}/$plan_package_slug/` 於 filesystem → 將 `$plan_package_slug` 作為 return value 回傳上層 orchestrator，後續解析 `${CURRENT_PLAN_PACKAGE}` 借位時以此 slug override → 回到 1.2。`arguments.yml` 中 `CURRENT_PLAN_PACKAGE` 永遠保持 `<<NNN-plan-slug>>` 借位形態，本步**不**改寫 yaml。

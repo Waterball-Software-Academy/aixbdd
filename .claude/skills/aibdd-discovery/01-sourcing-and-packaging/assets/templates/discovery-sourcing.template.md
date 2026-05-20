@@ -7,6 +7,7 @@
 >
 > 用語（寫進 discovery report 時請遵守）：
 > - **`function package`**：boundary 底下 `packages/NN-<slug>/` 這一層模組單位（內含 `features/`、`dsl.yml` 等）。
+> - **slug 語系**：所有 `<plan-package-slug>` 與 `<function-package-slug>` 之 `<slug>` 主體**必須**以 `${PROJECT_SPEC_LANGUAGE}` 自然語撰寫（zh-hant 寫繁中、en-us 寫英文 kebab-case…）。技術 token（API field／DSL token／domain acronym）可保留英文。**嚴禁** romanization（漢語拼音／kana／romaji／romaja）或無理由整段英譯作為 fallback；詳細 IF/THEN guards 見 `01-sourcing-and-packaging/SOP.md` 步驟 0.6。
 
 ## Impact scope
 
