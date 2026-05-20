@@ -66,7 +66,7 @@ references:
 | R9 | `references/dsl-output-contract/red-usable-l1-l4.md` | global | DSL L1-L4 必填欄位契約：`/aibdd-red` 可機械吃下的最低 schema |
 | R10 | `references/filename-axes-convention/nn-prefix-then-title.md` | global | spec package 與 feature 檔的 `NN-title` 命名軸 SSOT |
 | R11 | `references/gherkin-rule-body-prefix-policy/four-rules-prefix.md` | global | Rule body 四種 prefix（must/should/shall/may）寫作規範 |
-| R12 | `references/preset-contract/web-backend.md` | global | `web-backend` boundary preset 規章（handler-routing / handlers / variants 對應） |
+| R12 | `references/preset-contract/web-backend.md` | global | `web-backend` boundary preset 規章（step-classification / plugin-contract / handlers / variants 對應） |
 | R13 | `references/i18n/en-us.md` | global | en-US locale prose 慣例 |
 | R14 | `references/i18n/ja-jp.md` | global | ja-JP locale prose 慣例 |
 | R15 | `references/i18n/ko-kr.md` | global | ko-KR locale prose 慣例 |
@@ -77,8 +77,8 @@ references:
 
 | Path | Purpose |
 |---|---|
-| `assets/boundaries/` | Boundary preset SSOT — `<preset.name>/{handler-routing.yml, handlers/, variants/, shared-dsl-template.yml}`；`/aibdd-red` 透過此處解析 `L4.preset.{name, handler, variant}` |
-| `assets/boundaries/schemas/` | Boundary asset schema（如 `handler-routing.schema.yml`） |
+| `assets/boundaries/` | Boundary preset SSOT — `<preset.name>/{step-classification.yml, plugin-contract.md, handlers/, variants/, shared-dsl-template.yml, scripts/part_to_dsl.py}`；`/aibdd-red` 透過此處解析 preset assets |
+| `assets/boundaries/schemas/` | Boundary asset schema（如 `step-classification.schema.yml`） |
 
 ## §4 CROSS-REFERENCES
 

@@ -3,11 +3,11 @@
 ## Rules
 
 - Physical assets for this preset live under `aibdd-core/assets/boundaries/web-frontend/`.
-- `handler-routing.yml` is the L4 policy SSOT for `routes[].part`, handler ids, Gherkin keyword positions, and source-kind requirements.
-- `handler-routing.yml` declares 4 boundary-level invariants (I1 cross-process surface, I2 OpenAPI schema auto-gate, I3 per-scenario reset, I4 Storybook contract granularity) at its top comment block; per-handler `l4_requirements` MUST NOT redeclare these invariants.
-- `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `handler-routing.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting `L4.preset.{part,handler}`.
+- `step-classification.yml` is the SSOT for `routes[].part`, handler ids, and Gherkin keyword positions; `plugin-contract.md` is the SSOT for per-handler `required_source_kinds` and plan-time rules.
+- `plugin-contract.md` declares 4 boundary-level invariants (I1 cross-process surface, I2 OpenAPI schema auto-gate, I3 per-scenario reset, I4 Storybook contract granularity); per-handler 履約 MUST NOT redeclare these invariants.
+- `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `step-classification.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting the entry's `handler`.
 - Planner MUST cite the matched route or `(part, handler)` tuple in the derivation trace; do not keep a parallel generic markdown classification SSOT.
-- `handlers/*.md` documents rendering slots and narrative guidance; it does not override `handler-routing.yml`. Handler narrative docs are future expansion and may be absent in v1.
+- `handlers/*.md` documents rendering slots and narrative guidance; it does not override `step-classification.yml`. Handler narrative docs are future expansion and may be absent in v1.
 - `variants/*.md` defines runner/language/framework rendering contracts for a specific archetype, including the concrete cross-process mechanism required by invariant I1 and the per-scenario reset hook required by invariant I3.
 - `shared-dsl-template.yml` defines canonical boundary-wide shared DSL entries (route precondition, viewport, success/failure feedback, time control).
 - `L4.preset.name` MUST be `web-frontend`.
@@ -15,8 +15,8 @@
 - Default variant is `nextjs-playwright` unless boundary truth declares another supported variant.
 - `L4.preset.variant` MUST resolve to a file under `aibdd-core/assets/boundaries/web-frontend/variants/`.
 - `L4.preset.handler` MUST be one of the supported handler ids listed below; when `handlers/*.md` is present, the id MUST also resolve to a file under `aibdd-core/assets/boundaries/web-frontend/handlers/`.
-- `L4.preset.part` MUST be supported by `handler-routing.yml`.
-- Handler routing MUST be resolved from `handler-routing.yml`; handler docs may clarify rendering but MUST NOT override routing.
+- `L4.preset.part` MUST be supported by `step-classification.yml`.
+- Handler routing MUST be resolved from `step-classification.yml`; handler docs may clarify rendering but MUST NOT override routing.
 - Supported handler ids (Tier-1 — always required by any frontend boundary):
   - `route-given`
   - `viewport-control`
@@ -38,7 +38,7 @@
 - Do not let `L4.preset.handler` replace real L4 bindings, source refs, or callable mapping.
 - Do not accept missing handler, missing variant, or unsupported sentence part silently.
 - Do not collapse Tier-1 and Tier-2 handlers — a Tier-2 handler in `dsl.yml` requires the project test-strategy to declare its enablement.
-- `check_handler_routing_consistency.py` SHOULD validate `aibdd-core/assets/boundaries/web-frontend/handler-routing.yml`.
+- `check_step_classification_consistency.py` SHOULD validate `aibdd-core/assets/boundaries/web-frontend/step-classification.yml`.
 - `check_frontend_preset_refs.py` SHOULD validate every DSL entry using `web-frontend` against the core routing file (parallel to `check_backend_preset_refs.py`).
 - Missing `name`, `handler`, or `variant` assets MUST be fail-stop errors in `/aibdd-plan` and `/aibdd-red-execute`.
 
@@ -61,15 +61,15 @@
 
 - IF `L4.preset.handler` is missing:
   - STOP with missing handler.
-- IF handler id is not listed in `handler-routing.yml`:
+- IF handler id is not listed in `step-classification.yml`:
   - STOP with unsupported handler.
 - IF handler id is a Tier-2 handler and the project test-strategy does not declare its enablement:
   - STOP with Tier-2 not enabled.
 - IF `handlers/<handler>.md` is missing AND boundary policy requires handler narrative:
   - STOP with missing handler documentation.
   - (v1 default: handler narrative is future expansion; missing narrative is allowed when `boundary.policy.handler_narrative_required == false`.)
-- IF handler doc conflicts with `handler-routing.yml`:
-  - TREAT `handler-routing.yml` as SSOT and report the conflict.
+- IF handler doc conflicts with `step-classification.yml`:
+  - TREAT `step-classification.yml` as SSOT and report the conflict.
 - IF handler id exists but required source kind is absent from the DSL entry:
   - STOP with source-kind mismatch.
 
@@ -79,7 +79,7 @@
   - STOP with missing sentence part.
 - IF `part != handler` for `web-frontend`:
   - STOP with handler mismatch.
-- IF sentence part is not listed in `handler-routing.yml`:
+- IF sentence part is not listed in `step-classification.yml`:
   - STOP with unsupported sentence part.
 - IF keyword position conflicts with the routing policy:
   - STOP with keyword / sentence part mismatch.
@@ -306,7 +306,7 @@ L4:
 
 Why bad:
 
-- `dom-event-then` is not listed in `handler-routing.yml`.
+- `dom-event-then` is not listed in `step-classification.yml`.
 - Consumers must fail-stop instead of inventing a handler.
 
 ### Bad: Story export granularity violation (I4)

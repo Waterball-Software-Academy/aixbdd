@@ -44,7 +44,7 @@ Backend（HTTP API + persistence layer）Boundary 之 Gherkin step pattern prese
 
 ## §3 Handler 清單
 
-對應 `aibdd-core/assets/boundaries/web-backend/handler-routing.yml::routes`：
+對應 `aibdd-core/assets/boundaries/web-backend/step-classification.yml::routes`：
 
 | Handler | Gherkin 位置 | 用途 |
 |---------|-------------|------|
@@ -72,11 +72,11 @@ Variant 本身不增 handler 種類，只改實作語法。
 
 ## §5 與 machine routing SSOT 的關係
 
-- machine routing SSOT：`.claude/skills/aibdd-core/assets/boundaries/web-backend/handler-routing.yml`
+- machine routing SSOT：`.claude/skills/aibdd-core/assets/boundaries/web-backend/step-classification.yml`
 - preset 級契約：`.claude/skills/aibdd-core/references/preset-contract/web-backend.md`
-- 各 handler 之 `required_source_kinds`／`optional_source_kinds`／`l4_requirements` 內嵌於同一檔之 `dsl-writing-rules-for-each-part`（與 `routes` 並列）。
+- 各 handler 之 `required_source_kinds` 與 plan-time 履約規則：`.claude/skills/aibdd-core/assets/boundaries/web-backend/plugin-contract.md`（human-readable，原本內嵌於 yaml 之 `dsl-writing-rules-for-each-part`）
 
-| `handler-routing.yml` routing id | 對應本 preset 之語意角色 |
+| routing id | 對應本 preset 之語意角色 |
 |---|---|
 | `state-builder` | States → Given state setup |
 | `state-verifier`  | States → Then persisted state verify |

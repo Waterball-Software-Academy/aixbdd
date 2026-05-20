@@ -38,8 +38,10 @@ AIBDD execute skills.
   `.claude/skills/aibdd-core/assets/boundaries/<preset-name>/`.
 - `web-backend` is not resolved through a `backend` alias.
 - `/aibdd-plan/assets/boundaries` is not a runtime source for execute skills.
-- `handler-routing.yml` is the source for sentence part, Gherkin keyword,
-  handler, and required source kinds.
+- `step-classification.yml` is the source for sentence part, Gherkin keyword,
+  and handler id (the routes[] classification table).
+- `plugin-contract.md` is the source for required source kinds and per-handler
+  plan-time rules.
 - For `web-backend`, `part` must equal `handler`.
 
 ## Project-Owned Runtime References

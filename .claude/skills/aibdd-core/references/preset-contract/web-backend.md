@@ -3,10 +3,10 @@
 ## Rules
 
 - Physical assets for this preset live under `aibdd-core/assets/boundaries/web-backend/`.
-- `handler-routing.yml` is the L4 policy SSOT for `routes[].part`, handler ids, Gherkin keyword positions, source-kind requirements, and per-handler L4 rules under `dsl-writing-rules-for-each-part`.
-- `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `handler-routing.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting `L4.preset.{part,handler}`.
+- `step-classification.yml` is the SSOT for `routes[].part`, handler ids, Gherkin keyword positions; `plugin-contract.md` is the SSOT for per-handler `required_source_kinds` and plan-time rules (formerly under `dsl-writing-rules-for-each-part`).
+- `/aibdd-plan` DSL synthesis MUST classify each candidate clause against `step-classification.yml.routes` (Gherkin `keyword` + route `semantic`) before emitting the entry's `handler`.
 - Planner MUST cite the matched route or `(part, handler)` tuple in the derivation trace; do not keep a parallel generic markdown classification SSOT.
-- `handlers/*.md` documents rendering slots and narrative guidance; it does not override `handler-routing.yml`.
+- `handlers/*.md` documents rendering slots and narrative guidance; it does not override `step-classification.yml`.
 - `variants/*.md` defines runner/language/framework rendering contracts for a specific archetype.
 - `shared-dsl-template.yml` defines canonical boundary-wide shared DSL entries.
 - `L4.preset.name` MUST be `web-backend`.
@@ -14,8 +14,8 @@
 - Default variant is `python-e2e` unless boundary truth declares another supported variant.
 - `L4.preset.variant` MUST resolve to a file under `aibdd-core/assets/boundaries/web-backend/variants/`.
 - `L4.preset.handler` MUST resolve to a file under `aibdd-core/assets/boundaries/web-backend/handlers/`.
-- `L4.preset.part` MUST be supported by `handler-routing.yml`.
-- Handler routing MUST be resolved from `handler-routing.yml`; handler docs may clarify rendering but MUST NOT override routing.
+- `L4.preset.part` MUST be supported by `step-classification.yml`.
+- Handler routing MUST be resolved from `step-classification.yml`; handler docs may clarify rendering but MUST NOT override routing.
 - Supported handler ids are:
   - `state-builder`
   - `operation-invoke`
@@ -28,7 +28,7 @@
 - Do not synthesize handler docs from code or config key names.
 - Do not let `L4.preset.handler` replace real L4 bindings, source refs, or callable mapping.
 - Do not accept missing handler, missing variant, or unsupported sentence part silently.
-- `check_handler_routing_consistency.py` SHOULD validate `aibdd-core/assets/boundaries/web-backend/handler-routing.yml`.
+- `check_step_classification_consistency.py` SHOULD validate `aibdd-core/assets/boundaries/web-backend/step-classification.yml`.
 - `check_backend_preset_refs.py` SHOULD validate every DSL entry using `web-backend` against the core routing file.
 - Missing `name`, `handler`, or `variant` assets MUST be fail-stop errors in `/aibdd-plan` and `/aibdd-red`.
 
@@ -48,12 +48,12 @@
 
 - IF `L4.preset.handler` is missing:
   - STOP with missing handler.
-- IF handler id is not listed in `handler-routing.yml`:
+- IF handler id is not listed in `step-classification.yml`:
   - STOP with unsupported handler.
 - IF `handlers/<handler>.md` is missing:
   - STOP with missing handler documentation.
-- IF handler doc conflicts with `handler-routing.yml`:
-  - TREAT `handler-routing.yml` as SSOT and report the conflict.
+- IF handler doc conflicts with `step-classification.yml`:
+  - TREAT `step-classification.yml` as SSOT and report the conflict.
 - IF handler id exists but required source kind is absent from the DSL entry:
   - STOP with source-kind mismatch.
 
@@ -63,7 +63,7 @@
   - STOP with missing sentence part.
 - IF `part != handler` for `web-backend`:
   - STOP with handler mismatch.
-- IF sentence part is not listed in `handler-routing.yml`:
+- IF sentence part is not listed in `step-classification.yml`:
   - STOP with unsupported sentence part.
 - IF keyword position conflicts with the routing policy:
   - STOP with keyword / sentence part mismatch.
@@ -251,5 +251,5 @@ L4:
 
 Why bad:
 
-- `api-call` is not listed in `handler-routing.yml`.
+- `api-call` is not listed in `step-classification.yml`.
 - Consumers must fail-stop instead of inventing a handler.
