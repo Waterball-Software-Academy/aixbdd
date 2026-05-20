@@ -28,7 +28,8 @@
 2. ASSERT Discovery 真相已 accepted（READ-ONLY）
    - `${PLAN_SPEC}` 存在且含需求敘事全文與 discovery sourcing pointer（章節對齊 `/aibdd-discovery`，例：`Discovery Sourcing Summary`）。
    - `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 存在。
-   - `${ACTIVITIES_DIR}` 下至少一份 `.activity` 檔；`${FEATURE_SPECS_DIR}` 下至少一份 rule-only `.feature` 檔。
+   - `${FEATURE_SPECS_DIR}` 下至少一份 rule-only `.feature` 檔。
+   - `${ACTIVITIES_DIR}` 下若有 `.activity` 則納入 `activity_truth`；若無則視為空集合（Discovery 現行流程可不產 activity，不得因此 STOP）。
    - 任一條件失敗 → 提示使用者回 `/aibdd-discovery` 補完，STOP。本步禁止補建或改寫任何 discovery artifact。
 
 3. READ：boundary type profile

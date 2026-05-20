@@ -1,83 +1,71 @@
 # SOP
 
-緣由：實作計畫（對外契約、對內結構）就緒後，本 phase 把「Gherkin business-statement-step → 可執行自動化步驟與斷言」之映射規則，依顆粒度寫入 `${BOUNDARY_PACKAGE_DSL}`、`${BOUNDARY_SHARED_DSL}`。
+緣由：實作計畫就緒後，用 `dsl_cli` 把 `${CONTRACTS_DIR}` / `${DATA_DIR}` 下的 spec 自動展開為 DSL skeleton（HARNESS），再由 AI 業務化填字（SEMANTIC），最後跑 universal eval（HARNESS）。本 phase 不再以 per-rule 迭代產生 entry — `dsl_cli` 由 part-driven 自動 fan-out，落到 `${CONTRACTS_DIR}/<resource>.dsl.yml` / `${DATA_DIR}/<file>.dsl.yml`。
 
-0. **RESOLVE arguments**——將本 SOP 引用的 `${VAR}` 透過 sibling resolver 綁定，並把 resolver stdout（每行一筆 `KEY=value`）原樣 EMIT 給用戶。Resolver 非 0 退出時，停止本 SOP 並把 stderr 透傳給用戶。
+0. **RESOLVE arguments** —— 透過 sibling resolver 綁定變數，把 stdout 之 `KEY=value` 原樣 EMIT 給用戶；resolver 非 0 退出 → 停止 SOP 並把 stderr 透傳。
 
    ```bash
    python3 .claude/skills/aibdd-core/scripts/python/resolve_args.py <<'EOF'
-   BOUNDARY_PACKAGE_DSL=${BOUNDARY_PACKAGE_DSL}
-   BOUNDARY_SHARED_DSL=${BOUNDARY_SHARED_DSL}
    BOUNDARY_YML=${BOUNDARY_YML}
    CONTRACTS_DIR=${CONTRACTS_DIR}
+   DATA_DIR=${DATA_DIR}
+   BOUNDARY_SHARED_DSL=${BOUNDARY_SHARED_DSL}
    DSL_KEY_LOCALE=${DSL_KEY_LOCALE}
-   TRUTH_BOUNDARY_ROOT=${TRUTH_BOUNDARY_ROOT}
    EOF
    ```
 
-1. DERIVE `${DSL_KEY_LOCALE}`
-   - 依 `steps/dsl-key-locale.md` 1.1–1.3 執行；其餘以該檔為準。
+1. DERIVE `${DSL_KEY_LOCALE}` — 依 `steps/dsl-key-locale.md` 執行。
 
-2. READ boundary preset（SSOT：`${BOUNDARY_YML}`）
-   - 依 `steps/boundary-preset-and-handler-routing.md` 執行其中所有步驟：解析 boundary type、載入 boundary-type profile、讀取 profile 所指之 handler routing 文檔（含 `dsl-writing-rules-for-each-part`）、L4 履約順序與 TodoWrite、persistence 相關變數與 gate ASSERT；STOP 條件見該檔。
-   - 當本 phase 進入「依 feature 檔迭代」時，TodoWrite 粒度須符合該檔「與 per-feature loop 搭配」之規定（外層：目前迭代之 `.feature`；內層：該 entry 之 `l4_requirements`）。
+2. READ boundary preset name — 依 `steps/boundary-preset-and-handler-routing.md` 取出 `<boundary>`（即 `${BOUNDARY_YML}` 內活動 boundary 之 `type`）。
 
-3. BUILD `$DSL_FEATURE_WORKSET`（Discovery 閉包）
-   - 依 `steps/dsl-feature-workset-from-discovery-impact.md`；其餘以該檔為準。
+3. **(HARNESS) RUN** `dsl_cli generate-dsl-instructions`：
 
-4. **LOOP** per `$feature_path` in `$DSL_FEATURE_WORKSET`（固定排序；一檔一迭代；budget = `len($DSL_FEATURE_WORKSET)`；exit on iterator exhaustion）
+   ```bash
+   PYTHONPATH=.claude/skills/aibdd-core/scripts \
+     python -m dsl_cli generate-dsl-instructions \
+     --boundary <boundary> \
+     --specs ${CONTRACTS_DIR}/*.api.yml ${DATA_DIR}/*.dbml \
+     --dsl ${CONTRACTS_DIR}/*.dsl.yml ${DATA_DIR}/*.dsl.yml
+   ```
 
-   4.1 READ `rules/01-dsl-entry-schema.md`、`rules/02-dsl-parameters-coverage.md`（首次迭代後可快取；以快取為由跳過重讀時須 ASSERT 規則檔未變更）。
+   - dsl_cli 會依副檔名 dispatch 對應 spec_parser，取得所有 parts，與既有 `*.dsl.yml` 內 entry 之 `target_part_path` 做 prefix-match diff，把未 resolved 之 part 餵給 active boundary 之 part_to_dsl plugin (`assets/boundaries/<boundary>/scripts/part_to_dsl.py`) 取得 template skeleton，依 part 來源 spec 路由到對應 `*.dsl.yml`（`<spec>.api.yml` → `<spec>.dsl.yml`、`<file>.dbml` → `<file>.dsl.yml`），append。
+   - 命令 idempotent — 已 resolved 之 part 不再產出 skeleton。
+   - 命令印出 `GenerationReport`（新增 entries 數量、各寫到哪個檔）。
 
-   4.2 PARSE 本迭代 `$feature_path` 為 atomic rules 列表 `$rules`：每一條 `Rule:` 區塊為一筆，含完整 rule 文字（含子條目／example）。禁止合併多條 rule 為單筆；禁止跳過任何 rule（純文字陳述也需走 4.3 CLASSIFY）。
+4. **(SEMANTIC) LOOP** per skeleton entry 其 `format` 仍為 `"<FILL IN>"`（順序：依 entry 在檔案中之出現順序、跨檔依檔名字典序）：
 
-   4.3 **LOOP** per `$rule` in `$rules`（budget = `len($rules)`；exit on iterator exhaustion）
+   4.1 READ 該 entry 之 `target_part_path` 所指 spec 節點原文（OpenAPI operation / DBML table 等），辨識業務 actor / operation / object。
 
-      4.3.1 **CLASSIFY** `$rule` 之語意 kind（依規則文字 prefix／結構，由 boundary handler-routing 之 `routes[].keyword` 與 `dsl-writing-rules-for-each-part` 共同決定，逐字對照不得心證），enum 至少含：
-      - `precondition-parameter`（前置參數／參數合法性／輸入形狀規則）
-      - `precondition-state`（需事先存在的 entity／aggregate 狀態）
-      - `precondition-time` / `precondition-external`（時間／外部資源前置）
-      - `operation-target`（操作本身的可呼叫面——通常隱含於 feature 標題，每個 feature 至少 1 條）
-      - `postcondition-state`（持久化變更後該存在／不存在的狀態）
-      - `postcondition-response`（API 回應形狀／status／payload／拒絕訊號）
-      - `read-only-reference`（純文字對照、無可落地面）
+   4.2 從 skeleton 的「候選參數註解區塊」逐條決定該 candidate 進 `param_bindings`（必要、會出現在 format 中）或 `datatable_bindings`（可選 / 走 DataTable）；改 binding key 為業務術語（依 `${DSL_KEY_LOCALE}`），binding 的 `target` 路徑**原樣帶過**，禁止修改。
 
-      4.3.2 **BRANCH** on classified kind → 對照 boundary `handler-routing.yml` 之 `routes[].part` 與 `dsl-writing-rules-for-each-part`，列舉本 rule 必須產生之 entry 集合（下表以 web-service／web-backend handler ids 為例；其他 boundary 以該 boundary handler-routing 為準）：
+   4.3 寫入 `format` 業務句（actor-operation-object 句型，遵 `aibdd-core::references/sentence-parts-framework/default.md`）；引用 binding key 用 `{key}` 占位。
 
-      | rule kind | 必出 handler / surface_kind | 顆粒度 |
-      |---|---|---|
-      | `precondition-parameter` | 併入該 feature 之 `operation-invoke` entry 之 `param_bindings` 覆蓋；不獨立成 entry | 不獨立 |
-      | `precondition-state` | `state-builder`（surface_kind=`state-builder`）；每個參與 entity／DBML table 各一筆 | per entity |
-      | `precondition-time` | `time-control` | per clock surface |
-      | `precondition-external` | `external-stub` | per external resource |
-      | `operation-target` | `operation-invoke`（surface_kind=`operation`） | 一 feature 至少一筆 |
-      | `postcondition-state` | `state-verifier`（surface_kind=`state-verifier`） | per verified field／entity |
-      | `postcondition-response` | `operation-response-success-and-failure` 或 `operation-response-success-readmodel`（依規則語意擇一） | per asserted response surface |
-      | `read-only-reference` | 無 entry；於本迭代 `no_op_reason` 累計該 rule anchor | 累計理由 |
+   4.4 刪除 skeleton 中所有 plugin 寫入之候選參數註解區塊與 `<FILL IN>` 占位；若 `datatable_bindings` 仍為空，明確寫成 `{}`（不可留空 block 或殘留註解）。
 
-      4.3.3 **FAITHFUL REASONING** 推演 `$rule` 對應 entry 集合（欄位以 `rules/01-dsl-entry-schema.md` 為準；`L4.preset.{name,handler,variant}` 對齊本輪 boundary preset 與 `handler-routing.yml`，不得自造 handler id；`L4.source_refs.boundary` 指向實際載入之 `handler-routing.yml` 路徑）。禁止為其他 `.feature` 檔代推 entry。
+   4.5 SEMANTIC 對該 entry 之**禁止項**：不得改動 `handler`、`target_part_path`、`name`、binding 之 `target`、`source_spec_path`。這些 plugin 持有的 spec ↔ DSL 對應關係不容 SEMANTIC 重新詮釋。
 
-      4.3.4 在落 candidate entries 之前，EXECUTE `scripts/dsl-cli/run.py`：先用 `search <query> --boundary <邊界目錄 basename>`（basename 為 `${TRUTH_BOUNDARY_ROOT}` 最末路徑段，例：`…/specs/backend` → `backend`）在 `shared/dsl.yml` 與 `packages/*/dsl.yml` 做子字串比對——`<query>` 可為表／實體名、L1 句型片段、`surface_id`、`operationId` 片段、`source_refs.contract` 內檔名字段；可選 `--fuzzy`（門檻見 `--help`）；若要比對 `operationId` 是否已在 OpenAPI 露面，帶 `--contracts-root ${CONTRACTS_DIR}`。接著對目前 registry 跑 `verify [--strict] --boundary …` 抓全域 `id` 重複與語意層警示／嚴格錯——確認本 rule 之 entry 候選不致不當重複（譬如 state-builder／invoke 已定義在 shared 或其他 package，沿用既有 entry id 並記入本 rule 的 `covered_by_existing` 列表，勿再複製）。
+5. **(HARNESS) RUN** `dsl_cli eval`：
 
-      4.3.5 **ASSERT** 本 `$rule` 之 entry 集合非空（kind=`read-only-reference` 允許空但須累計 `no_op_reason` anchor；其餘 kind 至少 1 筆新增或沿用既有 entry id）。違反 → 列出 rule anchor／kind／預期 handler／實際輸出，**STOP**。
+   ```bash
+   PYTHONPATH=.claude/skills/aibdd-core/scripts \
+     python -m dsl_cli eval \
+     --dsl ${CONTRACTS_DIR}/*.dsl.yml ${DATA_DIR}/*.dsl.yml \
+     --shared-dsl ${BOUNDARY_SHARED_DSL}
+   ```
 
-   4.4 WRITE DSL registries（merge）
-   - 本迭代之 `local_entries` 非空 → merge 進 `${BOUNDARY_PACKAGE_DSL}`（保留既有 `entries`，以 `id` 去重；衝突則 **STOP** 並列出 id）。
-   - 本迭代之 `shared_entries` 非空 → merge 進 `${BOUNDARY_SHARED_DSL}`。
-   - 兩者皆空 → ASSERT 該檔之 `no_op_reason` 非空（須對應 4.3.1 標為 `read-only-reference` 之 rule anchor 列表），否則 **STOP**。
+   套用 6 條 universal rules：
 
-   4.5 寫入前或寫入後，本迭代涉及之 entry 須滿足下列規則檔全文約束（違規時列出 entry id／欄位或 binding key／原因；禁止刪除 assertion 或以弱 placeholder 繞過；**STOP**）。不得以本節條列取代規則檔正文：
-   - `rules/01-dsl-entry-schema.md`
-   - `rules/02-dsl-parameters-coverage.md`（每筆 operation entry 完整套用 §1–§3）
+   - `format-params-cap` — format 句型內 `{key}` 數量 ≤ 3
+   - `datatable-cap` — datatable_bindings 中 required:true 且無 default_value 之欄位數 ≤ 6
+   - `schema-completeness` — 必要欄不為空 / `<FILL IN>`
+   - `name-uniqueness` — entry `name` 跨所有 `--dsl` 與 `--shared-dsl` 唯一
+   - `format-key-binding-bijection` — format 內 `{key}` ⇔ `param_bindings` 之 key 雙向覆蓋
+   - `target-uri-scheme-validity` — 每個 binding 的 `target` 須命中 5 種 scheme 之一（Spec anchor / `response:` / `literal:` / `stub_payload:` / DBML anchor）
 
-   **END LOOP** (per `$rule`)
+   FAIL → 列每條 violation 的 `entry_name` / `rule_id` / `message` / `hint` → 回步驟 4 修；常見修法包含補 `default_value` 把 required datatable 降為 optional 以紓壓 `datatable-cap`、或拆分 entry 以紓壓 `format-params-cap`。
 
-   **END LOOP** (per `$feature_path`)
+   PASS → SOP 結束。
 
-5. **AGGREGATE ASSERT** — 全 workset 覆蓋率自驗（不得跳過）
+---
 
-   5.1 COMPUTE `$total_rules` ＝ 對 `$DSL_FEATURE_WORKSET` 內每檔以 4.2 PARSE 規則重數加總。
-   5.2 COMPUTE `$total_entries_emitted` ＝ 本輪在 `${BOUNDARY_PACKAGE_DSL}`／`${BOUNDARY_SHARED_DSL}` 新增或沿用之 entry id 集合大小（去重）。
-   5.3 COMPUTE `$rules_covered` ＝ 從 4.3.3／4.3.5 紀錄之 rule→entry-ids 反查表中，至少對應一筆 entry id（含 `covered_by_existing`）之 rule 數；`read-only-reference` rule 視為涵蓋。
-   5.4 ASSERT `$rules_covered == $total_rules`；違反時列出未覆蓋之 rule anchor 與其分類 kind，**STOP**（禁止為通過 ASSERT 而把缺項硬塞為 `read-only-reference`；該 reclassify 必須回到 4.3.1 重新依規則文字判定）。
-   5.5 ASSERT 每筆 `precondition-state` rule 至少有 1 筆 `surface_kind=state-builder` entry 涵蓋；每筆 `postcondition-state` rule 至少有 1 筆 `surface_kind=state-verifier` entry 涵蓋；每筆 `postcondition-response` rule 至少有 1 筆 `surface_kind` 屬 `operation-response-*` family 之 entry 涵蓋。違反 → **STOP** 並列出缺漏配對。
+**遷移備註**：本 SOP 之前版本（commit 99d7149 之前）採 per-rule 迭代搭配 `${BOUNDARY_PACKAGE_DSL}`（function-package 內 dsl.yml）與 `scripts/dsl-cli/run.py search/verify`。該流已不再使用 — dsl.yml 已遷出 function package 落到 contracts/data 同目錄；entry schema 已從 4 層巢狀改成扁平。schema 細節以 `experiemented-skills/aibdd-plan/04-dsl-synthesis/rules/01-dsl-entry-schema.md` 內之 deprecation pointer 為準。

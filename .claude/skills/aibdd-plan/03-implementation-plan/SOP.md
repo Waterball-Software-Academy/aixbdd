@@ -14,7 +14,7 @@
    EOF
    ```
 
-1. READ `${DEV_CONSTITUTION_PATH}`；後續內部結構與分層須與之一致。
+1. READ `${DEV_CONSTITUTION_PATH}`；後續內部結構與分層須與之一致。如無此檔案則直接 SKIP 此步驟。
 
 2. THINK：設計實作路徑與內部結構
    - READ `rules/sequence-path-granularity.md`、`reasoning/implementation-path-design.md`（SSOT、impact 覆蓋、path 可追溯、`$IMPLEMENTATION_MODEL` 形狀）。
