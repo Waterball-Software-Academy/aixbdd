@@ -1,0 +1,85 @@
+# web-frontend preset — Gherkin step → handler classification table
+#
+# Maps each Gherkin step's (keyword × sentence-part) to its semantic handler ID.
+# 11 handlers split into Tier-1 (always-required) and Tier-2 (opt-in per package).
+#
+# Schema: ../schemas/step-classification.schema.yml
+# Plan-time handler contracts (含 boundary invariants I1–I4 與 per-handler 履約)
+# live in ../plugin-contract.md. Runtime handler implementation contracts live
+# in handlers/*.md (尚未建立，留作 follow-up).
+
+routes:
+  # ─── Tier-1 — always required ───
+
+  - part: route-given
+    keyword:
+      - Given
+      - Background
+    handler: route-given
+    semantic: Land the browser context on a specific application route as a scenario precondition.
+
+  - part: viewport-control
+    keyword:
+      - Given
+      - When
+    handler: viewport-control
+    semantic: Control browser viewport dimensions or device emulation profile.
+
+  - part: mock-state-given
+    keyword:
+      - Given
+      - Background
+    handler: mock-state-given
+    semantic: Seed the in-process mock backend store with persistent state.
+
+  - part: time-control
+    keyword:
+      - Given
+      - When
+    handler: time-control
+    semantic: Control browser-visible time for time-dependent UI behavior.
+
+  - part: ui-action
+    keyword:
+      - Given
+      - When
+    handler: ui-action
+    semantic: Drive a UI interaction through the rendered surface — click, fill, select, upload, keyboard, drag, programmatic navigation. Given usage is prerequisite multi-step setup; When usage is the target operation.
+
+  - part: operation-response-success-and-failure
+    keyword:
+      - Then
+    handler: operation-response-success-and-failure
+    semantic: Verify the success-or-failure feedback class surfaced to the user (toast, inline error, banner, status pill).
+
+  - part: ui-readmodel-then
+    keyword:
+      - Then
+    handler: ui-readmodel-then
+    semantic: Verify a rendered UI value, label, role, attribute, or count is observable on the page DOM at assertion time. Includes scalar text, list/table collection items, and computed counts.
+
+  # ─── Tier-2 — opt-in per package ───
+
+  - part: api-stub
+    keyword:
+      - Given
+    handler: api-stub
+    semantic: Override the in-process mock backend's per-scenario behavior for a specific operationId (next response status, body fixture, latency, response sequence). Distinct from mock-state-given which seeds data; api-stub seeds behavior.
+
+  - part: url-then
+    keyword:
+      - Then
+    handler: url-then
+    semantic: Verify URL state — pathname, query string parameters, hash fragment — after the operation. Use this when URL is the load-bearing observable; otherwise prefer ui-readmodel-then.
+
+  - part: api-call-then
+    keyword:
+      - Then
+    handler: api-call-then
+    semantic: Verify that a specific outgoing API call was emitted and its method/path/body/query/headers match expected shape. Schema conformance is enforced by the mock layer (see boundary invariant I2 in plugin-contract.md); this handler asserts call presence, count, and content shape.
+
+  - part: mock-state-then
+    keyword:
+      - Then
+    handler: mock-state-then
+    semantic: Verify the in-process mock backend store was mutated as expected. Use this when the UI does not render the mutation but the scenario must still verify it.

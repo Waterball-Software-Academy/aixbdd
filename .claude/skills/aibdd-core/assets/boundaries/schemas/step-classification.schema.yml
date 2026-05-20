@@ -1,0 +1,36 @@
+type: object
+required:
+  - routes
+properties:
+  routes:
+    type: array
+    minItems: 1
+    items:
+      $ref: "#/$defs/route"
+additionalProperties: false
+
+$defs:
+  route:
+    type: object
+    required:
+      - part
+      - keyword
+      - semantic
+      - handler
+    properties:
+      part:
+        type: string
+      keyword:
+        type: array
+        minItems: 1
+        items:
+          enum:
+            - Given
+            - When
+            - Then
+            - Background
+      semantic:
+        type: string
+      handler:
+        type: string
+    additionalProperties: false
