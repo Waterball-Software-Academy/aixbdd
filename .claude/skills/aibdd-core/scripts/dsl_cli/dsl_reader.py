@@ -20,11 +20,12 @@ _yaml.preserve_quotes = True
 
 
 def load_dsl_files(paths: list[Path]) -> dict[Path, list[DSLEntry]]:
-    """Load each path's YAML list-of-entries into DSLEntry dataclasses.
+    """Load each path's YAML doc into DSLEntry dataclasses.
 
-    Paths that don't exist or contain an empty document (None or `[]`) yield an
-    empty entry list, not an error — that matches the harness's append-only
-    flow where the dsl.yml may not yet exist before the first generate pass.
+    Top-level shape is `dsl_steps: <list>`. Paths that don't exist, contain an
+    empty document, or set `dsl_steps: []` yield an empty entry list — that
+    matches the harness's append-only flow where the dsl.yml may not yet exist
+    before the first generate pass.
     """
 
     result: dict[Path, list[DSLEntry]] = {}
@@ -40,7 +41,7 @@ def _load_one(path: Path) -> list[DSLEntry]:
         doc = _yaml.load(fh)
     if doc is None:
         return []
-    return [_hydrate_entry(raw) for raw in doc]
+    return [_hydrate_entry(raw) for raw in (doc.get("dsl_steps") or [])]
 
 
 def _hydrate_entry(raw: dict) -> DSLEntry:

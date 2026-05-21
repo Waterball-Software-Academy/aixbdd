@@ -37,35 +37,38 @@ def route_template_to_file(template: DSLInstructionTemplate) -> Path:
 def append_templates(file_path: Path, templates: list[DSLInstructionTemplate]) -> None:
     if not templates:
         return
-    new_text = "".join(_render_template(t) for t in templates)
+    new_entries_text = "".join(_render_template(t) for t in templates)
     file_path.parent.mkdir(parents=True, exist_ok=True)
     if not file_path.is_file():
-        file_path.write_text(new_text)
+        file_path.write_text("dsl_steps:\n" + new_entries_text)
         return
     existing = file_path.read_text()
     stripped = existing.strip()
-    if stripped == "" or stripped == "[]":
-        file_path.write_text(new_text)
+    if stripped in ("", "dsl_steps:", "dsl_steps: []"):
+        file_path.write_text("dsl_steps:\n" + new_entries_text)
         return
     if not existing.endswith("\n"):
         existing += "\n"
-    file_path.write_text(existing + new_text)
+    file_path.write_text(existing + new_entries_text)
+
+
+_INDENT = "  "
 
 
 def _render_template(t: DSLInstructionTemplate) -> str:
     lines: list[str] = []
-    lines.append(f'- format: "{t.format}"')
-    lines.append(f"  name: {t.name}")
-    lines.append(f"  handler: {t.handler}")
-    lines.append(f"  target_part_path: {t.target_part_path}")
+    lines.append(f'{_INDENT}- format: "{t.format}"')
+    lines.append(f"{_INDENT}  name: {t.name}")
+    lines.append(f"{_INDENT}  handler: {t.handler}")
+    lines.append(f"{_INDENT}  target_part_path: {t.target_part_path}")
     if t.candidate_bindings:
         lines.append(
-            "  # 候選參數（請挑選後分別填入 param_bindings / datatable_bindings；"
+            f"{_INDENT}  # 候選參數（請挑選後分別填入 param_bindings / datatable_bindings；"
             "填完整段註解一併刪除）："
         )
         for cb in t.candidate_bindings:
-            lines.append(f"  #   {cb.key}:")
-            lines.append(f"  #     target: {cb.target}")
+            lines.append(f"{_INDENT}  #   {cb.key}:")
+            lines.append(f"{_INDENT}  #     target: {cb.target}")
     lines.append(_render_bindings("param_bindings", _param_bindings_dump(t.param_bindings)))
     lines.append(_render_bindings("datatable_bindings", _datatable_bindings_dump(t.datatable_bindings)))
     return "\n".join(lines) + "\n"
@@ -73,24 +76,24 @@ def _render_template(t: DSLInstructionTemplate) -> str:
 
 def _render_bindings(key: str, body: str) -> str:
     if body == "":
-        return f"  {key}: {{}}"
-    return f"  {key}:\n{body}"
+        return f"{_INDENT}  {key}: {{}}"
+    return f"{_INDENT}  {key}:\n{body}"
 
 
 def _param_bindings_dump(bindings) -> str:
     lines: list[str] = []
     for k, v in bindings.items():
-        lines.append(f"    {k}:")
-        lines.append(f"      target: {v.target}")
+        lines.append(f"{_INDENT}    {k}:")
+        lines.append(f"{_INDENT}      target: {v.target}")
     return "\n".join(lines)
 
 
 def _datatable_bindings_dump(bindings) -> str:
     lines: list[str] = []
     for k, v in bindings.items():
-        lines.append(f"    {k}:")
-        lines.append(f"      required: {'true' if v.required else 'false'}")
-        lines.append(f"      target: {v.target}")
+        lines.append(f"{_INDENT}    {k}:")
+        lines.append(f"{_INDENT}      required: {'true' if v.required else 'false'}")
+        lines.append(f"{_INDENT}      target: {v.target}")
         if v.default_value is not None:
-            lines.append(f'      default_value: "{v.default_value}"')
+            lines.append(f'{_INDENT}      default_value: "{v.default_value}"')
     return "\n".join(lines)
