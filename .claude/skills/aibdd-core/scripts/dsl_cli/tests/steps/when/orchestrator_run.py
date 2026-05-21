@@ -55,7 +55,7 @@ def _existing_or_seed_dsls(context):
         full = context.tmp_root / p
         if not full.is_file():
             full.parent.mkdir(parents=True, exist_ok=True)
-            full.write_text("[]\n")
+            full.write_text("dsl_steps: []\n")
         paths.append(p)
     return paths
 

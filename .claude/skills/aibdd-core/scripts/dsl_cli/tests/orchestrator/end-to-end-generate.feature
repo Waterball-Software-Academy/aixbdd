@@ -55,11 +55,11 @@ Feature: dsl_cli generate-dsl-instructions on joinRoom (spec §1 worked example)
       """
     And a temporary file at "specs/contracts/room.dsl.yml" with content:
       """
-      []
+      dsl_steps: []
       """
     And a temporary file at "specs/data/data.dsl.yml" with content:
       """
-      []
+      dsl_steps: []
       """
     When dsl_cli generate-dsl-instructions runs for boundary "web-service"
 

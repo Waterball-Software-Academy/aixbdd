@@ -4,25 +4,26 @@ Feature: eval rule `target-uri-scheme-validity` enforces 5 valid target URI sche
     Example: spec anchor、response:、literal:、stub_payload:、DBML anchor 各一條
       Given the following DSL entries in "contracts/room.dsl.yml":
         """
-        - format: 房號 "{房號}" 與人數 "{人數}"
-          name: ok.entry
-          handler: operation-response-success-readmodel
-          target_part_path: contracts/room.api.yml#/paths/~1rooms/post
-          param_bindings:
-            房號:
-              target: response:$.roomNo
-            人數:
-              target: response:$.playerCount
-          datatable_bindings:
-            時刻:
-              required: true
-              target: literal:iso8601-instant
-            玩家Id:
-              required: true
-              target: stub_payload:targetUserId
-            users-id:
-              required: true
-              target: data/data.dbml#users.id
+        dsl_steps:
+          - format: 房號 "{房號}" 與人數 "{人數}"
+            name: ok.entry
+            handler: operation-response-success-readmodel
+            target_part_path: contracts/room.api.yml#/paths/~1rooms/post
+            param_bindings:
+              房號:
+                target: response:$.roomNo
+              人數:
+                target: response:$.playerCount
+            datatable_bindings:
+              時刻:
+                required: true
+                target: literal:iso8601-instant
+              玩家Id:
+                required: true
+                target: stub_payload:targetUserId
+              users-id:
+                required: true
+                target: data/data.dbml#users.id
         """
       When evaluate runs
       Then EvalReport status is "PASS"
@@ -31,14 +32,15 @@ Feature: eval rule `target-uri-scheme-validity` enforces 5 valid target URI sche
     Example: target 用 unknown:foo 開頭
       Given the following DSL entries in "contracts/room.dsl.yml":
         """
-        - format: 異常條目 "{x}"
-          name: bad.entry
-          handler: operation-invoke
-          target_part_path: contracts/room.api.yml#/paths/~1rooms/post
-          param_bindings:
-            x:
-              target: unknown:nope
-          datatable_bindings: {}
+        dsl_steps:
+          - format: 異常條目 "{x}"
+            name: bad.entry
+            handler: operation-invoke
+            target_part_path: contracts/room.api.yml#/paths/~1rooms/post
+            param_bindings:
+              x:
+                target: unknown:nope
+            datatable_bindings: {}
         """
       When evaluate runs
       Then a violation with rule_id "target-uri-scheme-validity" is present
@@ -47,12 +49,13 @@ Feature: eval rule `target-uri-scheme-validity` enforces 5 valid target URI sche
     Example: target_part_path 無 # 分隔
       Given the following DSL entries in "contracts/room.dsl.yml":
         """
-        - format: 異常條目
-          name: bad.entry
-          handler: operation-invoke
-          target_part_path: contracts/room.api.yml
-          param_bindings: {}
-          datatable_bindings: {}
+        dsl_steps:
+          - format: 異常條目
+            name: bad.entry
+            handler: operation-invoke
+            target_part_path: contracts/room.api.yml
+            param_bindings: {}
+            datatable_bindings: {}
         """
       When evaluate runs
       Then a violation with rule_id "target-uri-scheme-validity" is present

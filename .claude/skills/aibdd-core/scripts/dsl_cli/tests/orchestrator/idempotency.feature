@@ -17,7 +17,7 @@ Feature: generate-dsl-instructions is idempotent — re-running adds 0 new entri
       """
     And a temporary file at "specs/contracts/room.dsl.yml" with content:
       """
-      []
+      dsl_steps: []
       """
 
   Rule: 後置（狀態）- 同一 specs 重新 generate 應產生 0 added entries（prefix-match 視作 resolved）
