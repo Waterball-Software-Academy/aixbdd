@@ -1,6 +1,6 @@
 # SOP
 
-緣由：實作計畫就緒後，用 `dsl_cli` 把 `${CONTRACTS_DIR}` / `${DATA_DIR}` 下的 spec 自動展開為 DSL skeleton（HARNESS），再由 AI 業務化填字（SEMANTIC），最後跑 universal eval（HARNESS）。本 phase 不再以 per-rule 迭代產生 entry — `dsl_cli` 由 part-driven 自動 fan-out，落到 `${CONTRACTS_DIR}/<resource>.dsl.yml` / `${DATA_DIR}/<file>.dsl.yml`。
+緣由：實作計畫就緒後，用 `dsl_cli` 把 `${CONTRACTS_DIR}` / `${DATA_DIR}` 下的 spec 自動展開為 DSL skeleton（HARNESS step 3），由 AI 業務化填字（SEMANTIC step 4），再用 `supplement-required-fields` 把 DB 必要但業務焦點外之欄位機械補進 datatable_bindings（HARNESS step 5），由 AI 填補業務語境合理之 default_value（SEMANTIC step 6），最後跑 universal eval（HARNESS step 7）。本 phase 不再以 per-rule 迭代產生 entry — `dsl_cli` 由 part-driven 自動 fan-out，落到 `${CONTRACTS_DIR}/<resource>.dsl.yml` / `${DATA_DIR}/<file>.dsl.yml`。
 
 0. **RESOLVE arguments** —— 透過 sibling resolver 綁定變數，把 stdout 之 `KEY=value` 原樣 EMIT 給用戶；resolver 非 0 退出 → 停止 SOP 並把 stderr 透傳。
 
@@ -44,7 +44,41 @@
 
    4.5 SEMANTIC 對該 entry 之**禁止項**：不得改動 `handler`、`target_part_path`、`name`、binding 之 `target`、`source_spec_path`。這些 plugin 持有的 spec ↔ DSL 對應關係不容 SEMANTIC 重新詮釋。
 
-5. **(HARNESS) RUN** `dsl_cli eval`：
+5. **(HARNESS) RUN** `dsl_cli supplement-required-fields`：
+
+   ```bash
+   PYTHONPATH=.claude/skills/aibdd-core/scripts \
+     python -m dsl_cli supplement-required-fields \
+     --specs ${CONTRACTS_DIR}/*.api.yml ${DATA_DIR}/*.dbml \
+     --dsl ${CONTRACTS_DIR}/*.dsl.yml ${DATA_DIR}/*.dsl.yml
+   ```
+
+   對每條 `state-builder` / `operation-invoke` entry，反向匹配對應 spec part，把**DB 必要但 SEMANTIC step 4 未業務焦點化**的欄位機械補進 `datatable_bindings`：
+
+   - 反查規則：以 `binding.target` 對 spec part 各欄位之 `target_part_path` 比對（不用 binding.key，SEMANTIC 可自由用本地化 key 如 `玩家暱稱` 對應 `nickname`）
+   - 補入條件（per part kind）：
+     - `DbmlTablePart`：`!is_pk && !nullable && !has_default` 且未出現於既有 bindings
+     - `ApiOperationPart`：`required && source == "body"` 且未出現於既有 bindings
+   - 補入形態：`{ target, required: false, default_value: "<FILL IN>" }`
+   - `state-verifier` / response handlers 不參與 supplement（verifier 不建 state、response 不寫狀態，無 DB 約束問題）
+   - `target_part_path` 對應不到任何 spec part 之 entry → 列入 `SupplementReport.skipped_entries`，不擋流程
+   - 命令 idempotent，可重跑（schema 改變後可再跑補新缺口；不會覆寫既有 default_value）
+   - 命令印出 `SupplementReport`（新增了哪些欄位 / 各寫到哪個 entry / skipped entries 與原因）
+
+6. **(SEMANTIC) LOOP** per supplemented `datatable_bindings[<key>]` whose `default_value == "<FILL IN>"`（順序：依 entry 在檔案中之出現順序、跨檔依檔名字典序）：
+
+   6.1 READ 該 entry 之 `target_part_path` 所指 spec 節點原文，識別該欄位之業務語境（欄位名 / type / 鄰近欄位的語義）。
+
+   6.2 把 `<FILL IN>` 換成業務語境合理之預設值；常見 convention：
+       - 時間欄位（`*_at` / `*_time`）→ `"now()"`
+       - ID / 外鍵 → 以業務語境決定（如 `"$(uuid)"` 或對應業務焦點 entry 的 ID）
+       - 字串列舉 → 對該 step 業務無關之預設值（如 `"unknown"`、`"default"`）
+       - boolean → `"false"` 或業務中性值
+       - 數字 → `"0"` 或業務中性值
+
+   6.3 SEMANTIC 對該欄位之**禁止項**：不得改動 `handler`、`target_part_path`、`name`、binding 之 `target`、`required` 旗標；只動 `default_value`。
+
+7. **(HARNESS) RUN** `dsl_cli eval`：
 
    ```bash
    PYTHONPATH=.claude/skills/aibdd-core/scripts \
@@ -57,12 +91,15 @@
 
    - `format-params-cap` — format 句型內 `{key}` 數量 ≤ 3
    - `datatable-cap` — datatable_bindings 中 required:true 且無 default_value 之欄位數 ≤ 6
-   - `schema-completeness` — 必要欄不為空 / `<FILL IN>`
+   - `schema-completeness` — 必要欄（`format` / `name` / `handler` / `target_part_path`）不為空 / 不為 `<FILL IN>`；且 `datatable_bindings[*].default_value` 不為 `<FILL IN>`（強制 step 6 SEMANTIC 補完業務值才能放行）
    - `name-uniqueness` — entry `name` 跨所有 `--dsl` 與 `--shared-dsl` 唯一
    - `format-key-binding-bijection` — format 內 `{key}` ⇔ `param_bindings` 之 key 雙向覆蓋
    - `target-uri-scheme-validity` — 每個 binding 的 `target` 須命中 5 種 scheme 之一（Spec anchor / `response:` / `literal:` / `stub_payload:` / DBML anchor）
 
-   FAIL → 列每條 violation 的 `entry_name` / `rule_id` / `message` / `hint` → 回步驟 4 修；常見修法包含補 `default_value` 把 required datatable 降為 optional 以紓壓 `datatable-cap`、或拆分 entry 以紓壓 `format-params-cap`。
+   FAIL → 列每條 violation 的 `entry_name` / `rule_id` / `message` / `hint` → 依 rule 性質回對應步驟修：
+   - `schema-completeness` 之 `<FILL IN>` 殘留 → 回步驟 6 補業務 default_value
+   - `format-params-cap` / `datatable-cap` → 回步驟 4 拆 entry 或補 default_value
+   - 其他 → 回步驟 4
 
    PASS → SOP 結束。
 
