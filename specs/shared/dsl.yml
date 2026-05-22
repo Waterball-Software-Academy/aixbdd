@@ -1,0 +1,34 @@
+# shared/dsl.yml — boundary-wide reusable DSL mapping registry (YAML)
+# Owner: /aibdd-plan. Seeded from aibdd-core/assets/boundaries/web-service/shared-dsl-template.yml.
+dsl_steps:
+  - format: 操作成功
+    name: shared.operation-response-success-and-failure.operation-success
+    handler: operation-response-success-and-failure
+    target_part_path: specs/test-strategy.yml#policies
+    param_bindings: {}
+    datatable_bindings: {}
+
+  - format: 操作失敗
+    name: shared.operation-response-success-and-failure.operation-failure
+    handler: operation-response-success-and-failure
+    target_part_path: specs/test-strategy.yml#policies
+    param_bindings: {}
+    datatable_bindings: {}
+
+  - format: 操作失敗，錯誤為 "{錯誤}"
+    name: shared.operation-response-success-and-failure.operation-failure-reason
+    handler: operation-response-success-and-failure
+    target_part_path: specs/test-strategy.yml#policies
+    param_bindings:
+      錯誤:
+        target: response:$.error.reason
+    datatable_bindings: {}
+
+  - format: 現在時間為 "{now}"
+    name: clock.time-control
+    handler: time-control
+    target_part_path: specs/test-strategy.yml#time_control
+    param_bindings:
+      now:
+        target: literal:iso8601-instant
+    datatable_bindings: {}

@@ -1,0 +1,96 @@
+# specs/contracts/game.dsl.yml — contract DSL registry keyed by dsl_steps
+
+dsl_steps:
+  - format: 以房號 {房號} 與名稱 {顯示名稱} 開房或加入
+    name: openOrJoinRoom.operation-invoke
+    handler: operation-invoke
+    target_part_path: specs/contracts/game.api.yml#/paths/~1rooms/post
+    param_bindings:
+      房號:
+        target: specs/contracts/game.api.yml#/components/schemas/OpenOrJoinRoomRequest/properties/room_number
+      顯示名稱:
+        target: specs/contracts/game.api.yml#/components/schemas/OpenOrJoinRoomRequest/properties/display_name
+    datatable_bindings: {}
+
+  - format: 開房或加入操作應成功
+    name: openOrJoinRoom.operation-response-success-and-failure
+    handler: operation-response-success-and-failure
+    target_part_path: specs/contracts/game.api.yml#/paths/~1rooms/post/responses/200
+    param_bindings: {}
+    datatable_bindings: {}
+
+  - format: 玩家 {玩家} 在房間 {房間} 標記準備
+    name: markPlayerReady.operation-invoke
+    handler: operation-invoke
+    target_part_path: specs/contracts/game.api.yml#/paths/~1rooms~1{roomId}~1ready/post
+    param_bindings:
+      玩家:
+        target: specs/contracts/game.api.yml#/paths/~1rooms~1{roomId}~1ready/post/parameters/1
+      房間:
+        target: specs/contracts/game.api.yml#/paths/~1rooms~1{roomId}~1ready/post/parameters/0
+    datatable_bindings: {}
+
+  - format: 標記準備操作應成功
+    name: markPlayerReady.operation-response-success-and-failure
+    handler: operation-response-success-and-failure
+    target_part_path: specs/contracts/game.api.yml#/paths/~1rooms~1{roomId}~1ready/post/responses/200
+    param_bindings: {}
+    datatable_bindings: {}
+
+  - format: 房主 {玩家} 在房間 {房間} 開始遊戲
+    name: startGame.operation-invoke
+    handler: operation-invoke
+    target_part_path: specs/contracts/game.api.yml#/paths/~1rooms~1{roomId}~1start/post
+    param_bindings:
+      玩家:
+        target: specs/contracts/game.api.yml#/paths/~1rooms~1{roomId}~1start/post/parameters/1
+      房間:
+        target: specs/contracts/game.api.yml#/paths/~1rooms~1{roomId}~1start/post/parameters/0
+    datatable_bindings: {}
+
+  - format: 開始遊戲操作應成功
+    name: startGame.operation-response-success-and-failure
+    handler: operation-response-success-and-failure
+    target_part_path: specs/contracts/game.api.yml#/paths/~1rooms~1{roomId}~1start/post/responses/200
+    param_bindings: {}
+    datatable_bindings: {}
+
+  - format: 玩家 {玩家} 在遊戲 {遊戲} 設置密碼 {密碼}
+    name: setPlayerSecret.operation-invoke
+    handler: operation-invoke
+    target_part_path: specs/contracts/game.api.yml#/paths/~1games~1{gameId}~1player-secrets/post
+    param_bindings:
+      玩家:
+        target: specs/contracts/game.api.yml#/paths/~1games~1{gameId}~1player-secrets/post/parameters/1
+      遊戲:
+        target: specs/contracts/game.api.yml#/paths/~1games~1{gameId}~1player-secrets/post/parameters/0
+      密碼:
+        target: specs/contracts/game.api.yml#/components/schemas/SetPlayerSecretRequest/properties/secret
+    datatable_bindings: {}
+
+  - format: 設置密碼操作應成功
+    name: setPlayerSecret.operation-response-success-and-failure
+    handler: operation-response-success-and-failure
+    target_part_path: specs/contracts/game.api.yml#/paths/~1games~1{gameId}~1player-secrets/post/responses/200
+    param_bindings: {}
+    datatable_bindings: {}
+
+  - format: 玩家 {玩家} 在遊戲 {遊戲} 猜測 {猜測}
+    name: submitPlayerGuess.operation-invoke
+    handler: operation-invoke
+    target_part_path: specs/contracts/game.api.yml#/paths/~1games~1{gameId}~1guesses/post
+    param_bindings:
+      玩家:
+        target: specs/contracts/game.api.yml#/paths/~1games~1{gameId}~1guesses/post/parameters/1
+      遊戲:
+        target: specs/contracts/game.api.yml#/paths/~1games~1{gameId}~1guesses/post/parameters/0
+      猜測:
+        target: specs/contracts/game.api.yml#/components/schemas/SubmitGuessRequest/properties/guess
+    datatable_bindings: {}
+
+  - format: 猜測操作應成功
+    name: submitPlayerGuess.operation-response-success-and-failure
+    handler: operation-response-success-and-failure
+    target_part_path: specs/contracts/game.api.yml#/paths/~1games~1{gameId}~1guesses/post/responses/200
+    param_bindings: {}
+    datatable_bindings: {}

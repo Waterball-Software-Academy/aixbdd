@@ -1,0 +1,200 @@
+# specs/data/domain.dsl.yml — data DSL registry keyed by dsl_steps
+
+dsl_steps:
+  - format: 系統 預先建立 房間 {房間識別}
+    name: rooms.state-builder
+    handler: state-builder
+    target_part_path: specs/data/domain.dbml#rooms
+    param_bindings:
+      房間識別:
+        target: specs/data/domain.dbml#rooms.id
+    datatable_bindings:
+      房號:
+        target: specs/data/domain.dbml#rooms.room_number
+        required: false
+      房間狀態:
+        target: specs/data/domain.dbml#rooms.status
+        required: false
+      房主:
+        target: specs/data/domain.dbml#rooms.host_player_id
+        required: false
+
+  - format: 房間 {房間識別} 的狀態 應為 {房間狀態}
+    name: rooms.state-verifier
+    handler: state-verifier
+    target_part_path: specs/data/domain.dbml#rooms
+    param_bindings:
+      房間識別:
+        target: specs/data/domain.dbml#rooms.id
+      房間狀態:
+        target: specs/data/domain.dbml#rooms.status
+    datatable_bindings:
+      房號:
+        target: specs/data/domain.dbml#rooms.room_number
+        required: false
+
+  - format: 系統 預先建立 遊戲 {遊戲識別}
+    name: games.state-builder
+    handler: state-builder
+    target_part_path: specs/data/domain.dbml#games
+    param_bindings:
+      遊戲識別:
+        target: specs/data/domain.dbml#games.id
+    datatable_bindings:
+      所屬房間:
+        target: specs/data/domain.dbml#games.room_id
+        required: false
+      階段:
+        target: specs/data/domain.dbml#games.phase
+        required: false
+      勝負:
+        target: specs/data/domain.dbml#games.outcome
+        required: false
+      當前回合:
+        target: specs/data/domain.dbml#games.current_turn_slot
+        required: false
+
+  - format: 遊戲 {遊戲識別} 的階段 應為 {階段}
+    name: games.state-verifier
+    handler: state-verifier
+    target_part_path: specs/data/domain.dbml#games
+    param_bindings:
+      遊戲識別:
+        target: specs/data/domain.dbml#games.id
+      階段:
+        target: specs/data/domain.dbml#games.phase
+    datatable_bindings:
+      勝負:
+        target: specs/data/domain.dbml#games.outcome
+        required: false
+
+  - format: 系統 預先建立 魔王 {魔王識別}
+    name: bosses.state-builder
+    handler: state-builder
+    target_part_path: specs/data/domain.dbml#bosses
+    param_bindings:
+      魔王識別:
+        target: specs/data/domain.dbml#bosses.id
+    datatable_bindings:
+      所屬遊戲:
+        target: specs/data/domain.dbml#bosses.game_id
+        required: false
+      血量:
+        target: specs/data/domain.dbml#bosses.hp
+        required: false
+      血量上限:
+        target: specs/data/domain.dbml#bosses.max_hp
+        required: false
+
+  - format: 魔王 {魔王識別} 的血量 應為 {血量}
+    name: bosses.state-verifier
+    handler: state-verifier
+    target_part_path: specs/data/domain.dbml#bosses
+    param_bindings:
+      魔王識別:
+        target: specs/data/domain.dbml#bosses.id
+      血量:
+        target: specs/data/domain.dbml#bosses.hp
+    datatable_bindings:
+      血量上限:
+        target: specs/data/domain.dbml#bosses.max_hp
+        required: false
+
+  - format: 系統 預先建立 猜測紀錄 {紀錄識別}
+    name: player_guesses.state-builder
+    handler: state-builder
+    target_part_path: specs/data/domain.dbml#player_guesses
+    param_bindings:
+      紀錄識別:
+        target: specs/data/domain.dbml#player_guesses.id
+    datatable_bindings:
+      遊戲:
+        target: specs/data/domain.dbml#player_guesses.game_id
+        required: false
+      玩家:
+        target: specs/data/domain.dbml#player_guesses.player_id
+        required: false
+      A值:
+        target: specs/data/domain.dbml#player_guesses.a_count
+        required: false
+      B值:
+        target: specs/data/domain.dbml#player_guesses.b_count
+        required: false
+      傷害:
+        target: specs/data/domain.dbml#player_guesses.damage_dealt
+        required: false
+
+  - format: 猜測紀錄 {紀錄識別} 的 A值 應為 {A值}
+    name: player_guesses.state-verifier
+    handler: state-verifier
+    target_part_path: specs/data/domain.dbml#player_guesses
+    param_bindings:
+      紀錄識別:
+        target: specs/data/domain.dbml#player_guesses.id
+      A值:
+        target: specs/data/domain.dbml#player_guesses.a_count
+    datatable_bindings:
+      B值:
+        target: specs/data/domain.dbml#player_guesses.b_count
+        required: false
+
+  - format: 系統 預先建立 魔王回合 {回合識別}
+    name: boss_rounds.state-builder
+    handler: state-builder
+    target_part_path: specs/data/domain.dbml#boss_rounds
+    param_bindings:
+      回合識別:
+        target: specs/data/domain.dbml#boss_rounds.id
+    datatable_bindings:
+      遊戲:
+        target: specs/data/domain.dbml#boss_rounds.game_id
+        required: false
+      行動:
+        target: specs/data/domain.dbml#boss_rounds.action
+        required: false
+
+  - format: 魔王回合 {回合識別} 的行動 應為 {行動}
+    name: boss_rounds.state-verifier
+    handler: state-verifier
+    target_part_path: specs/data/domain.dbml#boss_rounds
+    param_bindings:
+      回合識別:
+        target: specs/data/domain.dbml#boss_rounds.id
+      行動:
+        target: specs/data/domain.dbml#boss_rounds.action
+    datatable_bindings: {}
+
+  - format: 系統 預先建立 魔王命中 {命中識別}
+    name: boss_hits.state-builder
+    handler: state-builder
+    target_part_path: specs/data/domain.dbml#boss_hits
+    param_bindings:
+      命中識別:
+        target: specs/data/domain.dbml#boss_hits.id
+    datatable_bindings:
+      魔王回合:
+        target: specs/data/domain.dbml#boss_hits.boss_round_id
+        required: false
+      目標玩家:
+        target: specs/data/domain.dbml#boss_hits.target_player_id
+        required: false
+      對玩家傷害:
+        target: specs/data/domain.dbml#boss_hits.damage_to_player
+        required: false
+      治療魔王:
+        target: specs/data/domain.dbml#boss_hits.heal_to_boss
+        required: false
+
+  - format: 魔王命中 {命中識別} 的對玩家傷害 應為 {對玩家傷害}
+    name: boss_hits.state-verifier
+    handler: state-verifier
+    target_part_path: specs/data/domain.dbml#boss_hits
+    param_bindings:
+      命中識別:
+        target: specs/data/domain.dbml#boss_hits.id
+      對玩家傷害:
+        target: specs/data/domain.dbml#boss_hits.damage_to_player
+    datatable_bindings:
+      治療魔王:
+        target: specs/data/domain.dbml#boss_hits.heal_to_boss
+        required: false
