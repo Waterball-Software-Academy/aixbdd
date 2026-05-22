@@ -38,3 +38,20 @@ Feature: DBMLSpecParser collects one dbml_table Part per Table block
         | email      | varchar   | true     | false | false       |
         | bio        | text      | true     | false | false       |
         | created_at | timestamp | true     | false | true        |
+
+  Rule: 後置（狀態）- column type 應支援括號參數（如 varchar(4)、decimal(10,2)）
+    Example: room_code varchar(4)、price decimal(10,2) 之 type 應原樣保留括號
+      Given a temporary file at "data/data.dbml" with content:
+        """
+        Table rooms {
+          id integer [pk, increment]
+          room_code varchar(4) [not null]
+          price decimal(10,2) [not null]
+        }
+        """
+      When DBMLSpecParser parses the last file
+      Then the part named "rooms" has columns:
+        | name      | type          | nullable | is_pk | has_default |
+        | id        | integer       | false    | true  | false       |
+        | room_code | varchar(4)    | false    | false | false       |
+        | price     | decimal(10,2) | false    | false | false       |
