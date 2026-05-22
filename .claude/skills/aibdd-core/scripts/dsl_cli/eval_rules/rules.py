@@ -85,6 +85,18 @@ def rule_schema_completeness(entry: DSLEntry, entry_file: Path):
                 entry_file=entry_file,
                 message=f"必要欄 {field} 為空",
             )
+    for key, binding in entry.datatable_bindings.items():
+        if binding.default_value and binding.default_value.strip() == "<FILL IN>":
+            yield Violation(
+                rule_id="schema-completeness",
+                entry_name=entry.name or "<unnamed>",
+                entry_file=entry_file,
+                message=(
+                    f"datatable_bindings[{key}].default_value 仍為 `<FILL IN>` 占位符；"
+                    f"supplement-required-fields 補完後 SEMANTIC 階段未填業務值"
+                ),
+                hint="把 placeholder 換成業務語境合理的預設值（如 \"now()\"、\"unknown\"）",
+            )
 
 
 def rule_format_key_binding_bijection(entry: DSLEntry, entry_file: Path):
