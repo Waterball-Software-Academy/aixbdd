@@ -6,7 +6,7 @@ the orchestrator returns.
 
 from __future__ import annotations
 
-from dsl_cli.models import EvalReport, GenerationReport
+from dsl_cli.models import EvalReport, GenerationReport, SupplementReport
 
 
 def render_generation_report(report: GenerationReport) -> str:
@@ -28,6 +28,25 @@ def render_generation_report(report: GenerationReport) -> str:
         lines.append(f"Processed {len(report.processed_specs)} spec files:")
         for spec in report.processed_specs:
             lines.append(f"  - {spec.as_posix()}")
+    return "\n".join(lines) + "\n"
+
+
+def render_supplement_report(report: SupplementReport) -> str:
+    lines = ["Supplement Report", "================="]
+    if report.supplemented_fields:
+        lines.append(f"Supplemented {len(report.supplemented_fields)} fields:")
+        for s in report.supplemented_fields:
+            lines.append(
+                f"  - {s.field_key} -> {s.entry_name} @ {s.dsl_file.as_posix()}"
+            )
+    else:
+        lines.append("Supplemented 0 fields.")
+    if report.skipped_entries:
+        lines.append(f"Skipped {len(report.skipped_entries)} entries:")
+        for sk in report.skipped_entries:
+            lines.append(
+                f"  - {sk.entry_name} @ {sk.dsl_file.as_posix()}: {sk.reason}"
+            )
     return "\n".join(lines) + "\n"
 
 

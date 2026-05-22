@@ -181,3 +181,26 @@ class EvalReport:
     status: Literal["PASS", "FAIL"]
     total_entries: int
     violations: list[Violation] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
+class SupplementedField:
+    entry_name: str
+    dsl_file: Path
+    field_key: str
+    target: str
+
+
+@dataclass(frozen=True)
+class SkippedEntry:
+    entry_name: str
+    dsl_file: Path
+    reason: str
+
+
+@dataclass
+class SupplementReport:
+    supplemented_fields: list[SupplementedField] = field(default_factory=list)
+    skipped_entries: list[SkippedEntry] = field(default_factory=list)
+    processed_specs: list[Path] = field(default_factory=list)
+    processed_dsl_files: list[Path] = field(default_factory=list)

@@ -32,7 +32,7 @@ _TABLE_RE = re.compile(
 # (for `default: \`now()\``) so we match it as anything-but-newline.
 _COLUMN_RE = re.compile(
     r"^\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s+"
-    r"(?P<type>[A-Za-z_][A-Za-z0-9_]*)"
+    r"(?P<type>[A-Za-z_][A-Za-z0-9_]*(?:\([^)]*\))?)"
     r"(?:\s*\[(?P<options>[^\n\]]*)\])?\s*$"
 )
 
