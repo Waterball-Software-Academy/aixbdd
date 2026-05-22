@@ -1,0 +1,24 @@
+sequenceDiagram
+    actor Client
+    participant API as FastAPI Router
+    participant Game as GameService
+    participant Calc as GuessCalculator
+    participant Dmg as DamageCalculator
+    participant Boss as BossAi
+    participant Repo as GameRepository
+
+    Client->>API: POST /games/{gameId}/guesses
+    API->>Game: submitPlayerGuess
+    Game->>Calc: score guess vs boss secret
+    Game->>Dmg: apply damage to boss
+    Game->>Repo: persist guess + boss hp
+    alt boss hp zero
+        Game->>Repo: outcome players_win
+    else player queue exhausted
+        Game->>Boss: run boss round
+        Boss->>Calc: score vs player secrets
+        Boss->>Dmg: damage or heal
+        Game->>Repo: persist boss round hits
+    end
+    Game-->>API: GuessTurnResult
+    API-->>Client: 200 GuessTurnResult

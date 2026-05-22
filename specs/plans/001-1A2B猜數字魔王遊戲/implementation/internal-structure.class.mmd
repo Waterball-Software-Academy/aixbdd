@@ -1,0 +1,56 @@
+classDiagram
+    class FastAPIRouter {
+        +openOrJoinRoom()
+        +markPlayerReady()
+        +startGame()
+        +setPlayerSecret()
+        +submitPlayerGuess()
+    }
+
+    class RoomService {
+        +open_or_join()
+        +mark_ready()
+        +start_from_room()
+    }
+
+    class GameService {
+        +start_from_room()
+        +set_player_secret()
+        +submit_player_guess()
+    }
+
+    class GuessCalculator {
+        +score(secret, guess) OneTwoResult
+    }
+
+    class DamageCalculator {
+        +player_to_boss_damage(a, b) int
+        +boss_to_player_damage(a, b) int
+        +roll_critical() bool
+    }
+
+    class BossAi {
+        +pick_action(force_change_secret) BossActionKind
+        +execute_round(game) BossRoundResult
+    }
+
+    class RoomRepository {
+        +find_by_number()
+        +create_with_host()
+        +add_player()
+    }
+
+    class GameRepository {
+        +load_snapshot()
+        +save_guess()
+        +save_boss_round()
+    }
+
+    FastAPIRouter --> RoomService
+    FastAPIRouter --> GameService
+    RoomService --> RoomRepository
+    RoomService --> GameService
+    GameService --> GuessCalculator
+    GameService --> DamageCalculator
+    GameService --> BossAi
+    GameService --> GameRepository

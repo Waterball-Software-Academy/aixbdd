@@ -1,0 +1,9 @@
+sequenceDiagram
+    actor Client
+    participant API as FastAPI Router
+    participant Room as RoomService
+
+    Client->>API: POST /rooms { room_number }
+    API->>Room: openOrJoinRoom
+    Room-->>API: 422 room_full
+    API-->>Client: 422 ErrorResponse

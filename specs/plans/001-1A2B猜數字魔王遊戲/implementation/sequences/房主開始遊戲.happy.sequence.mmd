@@ -1,0 +1,14 @@
+sequenceDiagram
+    actor Client
+    participant API as FastAPI Router
+    participant Room as RoomService
+    participant Game as GameService
+    participant Repo as GameRepository
+
+    Client->>API: POST /rooms/{roomId}/start
+    API->>Room: startGame
+    Room->>Game: start_from_room
+    Game->>Repo: create game password_setup + boss max_hp
+    Game-->>Room: GameSnapshot
+    Room-->>API: GameSnapshot
+    API-->>Client: 200 GameSnapshot

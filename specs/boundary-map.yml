@@ -1,0 +1,21 @@
+# boundary-map — operation dispatch overrides (plan phase)
+version: 1
+boundary_id: backend
+function_package: 01-遊戲大廳
+
+operations:
+  openOrJoinRoom:
+    contract: contracts/game.api.yml#/paths/~1rooms/post
+    handler: RoomService.open_or_join
+  markPlayerReady:
+    contract: contracts/game.api.yml#/paths/~1rooms~1{roomId}~1ready/post
+    handler: RoomService.mark_ready
+  startGame:
+    contract: contracts/game.api.yml#/paths/~1rooms~1{roomId}~1start/post
+    handler: GameService.start_from_room
+  setPlayerSecret:
+    contract: contracts/game.api.yml#/paths/~1games~1{gameId}~1player-secrets/post
+    handler: GameService.set_player_secret
+  submitPlayerGuess:
+    contract: contracts/game.api.yml#/paths/~1games~1{gameId}~1guesses/post
+    handler: GameService.submit_player_guess

@@ -1,0 +1,11 @@
+sequenceDiagram
+    actor Client
+    participant API as FastAPI Router
+    participant Room as RoomService
+    participant Repo as RoomRepository
+
+    Client->>API: POST /rooms/{roomId}/ready
+    API->>Room: markPlayerReady
+    Room->>Repo: assert guest + set is_ready
+    Room-->>API: RoomSnapshot
+    API-->>Client: 200 RoomSnapshot

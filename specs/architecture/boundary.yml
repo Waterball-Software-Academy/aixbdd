@@ -1,0 +1,6 @@
+version: 2
+id: "backend"
+level: 1
+role: backend
+type: web-service
+description: "backend Python FastAPI backend service"

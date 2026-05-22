@@ -1,0 +1,15 @@
+sequenceDiagram
+    actor Client
+    participant API as FastAPI Router
+    participant Room as RoomService
+    participant Repo as RoomRepository
+
+    Client->>API: POST /rooms { room_number, display_name }
+    API->>Room: openOrJoinRoom
+    alt 房號不存在
+        Room->>Repo: create room + host P1
+    else 房號已存在且未滿
+        Room->>Repo: append player next slot
+    end
+    Room-->>API: RoomSnapshot
+    API-->>Client: 200 RoomSnapshot

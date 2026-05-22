@@ -1,0 +1,15 @@
+sequenceDiagram
+    actor Client
+    participant API as FastAPI Router
+    participant Game as GameService
+    participant Repo as GameRepository
+
+    Client->>API: POST /games/{gameId}/player-secrets
+    API->>Game: setPlayerSecret
+    Game->>Repo: store player secret
+    Game->>Game: all secrets set?
+    alt 全員完成
+        Game->>Repo: phase battle + init turn P1
+    end
+    Game-->>API: GameSnapshot
+    API-->>Client: 200 GameSnapshot

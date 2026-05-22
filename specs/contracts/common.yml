@@ -1,0 +1,56 @@
+openapi: 3.0.3
+info:
+  title: 1A2B 猜數字魔王遊戲 — 共用 schema
+  version: 1.0.0
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [message, code]
+      properties:
+        message:
+          type: string
+        code:
+          type: string
+
+    FourDigitSecret:
+      type: string
+      pattern: '^[0-9]{4}$'
+      description: 四位數字（0–9），業務層另驗證四位不重複
+
+    RoomNumber:
+      type: string
+      pattern: '^[0-9]{4}$'
+      description: 四位房號
+
+    PlayerSlot:
+      type: integer
+      minimum: 1
+      maximum: 10
+      description: 玩家編號 P1–P10
+
+    GamePhase:
+      type: string
+      enum: [lobby, password_setup, battle, ended]
+
+    GameOutcome:
+      type: string
+      enum: [players_win, players_lose, in_progress]
+
+    OneTwoResult:
+      type: object
+      required: [a, b]
+      properties:
+        a:
+          type: integer
+          minimum: 0
+          maximum: 4
+        b:
+          type: integer
+          minimum: 0
+          maximum: 4
+
+    BossActionKind:
+      type: string
+      enum: [aoe_attack, single_attack, self_heal, change_secret]

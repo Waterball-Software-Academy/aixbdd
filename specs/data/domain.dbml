@@ -1,0 +1,84 @@
+// 1A2B 猜數字魔王遊戲 — 持久化狀態（plan phase）
+// CiC(ASM): 玩家 max_hp = 1000；魔王 max_hp = 開局存活玩家數 × 1000
+
+Project guess_boss_game {
+  database_type: 'PostgreSQL'
+  Note: 'Boundary state truth for web-service backend'
+}
+
+Table rooms {
+  id uuid [pk, note: '房間識別']
+  room_number varchar(4) [unique, not null, note: '四位房號']
+  status varchar [not null, note: 'waiting | in_game']
+  host_player_id uuid [note: 'P1 房主']
+  created_at timestamptz [not null]
+  Note: 'aggregate_root'
+}
+
+Table players {
+  id uuid [pk]
+  room_id uuid [not null, ref: > rooms.id]
+  slot int [not null, note: '1–10']
+  display_name varchar(32) [not null]
+  is_ready boolean [not null, default: false]
+  is_alive boolean [not null, default: true]
+  hp int [not null, default: 1000]
+  max_hp int [not null, default: 1000]
+  secret varchar(4) [note: '四位不重複密碼，NULL 表示尚未設置']
+  created_at timestamptz [not null]
+
+  indexes {
+    (room_id, slot) [unique]
+  }
+}
+
+Table games {
+  id uuid [pk]
+  room_id uuid [not null, unique, ref: - rooms.id]
+  phase varchar [not null, note: 'lobby | password_setup | battle | ended']
+  outcome varchar [not null, default: 'in_progress', note: 'in_progress | players_win | players_lose']
+  current_turn_slot int [note: '輪到哪位玩家；NULL 表示魔王回合或等待']
+  force_boss_change_secret boolean [not null, default: false]
+  started_at timestamptz
+  ended_at timestamptz
+  Note: 'aggregate_root'
+}
+
+Table bosses {
+  id uuid [pk]
+  game_id uuid [not null, unique, ref: - games.id]
+  hp int [not null]
+  max_hp int [not null]
+  secret varchar(4) [not null, note: '系統隨機四位不重複']
+  Note: 'aggregate_root'
+}
+
+Table player_guesses {
+  id uuid [pk]
+  game_id uuid [not null, ref: > games.id]
+  player_id uuid [not null, ref: > players.id]
+  guess varchar(4) [not null]
+  a_count int [not null]
+  b_count int [not null]
+  damage_dealt int [not null]
+  is_critical boolean [not null, default: false]
+  created_at timestamptz [not null]
+}
+
+Table boss_rounds {
+  id uuid [pk]
+  game_id uuid [not null, ref: > games.id]
+  action varchar [not null, note: 'aoe_attack | single_attack | self_heal | change_secret']
+  created_at timestamptz [not null]
+}
+
+Table boss_hits {
+  id uuid [pk]
+  boss_round_id uuid [not null, ref: > boss_rounds.id]
+  target_player_id uuid [not null, ref: > players.id]
+  damage_to_player int [not null, default: 0]
+  heal_to_boss int [not null, default: 0]
+  guess_index int [not null, note: '同一回合第幾次猜測']
+  a_count int [not null]
+  b_count int [not null]
+}

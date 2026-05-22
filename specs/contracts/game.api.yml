@@ -1,0 +1,379 @@
+openapi: 3.0.3
+info:
+  title: 1A2B 猜數字魔王遊戲 — HTTP API
+  version: 1.0.0
+  description: |
+    Plan-phase operation contracts。傷害公式採 ASM：damage = A×100 + B×50；爆擊 15% 機率 ×2。
+    玩家 HP 採 ASM：每位 1000；魔王 HP 上限 = 存活玩家數 × 1000。
+
+paths:
+  /rooms:
+    post:
+      tags: [Lobby]
+      operationId: openOrJoinRoom
+      summary: 開房或加入遊戲房
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenOrJoinRoomRequest'
+      responses:
+        '200':
+          description: 成功開房或加入
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomSnapshot'
+        '400':
+          description: 房號格式錯誤
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+        '422':
+          description: 房間已滿等業務規則不滿足
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+
+  /rooms/{roomId}/ready:
+    post:
+      tags: [Lobby]
+      operationId: markPlayerReady
+      summary: 房客標記準備
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 已準備
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomSnapshot'
+        '403':
+          description: 房主不可標記準備
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+        '404':
+          description: 房間或玩家不存在
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+        '422':
+          description: 業務規則不滿足
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+
+  /rooms/{roomId}/start:
+    post:
+      tags: [Lobby]
+      operationId: startGame
+      summary: 房主開始遊戲
+      parameters:
+        - name: roomId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: 遊戲進入密碼設置階段並產生魔王
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSnapshot'
+        '403':
+          description: 非房主
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+        '422':
+          description: 人數不足或未全員準備
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+
+  /games/{gameId}/player-secrets:
+    post:
+      tags: [Battle]
+      operationId: setPlayerSecret
+      summary: 玩家設置四位不重複密碼
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPlayerSecretRequest'
+      responses:
+        '200':
+          description: 密碼已記錄；全員完成時進入對戰階段
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameSnapshot'
+        '400':
+          description: 密碼格式錯誤
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+        '422':
+          description: 階段或重複設置不符
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+
+  /games/{gameId}/guesses:
+    post:
+      tags: [Battle]
+      operationId: submitPlayerGuess
+      summary: 玩家回合猜測魔王密碼
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: X-Player-Id
+          in: header
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitGuessRequest'
+      responses:
+        '200':
+          description: 回傳 1A2B、傷害、遊戲狀態；必要時接續魔王回合結果
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuessTurnResult'
+        '400':
+          description: 猜測格式錯誤
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+        '422':
+          description: 非玩家回合、已出局或階段不符
+          content:
+            application/json:
+              schema:
+                $ref: common.yml#/components/schemas/ErrorResponse
+
+components:
+  schemas:
+    OpenOrJoinRoomRequest:
+      type: object
+      required: [room_number, display_name]
+      properties:
+        room_number:
+          $ref: common.yml#/components/schemas/RoomNumber
+        display_name:
+          type: string
+          minLength: 1
+          maxLength: 32
+
+    SetPlayerSecretRequest:
+      type: object
+      required: [secret]
+      properties:
+        secret:
+          $ref: common.yml#/components/schemas/FourDigitSecret
+
+    SubmitGuessRequest:
+      type: object
+      required: [guess]
+      properties:
+        guess:
+          $ref: common.yml#/components/schemas/FourDigitSecret
+
+    RoomPlayerView:
+      type: object
+      required: [player_id, slot, display_name, is_host, is_ready, is_alive]
+      properties:
+        player_id:
+          type: string
+          format: uuid
+        slot:
+          $ref: common.yml#/components/schemas/PlayerSlot
+        display_name:
+          type: string
+        is_host:
+          type: boolean
+        is_ready:
+          type: boolean
+        is_alive:
+          type: boolean
+
+    RoomSnapshot:
+      type: object
+      required: [room_id, room_number, status, players]
+      properties:
+        room_id:
+          type: string
+          format: uuid
+        room_number:
+          $ref: common.yml#/components/schemas/RoomNumber
+        status:
+          type: string
+          enum: [waiting, in_game]
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/RoomPlayerView'
+        game_id:
+          type: string
+          format: uuid
+          nullable: true
+
+    BossView:
+      type: object
+      required: [hp, max_hp, secret_set]
+      properties:
+        hp:
+          type: integer
+          minimum: 0
+        max_hp:
+          type: integer
+          minimum: 0
+        secret_set:
+          type: boolean
+
+    GameSnapshot:
+      type: object
+      required: [game_id, room_id, phase, outcome, players, boss, current_turn_slot]
+      properties:
+        game_id:
+          type: string
+          format: uuid
+        room_id:
+          type: string
+          format: uuid
+        phase:
+          $ref: common.yml#/components/schemas/GamePhase
+        outcome:
+          $ref: common.yml#/components/schemas/GameOutcome
+        current_turn_slot:
+          $ref: common.yml#/components/schemas/PlayerSlot
+          nullable: true
+        players:
+          type: array
+          items:
+            $ref: '#/components/schemas/BattlePlayerView'
+        boss:
+          $ref: '#/components/schemas/BossView'
+        force_boss_change_secret:
+          type: boolean
+          description: 本輪玩家曾 4A 時下一魔王行動強制改密碼
+
+    BattlePlayerView:
+      type: object
+      required: [player_id, slot, hp, max_hp, is_alive, secret_set]
+      properties:
+        player_id:
+          type: string
+          format: uuid
+        slot:
+          $ref: common.yml#/components/schemas/PlayerSlot
+        hp:
+          type: integer
+        max_hp:
+          type: integer
+        is_alive:
+          type: boolean
+        secret_set:
+          type: boolean
+
+    GuessTurnResult:
+      type: object
+      required: [guess_result, damage_dealt, is_critical, game]
+      properties:
+        guess_result:
+          $ref: common.yml#/components/schemas/OneTwoResult
+        damage_dealt:
+          type: integer
+          minimum: 0
+        is_critical:
+          type: boolean
+        boss_round:
+          $ref: '#/components/schemas/BossRoundResult'
+          nullable: true
+        game:
+          $ref: '#/components/schemas/GameSnapshot'
+
+    BossRoundResult:
+      type: object
+      required: [action, player_hits]
+      properties:
+        action:
+          $ref: common.yml#/components/schemas/BossActionKind
+        player_hits:
+          type: array
+          items:
+            $ref: '#/components/schemas/BossHitView'
+
+    BossHitView:
+      type: object
+      required: [target_player_id, guess_results, damage_to_player, heal_to_boss]
+      properties:
+        target_player_id:
+          type: string
+          format: uuid
+        guess_results:
+          type: array
+          items:
+            $ref: common.yml#/components/schemas/OneTwoResult
+        damage_to_player:
+          type: integer
+          minimum: 0
+        heal_to_boss:
+          type: integer
+          minimum: 0
