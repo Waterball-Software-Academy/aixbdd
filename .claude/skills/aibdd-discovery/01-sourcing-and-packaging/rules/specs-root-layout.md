@@ -21,4 +21,5 @@ ${SPECS_ROOT_DIR}/
       spec.md
       reports/
         discovery-sourcing.md
+        impact-matrix.yml
 ```

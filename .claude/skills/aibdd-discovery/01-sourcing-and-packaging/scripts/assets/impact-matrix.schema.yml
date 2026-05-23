@@ -1,0 +1,39 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+title: impact-matrix
+type: object
+required:
+  - version
+  - entries
+additionalProperties: false
+properties:
+  version:
+    type: integer
+    const: 1
+  entries:
+    type: array
+    items:
+      $ref: "#/$defs/entry"
+$defs:
+  changeType:
+    type: string
+    enum:
+      - read_only_compare
+      - update
+      - add
+      - conditional_update
+  entry:
+    type: object
+    required:
+      - path
+      - change_type
+      - impact_summary
+    additionalProperties: false
+    properties:
+      path:
+        type: string
+        minLength: 1
+      change_type:
+        $ref: "#/$defs/changeType"
+      impact_summary:
+        type: string
+        minLength: 1

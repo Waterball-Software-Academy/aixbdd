@@ -8,7 +8,7 @@
 | Family | Path pattern | Owner | Purpose |
 |---|---|---|---|
 | Project config | `.aibdd/arguments.yml`, `specs/architecture/boundary.yml` | `/aibdd-kickoff` | boundary-aware path and topology seed |
-| Discovery truth | `specs/packages/NN-*/activities/`, `features/`, `specs/plans/NNN-*/reports/discovery-sourcing.md`, `specs/plans/NNN-*/spec.md` summary | `/aibdd-discovery` plus form skills | accepted external behavior and atomic rules |
+| Discovery truth | `specs/packages/NN-*/activities/`, `features/`, `specs/plans/NNN-*/reports/impact-matrix.yml`, `specs/plans/NNN-*/reports/discovery-sourcing.md`, `specs/plans/NNN-*/spec.md` summary | `/aibdd-discovery` plus form skills | accepted external behavior and atomic rules |
 | Boundary technical truth | `specs/boundary-map.yml`, `specs/contracts/`, `specs/data/`, `specs/test-strategy.yml` | `/aibdd-plan` + boundary state specifier skill | owner-scoped implementation truth |
 | DSL truth | `specs/packages/NN-*/dsl.yml`, `specs/shared/dsl.yml` | `/aibdd-plan` | L1-L4 red-usable mapping truth |
 | Plan package work records | `specs/plans/NNN-*/plan.md`, `research.md`, `implementation/sequences/*.sequence.mmd`, `implementation/internal-structure.class.mmd` | `/aibdd-plan` | session-specific reasoning and implementation plan |

@@ -12,15 +12,6 @@
 - 納入範圍：登入成功後的時間戳記、必要資料欄位、既有登入規則與 feature 規格的更新。
 - 明確排除：會員註冊、忘記密碼、角色權限、第三方 OAuth 登入、登入通知推播。
 
-## Impact matrix
-
-| 既有規格檔（相對 `${TRUTH_BOUNDARY_ROOT}`） | 變更類型 | impact 描述 |
-|---|---|---|
-| `packages/01-會員登入/features/01-會員登入.feature` | 更新 | 先用既有 scenario 界定「登入成功」邊界；本輪補上登入成功後必須記錄 `last_login_at` 規則 |
-| `packages/01-會員登入/dsl.yml` | 更新 | 沿用既有登入語彙；本輪延伸到「最後登入時間」相關語彙或狀態描述 |
-| `data/會員.dbml` | 更新 | 先確認既有欄位是否足夠；本輪新增或調整 `last_login_at` 以承載登入時間 state truth |
-| `contracts/會員-api.yml` | 條件式更新 | 先對照現行契約與回傳模型；本輪若需求外顯到 API 才改動 |
-
 ## Function package charters
 
 ### `packages/01-會員登入`
@@ -69,6 +60,7 @@ specs/
       spec.md
       reports/
         discovery-sourcing.md
+        impact-matrix.yml
 ```
 
 ## `spec.md` 摘要片段（同一故事線）
@@ -76,7 +68,7 @@ specs/
 ```markdown
 ## Discovery sourcing summary
 - 本輪問題一句：每次登入成功都要記錄 `last_login_at`。
-- 已掃過並收斂 impact 的 boundary 規格檔：`specs` 根下 contracts／data／packages（見 `reports/discovery-sourcing.md` 內 Impact matrix）。
+- 已掃過並收斂 impact 的 boundary 規格檔：`specs` 根下 contracts／data／packages（見 `reports/impact-matrix.yml`）。
 - 本輪 function package：`packages/01-會員登入`。
 
 Pointer：`reports/discovery-sourcing.md`
@@ -98,6 +90,5 @@ Pointer：`reports/discovery-sourcing.md`
 
 ## Notes
 
-- `Impact matrix`：**唯一**表格；每列一個既有規格檔，統一寫本輪 raw idea 對它的 impact（含對齊與變更敘述）。
 - `Function package charters`：每個 function package 的職責邊界與本輪增量。
-- Plan-side artifacts（`${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${PLAN_SPEC}`）**不放進** `Impact matrix`。
+- Plan-side artifacts（`${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${PLAN_SPEC}`、`${IMPACT_MATRIX_YML}` 本身）**不放進** `${IMPACT_MATRIX_YML}` entries。
