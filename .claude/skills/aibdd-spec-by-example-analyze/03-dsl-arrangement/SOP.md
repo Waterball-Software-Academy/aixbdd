@@ -22,6 +22,12 @@
 3. [LOOP] FOR EACH `${SCOPED_FEATURE_PATHS}` 內每個 `.feature`：
     1. READ 該 `.feature` 全文。
     2. TRIGGER 一個 faithful reasoning worker（可用 sub-agent；粒度固定為一個 feature 一個 worker），只處理當前 `.feature`，此 worker 將嚴格執行：`steps/dsl-arrangement.md`
-    3. worker 的唯一授權 side effect：原地改寫當前 `.feature` 內的 placeholder `# @dsl` block；不得改寫其他 feature、不得改寫 `When`、不得擴張 scope。
+    3. worker 成功完成時的唯一授權 side effect：原地改寫當前 `.feature` 內的 placeholder `# @dsl` block。
+    4. worker 若回傳 `$questions`，視為該 `.feature` 尚未完成；外層 phase 不得採納該 worker 的完成宣告。
 
-4. WAIT 所有 feature workers 完成 + 若任一 worker 回傳 `$questions`：按 feature 維度 DELEGATE `/clarify-loop`；澄清完成後只重跑受影響的 feature worker。
+4. WAIT 所有 feature workers 完成。
+    1. COLLECT 全部 worker 回傳的 `$questions`。
+    2. 若 `$questions` 為空：本 phase 完成。
+    3. 若 `$questions` 非空：按 feature 維度 merge / dedupe 成批次 clarify payload，DELEGATE `/clarify-loop`。
+    4. WAIT clarify 結果，然後只重跑受影響的 feature worker。
+    5. 回到步驟 4.1，直到 `$questions` 為空才可離開本 phase。

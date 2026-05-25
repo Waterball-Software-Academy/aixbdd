@@ -18,6 +18,12 @@
 1. **依序不漏步**：自底下列 SOP 逐一執行；每做一步，在訊息中**明示該步編號**。
 2. **限縮延長推理**：僅當 sub-SOP 當步**明文**標示須 **`THINK / REASONING`** 時，才拉長內省與推演；否則以**最直接**可做之 `READ`／`PARSE`／`DERIVE`／`WRITE`／`UPDATE`／`DELEGATE`／`TRIGGER` 工具呼叫達成該步，省略與該步授權範圍無關的冗長鋪墊，以降低往返等待時間。
 
+## PRINCIPLE: Clarify gate is blocking
+
+1. 任何 sub-SOP 只要回傳 `$questions` 或 `$NEED_TO_CLARIFY`，外層 orchestrator **必須**先 DELEGATE `/clarify-loop` 完成澄清，再只重跑受影響的 worker。
+2. 在對應的 clarify gate 尚未清空前，該 phase 不算完成；頂層 SOP 也不得往後推進，更不得對用戶宣告 `/aibdd-spec-by-example-analyze` 完成。
+3. worker 只負責分析與寫檔；使用者互動一律由外層 phase 負責。
+
 ## PRINCIPLE: 長流程待辦（兩層）
 
 長流程會跨多輪對話；在 **conversation compact**（對話摘要壓縮）之後，執行者仍要靠**同一套待辦**還原：目前卡在哪個 **phase**，該 phase 內細項又到哪一格。底下為**兩層**約定：**外層只列 phase**，**進入該 phase** 再把該 sub-SOP 第一層編號步驟拆成子項。尚未開始的 phase 不必預先展開成檔案級細項，以免待辦與實際 `SOP.md` 脫節。
@@ -53,6 +59,6 @@
 
 5. EXECUTE `04-parameter-instantiation/SOP.md`
 
-6. 和用戶說道（可使用不同詞彙但維持語意）：「OK /aibdd-spec-by-example-analyze 完成。本輪 `${SCOPED_FEATURE_PATHS}` 內 atomic rules 已展成 Scenario／Scenario Outline + Examples，並完成 Given／When／Then 的 DSL arrangement 與 canonical exemplar instantiation（唯一產物為原地改寫之 `.feature`）。
+6. 當且僅當 clarify gate 都已清空，和用戶說道（可使用不同詞彙但維持語意）：「OK /aibdd-spec-by-example-analyze 完成。本輪 `${SCOPED_FEATURE_PATHS}` 內 atomic rules 已展成 Scenario／Scenario Outline + Examples，並完成 Given／When／Then 的 DSL arrangement 與 canonical exemplar instantiation（唯一產物為原地改寫之 `.feature`）。
 
 嗯，本步完成後即可直接執行 /aibdd-tasks！」

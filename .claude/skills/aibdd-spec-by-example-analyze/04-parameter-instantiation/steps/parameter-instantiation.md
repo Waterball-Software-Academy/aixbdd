@@ -102,7 +102,7 @@
 
 7. `$NEED_TO_CLARIFY` += DO FAITHFUL REASONING 針對當前 `.feature` 範疇內所有已落地的 `Example` / `Scenario Outline`，依照 `derive-findings.md` 中的分析切角去進行深度分析，並找到所有需要澄清的地方。
 
-8. 若 `$NEED_TO_CLARIFY` 非空：針對所有 `$NEED_TO_CLARIFY`，DELEGATE `/clarify-loop` skill 以單次最多五題的方式來進行提問。
+8. 若 `$NEED_TO_CLARIFY` 非空：EMIT 給外層 phase；外層 phase 負責 DELEGATE `/clarify-loop` skill 以單次最多五題的方式來進行提問。
 
 # Worker hard limits
 1. 不得變更 `When` step 的行為意圖；若 `When` 內含 placeholder，只能把它落成 concrete exemplar 或符合 slot 型別格式的 `$alias`，不得改寫該操作想表達的業務語意。
@@ -114,9 +114,11 @@
 7. string slot 中的 `$alias` 必須加雙引號，例如 `"$orderId"`；integer slot 中的 `$alias` 必須保持裸 token，例如 `$retryCount`。
 8. 不得把 runtime-produced value 偽裝成 concrete exemplar；例如前序 step 才會得到的 id / token / timestamp，不得硬落成 `"order-id-xyz"`、`"payment-token-abc"` 之類的假固定值。
 9. 若某 placeholder 的值無法在不改變 spec meaning 的前提下唯一決定，必須 EMIT `$NEED_TO_CLARIFY` 並提議最根本的解法；不得硬猜。
+10. 若 `$NEED_TO_CLARIFY` 非空，本 worker 不做使用者互動、不宣告完成，也不做最終寫回。
 
 # Completion contract
 1. 每個 `.feature` 完成後，該檔內所有尚未落地的 placeholder 都應已被 instantiation 成最終 artifact 形態：static known value 變成 concrete exemplar，runtime-produced value 變成 `$alias`。`{...}` 與 `<...>` 不得殘留；`$alias` 合法保留。
 2. 若某 `Scenario Outline` 在 instantiation 後只剩單一 exemplar，且不再承載多組變化，可被正規化為單一 `Example`。
 3. 同一個 `.feature` 內相同 actor、resource、identifier、runtime handle 與 expected value 的 naming 應保持一致，讓讀者能直接看出誰生出誰、誰沿用誰。
 4. 本步完成後的 feature files 應可直接銜接 `/aibdd-tasks`；若要再做 coverage 擴寫、EP / BVA 或額外 examples，屬於 optional enhancement，不屬本 phase。
+5. 若 `$NEED_TO_CLARIFY` 非空，worker 回傳 incomplete；外層 phase 完成 clarify 後才可重跑本 worker。
