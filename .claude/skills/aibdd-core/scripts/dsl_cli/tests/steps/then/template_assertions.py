@@ -50,6 +50,14 @@ def step_assert_template_target_part_path(context, name: str, expected: str):
     )
 
 
+@then('template "{name}" has no datatable_binding "{key}"')
+def step_assert_no_datatable_binding(context, name: str, key: str):
+    t = _by_name(context, name)
+    assert key not in t.datatable_bindings, (
+        f"template {name} should NOT have datatable_binding {key!r}, but it does"
+    )
+
+
 @then('template "{name}" datatable_binding "{key}" has required {expected}')
 def step_assert_datatable_required(context, name: str, key: str, expected: str):
     t = _by_name(context, name)

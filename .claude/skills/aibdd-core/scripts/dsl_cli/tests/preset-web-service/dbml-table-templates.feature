@@ -26,6 +26,10 @@ Feature: web-service plugin expands DbmlTablePart into state-builder + state-ver
       Then template "users.state-builder" has target_part_path "data/data.dbml#users"
       And template "users.state-verifier" has target_part_path "data/data.dbml#users"
 
+  Rule: 後置（狀態）- state-builder 不應將 pk 欄位放入 datatable_bindings
+    Example: id int [pk, increment]（Background 已提供）→ 不在 datatable_bindings 中
+      Then template "users.state-builder" has no datatable_binding "id"
+
   Rule: 後置（狀態）- state-builder 應將 NOT NULL 且無 DBML default 的欄位放入 datatable_bindings，
         required: false，default_value: "<FILL IN>"
     Example: nickname varchar [not null]（Background 已提供）→ datatable_binding required false, default_value "<FILL IN>"
