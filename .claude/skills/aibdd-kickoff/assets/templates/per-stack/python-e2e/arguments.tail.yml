@@ -6,7 +6,7 @@
 STARTER_VARIANT: python-e2e
 
 # PRESET_KIND — boundary preset；backend stack 必填。
-PRESET_KIND: web-backend
+PRESET_KIND: web-service
 
 # -----------------------------------------------------------------------------
 # 7. PYTHON_E2E_STARTER_OUTPUT_PATHS — walking skeleton 落點；由 /aibdd-auto-starter 產出實體碼。
@@ -25,6 +25,3 @@ PY_STEPS_DIR: ${PY_TEST_FEATURES_DIR}/steps
 PY_ENV_FILE: ${PY_TEST_FEATURES_DIR}/environment.py
 PY_SHARED_STEPS_DIR: ${PY_TEST_FEATURES_DIR}/steps/shared
 ALEMBIC_VERSIONS_DIR: alembic/versions
-
-# Section 8 variant — backend preset contract ref
-BACKEND_PRESET_CONTRACT_REF: .claude/skills/aibdd-core/references/preset-contract/web-backend.md

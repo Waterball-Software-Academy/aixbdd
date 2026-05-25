@@ -1,13 +1,13 @@
 # Handler: <handler-id>
 
 1. 這份檔記載一個 handler 的 runtime（red-execute 實作期）履約：它讀寫什麼 context、何時該用、不准做什麼。
-2. 一個 handler 一個檔，檔名等於 step-classification.yml 裡的 handler ID。step-classification.yml 有幾個 handler，這裡就有幾份對應 .md（除非該 boundary 刻意不為某 handler 寫 runtime 文件）。
-3. 與 plugin-contract.md 的分工：plugin-contract.md 談 plan-time 構造（template 怎麼生），本檔談 runtime 實作（step def 跑起來怎麼讀寫 context）。
+2. 一個 handler 一個檔，檔名等於 boundary 支援的 handler ID。`handlers/` 目錄有幾個 handler 檔，就代表此 boundary 有幾份 runtime 文件（除非刻意不為某 handler 寫）。
+3. 與 plan-time 的分工：`scripts/part_to_dsl.py` 談 plan-time 構造（template 怎麼生），本檔談 runtime 實作（step def 跑起來怎麼讀寫 context）。
 
 ## Role
 
 1. 一句話定義此 handler 渲染/負責什麼（例：`<handler-id>` renders persisted backend state setup）。
-2. 它屬於哪個 part 與哪些 keyword（與 step-classification.yml 一致）：
+2. 它屬於哪個 part 與哪些 keyword（與 DSL entry 的 `handler` 一致）：
    1. `part`：`<handler-id>`
    2. `keywords`：`<Given|When|Then|Background>`
 

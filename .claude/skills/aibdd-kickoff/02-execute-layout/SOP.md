@@ -6,8 +6,8 @@
 
 | `$decisions.stack` | tail dir | `$role` | `$type` | `$preset_kind` | `$description_suffix`（接於 `<tlb_id> ` 之後） |
 |---|---|---|---|---|---|
-| `python_e2e` | `python-e2e` | `backend` | `web-service` | `web-backend` | `Python FastAPI backend service` |
-| `java_e2e` | `java-e2e` | `backend` | `web-service` | `web-backend` | `Java Spring Boot backend service` |
+| `python_e2e` | `python-e2e` | `backend` | `web-service` | `web-service` | `Python FastAPI backend service` |
+| `java_e2e` | `java-e2e` | `backend` | `web-service` | `web-service` | `Java Spring Boot backend service` |
 | `nextjs_playwright` | `nextjs-playwright` | `frontend` | `web-app` | `web-frontend` | `Next.js + Playwright frontend application` |
 
 ## Steps

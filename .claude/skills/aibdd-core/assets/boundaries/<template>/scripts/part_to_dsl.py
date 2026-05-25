@@ -53,9 +53,9 @@ def generate_templates(parts, context):
 
 # --- 每種 part-kind 一個 fan-out helper ---------------------------------------
 # 每個 helper 回傳 list[DSLInstructionTemplate]；每個 template 至少帶：
-#   handler           : 對應 step-classification.yml 的 handler ID
+#   handler           : boundary 支援的 handler ID
 #   name              : 全域唯一名（建議 <natural-id>.<handler>）
-#   target_part_path  : 綁定的 truth 錨點（plugin-contract.md 規定 scheme）
+#   target_part_path  : 綁定的 truth 錨點（本 plugin 內 scheme 規則）
 #   source_spec_path  : 來源 spec 檔
 #   candidate_bindings: tuple[CandidateBinding(key=..., target=<uri-scheme:...>)]
 #

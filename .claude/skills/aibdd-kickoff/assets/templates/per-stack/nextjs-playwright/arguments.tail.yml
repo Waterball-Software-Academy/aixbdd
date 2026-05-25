@@ -31,6 +31,3 @@ FE_STEPS_DIR: ${FE_FEATURES_DIR}/steps
 FE_FIXTURES_FILE: ${FE_STEPS_DIR}/fixtures.ts
 FE_PLAYWRIGHT_CONFIG: playwright.config.ts
 FE_STORYBOOK_CONFIG_DIR: .storybook
-
-# Section 8 variant — frontend preset contract ref
-FRONTEND_PRESET_CONTRACT_REF: .claude/skills/aibdd-core/references/preset-contract/web-frontend.md

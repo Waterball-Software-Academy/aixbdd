@@ -2,7 +2,7 @@
 # Schema (per boundary):
 #   - web-frontend: aibdd-core/assets/boundaries/web-frontend/test-strategy-schema.md
 #       (tier2_handlers / viewport_profiles / coverage_gates / policies)
-#   - web-backend:  (schema TBD)
+#   - web-service:  (schema TBD — backend tier2 not used in v1)
 # Empty skeleton: only base keys here. Boundary-specific keys are added by
 # /aibdd-plan when first feature package is bound; before that, prehandling
 # pre-red gates that depend on boundary-specific keys treat their absence as

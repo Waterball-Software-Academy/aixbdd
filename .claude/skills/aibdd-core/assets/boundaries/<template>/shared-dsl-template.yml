@@ -15,7 +15,7 @@
 # 每個 entry 的欄位 schema（與 part-driven template 同一套 DSL entry 形狀）：
 #   format            : Gherkin step 業務句（actor-operation-object 句型；{key} 為占位）
 #   name              : 全域唯一的 entry 名（建議 shared.<handler>.<slug>）
-#   handler           : 對應 step-classification.yml 的某個 handler ID
+#   handler           : boundary 支援的 handler ID
 #   target_part_path  : 此 step 綁定的 truth 錨點（shared 多半指向 test-strategy.yml#<section>）
 #   param_bindings    : {key: {target: <uri-scheme:...>}}；inline 占位的綁定
 #   datatable_bindings: {key: {target: <uri-scheme:...>}}；DataTable 欄位的綁定

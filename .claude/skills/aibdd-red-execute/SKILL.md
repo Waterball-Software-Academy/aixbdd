@@ -3,203 +3,61 @@ name: aibdd-red-execute
 description: Create legal AIBDD red for target feature files by loading project config, mapping every Scenario step to DSL and core preset assets, rendering runtime-visible step definitions, and emitting a Red handoff. TRIGGER when Red execute is requested or delegated by implementation/debug flow. SKIP when the feature package or BDD stack config is absent.
 metadata:
   user-invocable: true
-  source: project-level dogfooding
 ---
 
 # aibdd-red-execute
 
-Create legal red for every Scenario in the target feature-file set.
+根據上游指定的範疇內，針對每一個 `.feature` 檔，都去實作 Failing Test (StepDefinitions) 並確認此 Failing Test 是「合法的紅燈」：測試環境是健康的、唯一還在失敗的原因，是產品行為還沒做出來。最後把這次紅燈的整理結果（red handoff）交回給呼叫者。
 
-<!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
-> **Program-like SKILL.md — self-contained notation**
->
-> **3 verb classes** (type auto-derived from verb name):
-> - **D** = Deterministic — no LLM judgment required; future scripting candidate
-> - **S** = Semantic — LLM reasoning required
-> - **I** = Interactive — yields turn to user
->
-> **Yield discipline** (executor 鐵律): **ONLY** `I` verbs yield turn to the user. `D` and `S` verbs MUST NOT pause for user reaction. In particular:
-> - `EMIT $x to user` is **fire-and-forget** — continue immediately to the next step; do not wait for acknowledgment.
-> - `WRITE` / `CREATE` / `DELETE` are side effects, **not** phase boundaries — execution continues to the next sub-step.
-> - Phase transitions (Phase N → Phase N+1) and sub-step transitions are **non-yielding**.
-> - Mid-SOP messages of the form 「要繼續嗎？」/「先 review 一下？」/「先 checkpoint？」/「先停下來確認？」/「want me to proceed?」/「should I continue?」are **FORBIDDEN**. The ONLY way to ask the user is an `[USER INTERACTION] $reply = ASK ...` step.
-> - `STOP` / `RETURN` are terminations, not yields — no next step follows.
->
-> **SSA bindings**: `$x = VERB args` (productive steps name their output);
-> `$x` is phase-local; `$$x` crosses phases (declared in phase header's `> produces:` line).
->
-> **Side effect**: `VERB target ← $payload` — `←` arrow = "write into target".
->
-> **Control flow**: `BRANCH $check ? then : else` (binary) or indented arms (multi);
-> `GOTO #N.M` = jump to Phase N step M (literal `#phase.step`).
->
-> **Canonical verb table** (T = D / S / I):
->
-> | Verb | T | Meaning |
-> |---|---|---|
-> | READ | D | 讀檔 → bytes / text |
-> | WRITE | D | 寫檔（內容已備好） |
-> | CREATE | D | 建立目錄 / 空檔 |
-> | DELETE | D | 刪檔（rollback） |
-> | COMPUTE | D | 純運算 |
-> | DERIVE | D | 從既定規則推算 |
-> | PARSE | D | 字串 → in-memory 結構 |
-> | RENDER | D | template + vars → string |
-> | ASSERT | D | 斷言 invariant；fail-stop |
-> | MATCH | D | regex / pattern 比對 |
-> | TRIGGER | D | 啟動 process / subagent / tool / script；output 可 bind |
-> | DELEGATE | D | 呼叫其他 skill |
-> | MARK | D | 紀錄狀態（譬如 TodoWrite） |
-> | BRANCH | D | 分支（吃 `$check` / `$kind` binding） |
-> | GOTO | D | 跳 `#phase.step` literal |
-> | IF / ELSE / END IF | D | 條件 sub-step |
-> | LOOP / END LOOP | D | 迴圈（必標 budget + exit） |
-> | RETURN | D | 提前結束 phase |
-> | STOP | D | 終止整個 skill |
-> | EMIT | D | 輸出已生成資料（fire-and-forget；**不 yield**，continue 下一 step） |
-> | WAIT | D | 等待已 spawn 的 process |
-> | THINK | S | 內部判斷（不印 user） |
-> | CLASSIFY | S | 多類別分類 → enum 之一 |
-> | JUDGE | S | 二元語意判斷 |
-> | DECIDE | S | 從 user reply / context 推結論 |
-> | DRAFT | S | 生成 prose / 訊息 |
-> | EDIT | S | LLM 推 patch 改既有檔 |
-> | PARAPHRASE | S | 改寫 / 翻譯 prose |
-> | CRITIQUE | S | 批評 / 建議 |
-> | SUMMARIZE | S | 抽取重點 |
-> | EXPLAIN | S | 對 user 解釋 why |
-> | ASK | I | 問 user 等回應（仍配 `[USER INTERACTION]` tag）；**唯一允許 yield turn 給 user 的 verb**。**Planner-level skill** 對 user 的提問**必須 `DELEGATE /clarify-loop`**，不得直接 `ASK`（其他角色的 skill 自決）。 |
-<!-- VERB-GLOSSARY:END -->
+## 這支 skill 在做什麼
 
-## §1 REFERENCES
+1. 接住呼叫者指定要處理的 `.feature` 檔，載入專案設定與各種規格來源。
+2. 把每一條 Scenario 的每一個步驟 (DSL Step)，從 dsl corpus 中尋找該 DSL step 撰寫成 Step Definition 的方法（參考 active boundary preset 的 handlers x variants）。
+3. 依對應結果產生「執行器看得到」的 step definitions。
+4. 真的去跑一次測試，確認它紅得合法（而不是因為程式壞掉而紅）。
+5. 把這次紅燈的證據與對應關係整理成 red handoff，交給下游的 green。
 
-```yaml
-references:
-  - path: references/execute-config-contract.md
-    purpose: Defines target, arguments, core reference, preset asset, runtime ref, drift, and routing contracts
-  - path: references/handoff-schemas.md
-    purpose: Defines behavior report and execute handoff schemas for downstream drift checks
-  - path: references/legal-red-classification.md
-    purpose: Defines legal red, false red, stop routing, and red loop budget semantics
-```
+## 執行原則
 
-## §2 SOP
+1. 依序執行、不要跳步；每做一步，在訊息中講出你正在做哪一步，方便對話被壓縮後還能接回來。
+2. 除非遇到底下明確寫出的 STOP 條件，否則一路做到產出 handoff 為止；中途不要停下來問「要不要繼續」。真的遇到 STOP 條件時，就停下來、把停止原因（`stop_reason`）與該去找誰回報清楚。
+3. 這支 skill 唯一要交出去的東西是最後的 red handoff。中途寫出的 step definition 是達成目的的必要副作用，不是另外的交付物。
 
-### Phase 1 — RECEIVE target
-> produces: `$$payload`, `$$target_feature_files`, `$$arguments_path`
+## SOP
 
-1. `$$payload` = READ caller payload with `target_feature_files`, optional `arguments_path`, optional `task_id`, optional `phase`.
-2. `$$target_feature_files` = PARSE `$$payload.target_feature_files` as non-empty path list.
-3. ASSERT `$$target_feature_files` contains only feature files.
-4. `$$arguments_path` = DERIVE caller override or `${AIBDD_CONFIG_DIR}/arguments.yml` per [`references/execute-config-contract.md`](references/execute-config-contract.md).
-5. ASSERT `$$arguments_path` exists; on failure STOP with `missing_arguments_path`.
+1. RESOLVE arguments：把後續會用到的 `${VAR}` 一次綁定，resolver 的 stdout 原樣 EMIT 給用戶；非 0 退出就停下來並透傳 stderr（缺 `.aibdd/arguments.yml` 是 exit 1，缺鍵是 exit 2 並列出缺哪些鍵）。
+   ```bash
+   python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
+   AIBDD_ARGUMENTS_PATH=${AIBDD_ARGUMENTS_PATH}
+   IMPACT_MATRIX_YML=${IMPACT_MATRIX_YML}
+   SPECS_ROOT_DIR=${SPECS_ROOT_DIR}
+   CONTRACTS_DIR=${CONTRACTS_DIR}
+   DATA_DIR=${DATA_DIR}
+   BOUNDARY_SHARED_DSL=${BOUNDARY_SHARED_DSL}
+   PRESET_KIND=${PRESET_KIND}
+   STARTER_VARIANT=${STARTER_VARIANT}
+   ACCEPTANCE_RUNNER_RUNTIME_REF=${ACCEPTANCE_RUNNER_RUNTIME_REF}
+   STEP_DEFINITIONS_RUNTIME_REF=${STEP_DEFINITIONS_RUNTIME_REF}
+   FIXTURES_RUNTIME_REF=${FIXTURES_RUNTIME_REF}
+   FEATURE_ARCHIVE_RUNTIME_REF=${FEATURE_ARCHIVE_RUNTIME_REF}
+   RED_PREHANDLING_HOOK_REF=${RED_PREHANDLING_HOOK_REF}
+   EOF
+   ```
 
-### Phase 2 — LOAD runtime truth
-> produces: `$$config`, `$$core_refs`, `$$runtime_refs`, `$$pre_hook_doc`
+2. 接著，我們將上游指定的 Feature files 以 `$SCOPE_FEATURE_FILES` 變數稱之。請簡單在對話中復述一次 `$SCOPE_FEATURE_FILES` 復述完之後，不停，就直接緊接著執行下一步。
 
-1. `$$config` = PARSE `$$arguments_path` as project config.
-   1.1 `$preset_kind` = COMPUTE `${PRESET_KIND}` from `$$config`（default `web-backend` when key missing — backward compat for existing backend projects）
-   1.2 BRANCH `$preset_kind`
-       web-backend  → `$preset_contract_ref_key` = COMPUTE `BACKEND_PRESET_CONTRACT_REF`
-       web-frontend → `$preset_contract_ref_key` = COMPUTE `FRONTEND_PRESET_CONTRACT_REF`
-       other        → STOP with `unsupported_preset_kind`
-2. `$$core_refs` = READ every configured `GHERKIN_*_REF`, `FILENAME_*_REF`, `DSL_OUTPUT_CONTRACT_REF`, and `${$preset_contract_ref_key}` (active key dispatched by `$preset_kind`).
-3. ASSERT every core ref path exists and is read from path, not basename.
-4. `$$runtime_refs` = READ `ACCEPTANCE_RUNNER_RUNTIME_REF`, `STEP_DEFINITIONS_RUNTIME_REF`, `FIXTURES_RUNTIME_REF`, and `FEATURE_ARCHIVE_RUNTIME_REF`.
-5. ASSERT every runtime ref exists and declares command, glob, fixture, archive, or visibility behavior it owns.
-6. `$boundary_codebase_root` = COMPUTE parent directory of `.aibdd/` resolved from `$$arguments_path`.
-7. ASSERT `$$config` contains non-empty `RED_PREHANDLING_HOOK_REF`; on failure STOP with `missing_red_prehandling_hook_ref`.
-8. `$$pre_hook_doc` = READ resolved absolute path `join($boundary_codebase_root, resolved($$config.RED_PREHANDLING_HOOK_REF))`; ASSERT file exists and is non-empty; on failure STOP route project BDD stack configuration.
-9. ASSERT Worker completes Pre-Red gate described in `$$pre_hook_doc` before Phase 3; on NO-GO STOP with `pre_red_gate_blocked`.
-10. `$snapshot` = DERIVE runtime ref paths and content fingerprints including `RED_PREHANDLING_HOOK_REF`.
+3. BIND active boundary：以已 RESOLVE 的 `${PRESET_KIND}` 作為本專案 active boundary；值為空就停下來，回報 `stop_reason: missing_active_boundary`。BIND 並確認此路徑存在：`.claude/skills/aibdd-core/assets/boundaries/${PRESET_KIND}/`
 
-### Phase 3 — BUILD DSL and preset registry
-> produces: `$$dsl_index`, `$$preset_registry`
+4. 針對 EXECUTE `${FEATURE_ARCHIVE_RUNTIME_REF}`：我們要遵守此專案的「Feature Files」歸檔 SOP，來將 Feature Files 用特定方式歸檔，會有這步驟的原因是：Feature File 必須配合專案所用的 BDD 測試框架，有些測試框架會嚴格要求 Feature file 所在位置約束（好比 Java cucumber 下 Feature file 必須放在 resources 底下，而 python behave 下 feature file 必須和測試程式碼放一塊）。此 SOP 檔案被放置在 `${FEATURE_ARCHIVE_RUNTIME_REF}` 所指定的路徑中。
 
-1. `$contracts_dsl_glob` = COMPUTE `${CONTRACTS_DIR}/*.dsl.yml` from `$$config`.
-2. `$data_dsl_glob` = COMPUTE `${DATA_DIR}/*.dsl.yml` from `$$config`.
-3. `$regular_dsl_paths` = GLOB `$contracts_dsl_glob` then `$data_dsl_glob` in stable filename order.
-4. `$shared_dsl_path` = COMPUTE `${BOUNDARY_SHARED_DSL}` from `$$config`.
-5. `$shared_dsl` = READ `$shared_dsl_path`; missing file becomes empty entries.
-6. ASSERT at least one path in `$regular_dsl_paths` exists or `$shared_dsl` is non-empty; on failure STOP route `/aibdd-plan` with `dsl_corpus_missing`.
-7. `$$dsl_index` = DERIVE merged DSL index from `$regular_dsl_paths` then `$shared_dsl_path`, matching `dsl_cli/catalog.py` merge order:
-   1. regular files first, in glob order
-   2. shared file last
-   3. `name` globally unique; first occurrence wins
-   4. placeholder-aware `format` pattern indexes for step matching
-8. ASSERT no duplicate `name` across corpus (eval-equivalent to `name-uniqueness`).
-9. ASSERT every entry has `name`, `format`, `handler`, `target_part_path`, `param_bindings`, and `datatable_bindings`.
-10. `$$preset_registry` = DERIVE `.claude/skills/aibdd-core/assets/boundaries/<preset-kind>/` from `$preset_kind` resolved in Phase 2.
-11. ASSERT preset directory has `step-classification.yml`, `plugin-contract.md`, handler doc, and variant doc; no `backend` alias resolution.
-12. ASSERT each entry `handler` resolves in preset `step-classification.yml`.
+5. EXECUTE `${RED_PREHANDLING_HOOK_REF}`：在我們實際要撰寫測試程式碼 (紅燈階段) 之前，必須先遵守此專案配置的「紅燈前置處理 SOP (RED_PREHANDLING_HOOK)」來進行測試前置處理。為何需要設置 prehandling hook？好比說一個例子：若是後端專案可能會先需要定義 Database 環境，才能跑 testcontainer 測試；但上述只是例子，你在此步驟唯一該做的事情只有嚴格遵照 `${RED_PREHANDLING_HOOK_REF}` 所指路徑檔案中的每一步。
 
-### Phase 4 — ARCHIVE runtime features
-> produces: `$$runtime_feature_files`
+6. READ `${ACCEPTANCE_RUNNER_RUNTIME_REF}`、`${FIXTURES_RUNTIME_REF}`，在開始撰寫測試之前先充分閱讀這些文件來理解如何在本專案中執行或撰寫、管理 BDD 之測試程式。
 
-1. `$$runtime_feature_files` = DERIVE archive/copy/include destinations for `$$target_feature_files` from `FEATURE_ARCHIVE_RUNTIME_REF`.
-2. TRIGGER the project-owned archive command or mechanical copy procedure.
-3. ASSERT runtime feature glob sees every `$$runtime_feature_files`.
-4. ASSERT no target feature is assumed runner-visible without archive proof.
+最後，我們開始撰寫測試程式碼。
 
-### Phase 5 — COMPILE StepPlan
-> produces: `$$step_plans`
+7. [LOOP] 針對每一個 target feature file in `$SCOPE_FEATURE_FILES`，請嚴格 EXECUTE `steps/implement-all-dsl-steps-in-feature-file.md`。
 
-1. LOOP per `$feature_file` in `$$runtime_feature_files`
-   1.1 `$scenarios` = PARSE all Scenarios in `$feature_file`.
-   1.2 LOOP per `$scenario` in `$scenarios`
-       1.2.1 LOOP per `$step` in `$scenario.steps`
-             1.2.1.1 `$match` = MATCH `$step.prose` against `$$dsl_index.format_patterns`.
-             1.2.1.2 ASSERT `$match` is exact and unique; on failure STOP route `/aibdd-spec-by-example-analyze`.
-             1.2.1.3 ASSERT datatable/docstring shape matches matched entry bindings.
-             1.2.1.4 ASSERT dynamic IDs resolve to declared Scenario, response, repository, or fixture truth.
-             END LOOP
-       END LOOP
-   END LOOP
-2. `$$step_plans` = DERIVE normalized StepPlan IR for every matched step.
-3. ASSERT each StepPlan contains matched entry, preset tuple, surface, source refs, bindings, runtime inputs, context IO, forbidden list, and target step-def path.
-4. ASSERT renderer inputs are fully present in StepPlan; on gap STOP route `/aibdd-plan`.
+8. EXECUTE `steps/red-basic-double-check.md` 來檢查測試品質。
 
-### Phase 6 — RENDER step definitions
-> produces: `$$step_defs_touched`
-
-1. LOOP per `$plan` in `$$step_plans`
-   1.1 `$step_def` = RENDER step definition from `$plan`, handler doc, variant doc, and runtime step-definition ref.
-   1.2 ASSERT matcher string equals matched `format`.
-   1.3 ASSERT body uses only handler/variant rendering slots.
-   1.4 ASSERT body has no free-form step-def, raw locator, direct production internal import, inferred endpoint, inferred field, or inferred id.
-   1.5 ASSERT body is not empty, `pass`, or `RED-PENDING`.
-   1.6 WRITE target step-def path ← `$step_def`.
-   1.7 MARK target path in `$$step_defs_touched`.
-   END LOOP
-2. ASSERT step glob sees all written step definitions.
-3. ASSERT duplicate registration guard allows shared steps exactly once.
-
-### Phase 7 — RUN until legal red
-> produces: `$$behavior_report`, `$$red_handoff`
-
-1. LOOP until legal red or stop, max 5
-   1.1 `$visibility` = TRIGGER runtime dry-run/discovery command from `ACCEPTANCE_RUNNER_RUNTIME_REF`.
-   1.2 ASSERT `$visibility` sees every target feature and Scenario; on failure STOP route project BDD stack config.
-   1.3 `$$behavior_report` = TRIGGER acceptance runner for `$$runtime_feature_files`.
-   1.4 `$failure_class` = CLASSIFY `$$behavior_report.first_failure` using [`references/legal-red-classification.md`](references/legal-red-classification.md).
-   1.5 BRANCH `$failure_class`
-       `value_difference` → RETURN legal red
-       `expected_exception` → RETURN legal red
-       `false_red_repairable` → GOTO #6.1
-       `false_red_stop` → STOP with routeable false-red reason
-       `unknown` → STOP with `unclassified_red_failure`
-   END LOOP
-2. ASSERT legal red exists; on budget exhaustion STOP with `red_loop_budget_exceeded`.
-3. `$$red_handoff` = RENDER schema from [`references/handoff-schemas.md`](references/handoff-schemas.md), `$$behavior_report`, `$$step_plans`, `$$step_defs_touched`, and `$snapshot`.
-
-### Phase 8 — EMIT handoff
-
-1. ASSERT `$$red_handoff.behavior_test_report` contains no DSL mapping fields.
-2. ASSERT `$$red_handoff.dsl_mapping` contains `dsl_entry_id` (from entry `name`), `matched_l1` (from entry `format`), preset tuple, `target_part_path`, binding keys, and step-def path for every Scenario step.
-3. EMIT `$$red_handoff` to caller.
-
-## §3 CROSS-REFERENCES
-
-- `/aibdd-green-execute` — consumes legal Red handoff and writes product code.
-- `/aibdd-plan` — repairs DSL, source refs, binding truth, and preset tuple gaps.
-- `/aibdd-spec-by-example-analyze` — repairs feature wording, Examples, datatable, and dynamic ID gaps.
+9. READ `references/handoff-schemas.md` and REPORT - 遵照其格式定義來 report `behavior_test_report` 給呼叫者或是遵照上游所指定的 report 方式。

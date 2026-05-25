@@ -2,7 +2,7 @@
 
 ## §1 為什麼這條 pattern 是 hard gate
 
-`aibdd-core::preset-contract/web-frontend.md` boundary invariant **I4** 規定：
+`aibdd-core/assets/boundaries/web-frontend/profile.yml` 之 `component_contract_specifier` 與 [`nextjs-playwright.md`](../../../aibdd-core/assets/boundaries/web-frontend/variants/nextjs-playwright.md) boundary invariant **I4** 規定：
 UI handler（`ui-action` / `ui-readmodel-then`）的 `L4.source_refs.component` **必須**指向 Story export 層
 （`<file>.stories.@(ts|tsx)::<ExportName>`），不接受 component file 本身。
 

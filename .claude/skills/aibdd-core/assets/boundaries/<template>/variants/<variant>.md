@@ -2,7 +2,7 @@
 
 1. 一個 variant 描述「同一個 boundary preset 的 handler，渲染到某個具體技術棧」時的機制。
 2. 一個 boundary 可以有多個 variant（例：後端的 python-e2e / java-e2e；前端的 nextjs-playwright），各自一份 .md。實際採用哪個 variant 由 plan 的 `L4.preset.variant` 選定。
-3. 邊界：variant 只定義 rendering 機制（語言、框架、context 物件、step 檔佈局），不分類 sentence part、不挑 handler（那是 step-classification.yml 的事）。
+3. 邊界：variant 只定義 rendering 機制（語言、框架、context 物件、step 檔佈局），不分類 sentence part、不挑 handler（那是 `part_to_dsl.py` 與 DSL entry `handler` 的事）。
 
 ## Role
 

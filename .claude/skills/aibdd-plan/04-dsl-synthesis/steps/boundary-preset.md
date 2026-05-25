@@ -12,9 +12,8 @@ stage 4 SOP 僅需要從 `${BOUNDARY_YML}` 抽出 active boundary preset 的 `ty
 
 ## stage 4 不讀的檔
 
-- `assets/boundaries/${boundary_type}/step-classification.yml` — 由 `aibdd-red-execute` 與 SBE 消費（step → handler classification）；stage 4 不參與此分類，所有 entry 之 `handler` 由 plugin 自動生成。
-- `assets/boundaries/${boundary_type}/plugin-contract.md` — 紀錄 plan-time 履約的 human-readable SSOT，供 plugin 作者參考。stage 4 不直接 enforce 該文件條目 — plugin 在 `generate_templates` 內構造性保證即可。
-- 「給定 part-kind，產哪些 handler / 多少 entry / template skeleton 長什麼樣」這套規則由 `assets/boundaries/${boundary_type}/scripts/part_to_dsl.py` 持有，stage 4 SOP 不再參與決定。
+- handler 路由由 `scripts/part_to_dsl.py` 在 template 生成期構造性保證；`aibdd-red-execute` 與 SBE 透過 boundary assets（`handlers/`、`variants/`、`kits/`）消費 routing，stage 4 不參與 step→handler 分類。
+- 「給定 part-kind，產哪些 handler / 多少 entry / template skeleton 長什麼樣」這套規則由 `assets/boundaries/${boundary_type}/scripts/part_to_dsl.py` 持有，stage 4 SOP 不再參與決定；plugin 在 `generate_templates` 內構造性保證 handler 與 binding scheme 合法性。
 
 ## 履約原則
 

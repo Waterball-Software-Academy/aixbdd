@@ -40,7 +40,6 @@ component_contract_specifier:
 persistence_handler:
   handler_id: mock-state-given
   state_ref_pattern: "src/lib/schemas/<schema>.ts#<SchemaName>"
-  step_classification_yml: aibdd-core/assets/boundaries/web-frontend/step-classification.yml
   coverage_gate: deferred-v1
 
 # Allowed L4 binding target prefixes for this preset.
@@ -60,7 +59,7 @@ allowed_l4_target_prefixes:
 #   state_specifier: Zod-schema-based mock data-model formulation skill
 #     (frontend equivalent of /aibdd-form-entity-spec)
 #   persistence_handler.coverage_gate: enable Zod-schema-required-field coverage gate
-#     (mirrors web-backend NOT-NULL column coverage)
+#     (mirrors web-service NOT-NULL column coverage)
 #
 # Activated in v1 (was previously deferred):
 #   operation_contract_specifier: now /aibdd-form-api-spec — plan authors api.yml

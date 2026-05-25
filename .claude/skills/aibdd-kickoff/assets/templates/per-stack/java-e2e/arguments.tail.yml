@@ -6,7 +6,7 @@
 STARTER_VARIANT: java-e2e
 
 # PRESET_KIND — boundary preset；backend stack 必填。
-PRESET_KIND: web-backend
+PRESET_KIND: web-service
 
 # -----------------------------------------------------------------------------
 # 7. JAVA_E2E_STARTER_OUTPUT_PATHS — Maven coordinates / Java 套件落點 / 版本鎖在本檔。
@@ -33,6 +33,3 @@ DB_NAME: ${KICKOFF_TLB_ID}
 DB_USER: postgres
 DB_PASSWORD: postgres
 DB_PORT: '5432'
-
-# Section 8 variant — backend preset contract ref
-BACKEND_PRESET_CONTRACT_REF: .claude/skills/aibdd-core/references/preset-contract/web-backend.md

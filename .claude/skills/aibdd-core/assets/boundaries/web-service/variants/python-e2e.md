@@ -2,7 +2,7 @@
 
 ## Role
 
-`python-e2e` renders web-backend preset handlers into Python Behave step definitions for API-level end-to-end tests.
+`python-e2e` renders web-service preset handlers into Python Behave step definitions for API-level end-to-end tests.
 
 This variant only defines rendering mechanics. It does not classify sentence parts and does not select handlers.
 
@@ -36,7 +36,7 @@ context.external_stubs = ExternalStubRegistry()
 
 ## Step File Layout
 
-Directories under `steps/<function-package-or-domain>/` map one-to-one to handlers in [`step-classification.yml`](../step-classification.yml) (hyphen in handler name -> snake_case folder).
+Directories under `steps/<function-package-or-domain>/` map one-to-one to handlers in [`../handlers/`](../handlers/) (hyphen in handler name -> snake_case folder).
 
 ```text
 ${PY_TEST_FEATURES_DIR}/

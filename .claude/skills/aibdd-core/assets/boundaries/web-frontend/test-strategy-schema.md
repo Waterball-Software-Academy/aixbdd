@@ -2,7 +2,7 @@
 
 > **Owner**: this schema is owned by `aibdd-core`; **`test-strategy.yml`** instances are owned by `/aibdd-plan` (initial placeholder by `/aibdd-kickoff`).  
 > **Resolved path** in a project: `${TEST_STRATEGY_FILE}` (typically `specs/<boundary>/test-strategy.yml` per `arguments.yml` §5).  
-> **Consumers**: `/aibdd-plan` (writes), `/aibdd-spec-by-example-analyze` (reads `policies`), `prehandling-before-red-phase.md` §3.6 / §3.7 (reads `tier2_handlers` / `viewport_profiles`), `check_frontend_preset_refs.py` (validates Tier-2 enablement match).
+> **Consumers**: `/aibdd-plan` (writes), `/aibdd-spec-by-example-analyze` (reads `policies`), `prehandling-before-red-phase.md` §3.6 / §3.7 (reads `tier2_handlers` / `viewport_profiles`).
 
 ---
 
@@ -42,7 +42,7 @@ policies: {}                         # map<PolicyId, PolicyEntry> — owned by S
 
 ## §2 `tier2_handlers`
 
-Tier-2 handler 來源：`step-classification.yml` 的 4 個 opt-in handler。
+Tier-2 handler 來源：本 variant Step File Layout 目錄樹中標記 Tier-2 的 4 個 opt-in handler（亦見 [`test-strategy-schema.md`](../test-strategy-schema.md) §2）。
 
 | Key | 允許值 | 預設 | 何時 enable |
 |---|---|---|---|

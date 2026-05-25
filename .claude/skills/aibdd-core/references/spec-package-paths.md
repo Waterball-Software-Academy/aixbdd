@@ -73,6 +73,6 @@ Accepted behavior truth（Activity / Discovery rule-only feature）落於 caller
 
 ## Cross-reference
 
-- Boundary profile（`operation_contract_specifier`／`state_specifier`）與同目錄 `step-classification.yml`、`plugin-contract.md`：見 `aibdd-core` SKILL.md §2 ASSETS（`assets/boundaries/<type>/`）
+- Boundary profile（`operation_contract_specifier`／`state_specifier`）與 handler 路由／plan-time 履約：見 `assets/boundaries/<type>/`（`profile.yml`、`handlers/`、`variants/`、`scripts/part_to_dsl.py`）
 - 欄位預設值與占位符語意：`aibdd-kickoff::assets/templates/arguments.template.yml`（python_e2e）、`.java-e2e.yml`、`.nextjs-playwright.yml`；每個 key 旁邊的 `#` 註解即為 SSOT 說明。
 - Feature 檔名軸（§5.1）與 bdd-stack 憲法樹：`${BDD_CONSTITUTION_PATH}`（專案內預設 `.aibdd/bdd-stack/project-bdd-axes.md`）；runner／step／fixture 細節見 `.aibdd/bdd-stack/*.md`

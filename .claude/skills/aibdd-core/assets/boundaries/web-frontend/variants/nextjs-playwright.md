@@ -91,7 +91,7 @@ The fixture's closure (`store`, `page.route` registrations) is automatically rec
 
 ## Step File Layout
 
-Directories under `features/steps/<function-package-or-domain>/` map one-to-one to handlers in [`../step-classification.yml`](../step-classification.yml) (hyphen in handler name preserved).
+Directories under `features/steps/<function-package-or-domain>/` map one-to-one to handlers in 下方 Step File Layout 目錄樹（hyphen in handler name preserved）。
 
 ```text
 features/

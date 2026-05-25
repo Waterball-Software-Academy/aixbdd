@@ -3,161 +3,46 @@ name: aibdd-green-execute
 description: Turn a legal Red handoff for target feature files green by verifying drift, editing product code only, detecting failure oscillation, and emitting a Green handoff. TRIGGER when Green execute is requested after aibdd-red-execute. SKIP when no legal Red handoff exists or the request is test, DSL, runtime, or architecture repair.
 metadata:
   user-invocable: true
-  source: project-level dogfooding
 ---
 
 # aibdd-green-execute
 
-Turn the Red target feature-file set green with product-code-only changes.
+接住上游一個合法的 red handoff，把那組 target feature 檔從紅燈做到綠燈——而且只准動產品程式碼。最後把這次轉綠的結果整理成 green handoff，交給下游的 refactor。
 
-<!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
-> **Program-like SKILL.md — self-contained notation**
->
-> **3 verb classes** (type auto-derived from verb name):
-> - **D** = Deterministic — no LLM judgment required; future scripting candidate
-> - **S** = Semantic — LLM reasoning required
-> - **I** = Interactive — yields turn to user
->
-> **Yield discipline** (executor 鐵律): **ONLY** `I` verbs yield turn to the user. `D` and `S` verbs MUST NOT pause for user reaction. In particular:
-> - `EMIT $x to user` is **fire-and-forget** — continue immediately to the next step; do not wait for acknowledgment.
-> - `WRITE` / `CREATE` / `DELETE` are side effects, **not** phase boundaries — execution continues to the next sub-step.
-> - Phase transitions (Phase N → Phase N+1) and sub-step transitions are **non-yielding**.
-> - Mid-SOP messages of the form 「要繼續嗎？」/「先 review 一下？」/「先 checkpoint？」/「先停下來確認？」/「want me to proceed?」/「should I continue?」are **FORBIDDEN**. The ONLY way to ask the user is an `[USER INTERACTION] $reply = ASK ...` step.
-> - `STOP` / `RETURN` are terminations, not yields — no next step follows.
->
-> **SSA bindings**: `$x = VERB args` (productive steps name their output);
-> `$x` is phase-local; `$$x` crosses phases (declared in phase header's `> produces:` line).
->
-> **Side effect**: `VERB target ← $payload` — `←` arrow = "write into target".
->
-> **Control flow**: `BRANCH $check ? then : else` (binary) or indented arms (multi);
-> `GOTO #N.M` = jump to Phase N step M (literal `#phase.step`).
->
-> **Canonical verb table** (T = D / S / I):
->
-> | Verb | T | Meaning |
-> |---|---|---|
-> | READ | D | 讀檔 → bytes / text |
-> | WRITE | D | 寫檔（內容已備好） |
-> | CREATE | D | 建立目錄 / 空檔 |
-> | DELETE | D | 刪檔（rollback） |
-> | COMPUTE | D | 純運算 |
-> | DERIVE | D | 從既定規則推算 |
-> | PARSE | D | 字串 → in-memory 結構 |
-> | RENDER | D | template + vars → string |
-> | ASSERT | D | 斷言 invariant；fail-stop |
-> | MATCH | D | regex / pattern 比對 |
-> | TRIGGER | D | 啟動 process / subagent / tool / script；output 可 bind |
-> | DELEGATE | D | 呼叫其他 skill |
-> | MARK | D | 紀錄狀態（譬如 TodoWrite） |
-> | BRANCH | D | 分支（吃 `$check` / `$kind` binding） |
-> | GOTO | D | 跳 `#phase.step` literal |
-> | IF / ELSE / END IF | D | 條件 sub-step |
-> | LOOP / END LOOP | D | 迴圈（必標 budget + exit） |
-> | RETURN | D | 提前結束 phase |
-> | STOP | D | 終止整個 skill |
-> | EMIT | D | 輸出已生成資料（fire-and-forget；**不 yield**，continue 下一 step） |
-> | WAIT | D | 等待已 spawn 的 process |
-> | THINK | S | 內部判斷（不印 user） |
-> | CLASSIFY | S | 多類別分類 → enum 之一 |
-> | JUDGE | S | 二元語意判斷 |
-> | DECIDE | S | 從 user reply / context 推結論 |
-> | DRAFT | S | 生成 prose / 訊息 |
-> | EDIT | S | LLM 推 patch 改既有檔 |
-> | PARAPHRASE | S | 改寫 / 翻譯 prose |
-> | CRITIQUE | S | 批評 / 建議 |
-> | SUMMARIZE | S | 抽取重點 |
-> | EXPLAIN | S | 對 user 解釋 why |
-> | ASK | I | 問 user 等回應（仍配 `[USER INTERACTION]` tag）；**唯一允許 yield turn 給 user 的 verb**。**Planner-level skill** 對 user 的提問**必須 `DELEGATE /clarify-loop`**，不得直接 `ASK`（其他角色的 skill 自決）。 |
-<!-- VERB-GLOSSARY:END -->
+## 這支 skill 在做什麼
 
-## §1 REFERENCES
+1. 接住 red handoff，確認它合法、而且講的就是這次要處理的那組 feature。
+2. 確認從紅到現在 runtime 環境沒有飄移。
+3. 一次只修一個失敗、只改產品程式碼、只寫剛好讓它通過的最小量，反覆跑到全綠；過程中盯著有沒有「兩種失敗來回擺盪」的死循環。
+4. 把這次轉綠的結果整理成 green handoff，交給呼叫者。
 
-```yaml
-references:
-  - path: references/execute-config-contract.md
-    purpose: Defines target, arguments, core reference, runtime reference, drift, and routing contracts
-  - path: references/handoff-schemas.md
-    purpose: Defines Red input and Green output schemas plus stable failure signature fields
-  - path: references/legal-red-classification.md
-    purpose: Defines legal Red evidence required before Green may edit product code
-  - path: references/green-oscillation-detection.md
-    purpose: Defines strict ping-pong detection, threshold, and STOP payload
-```
+## 執行原則
 
-## §2 SOP
+1. 依序執行、不要跳步；每做一步，在訊息中講出你正在做哪一步，方便對話被壓縮後還能接回來。
+2. 只准改產品程式碼。feature、歸檔、step-def、DSL、核心 ref、runtime ref、fixture 慣例、BDD 憲章這些檔案一律不准動——要動它們表示問題不在這支 skill，該停下來路由出去。
+3. 每個失敗只寫剛好讓它通過的最小產品碼：能讓 runner 報的「第一個失敗」轉綠的最小改動就停手，不替測試還沒要求的行為、欄位、分支或抽象預先鋪路（那是下一個失敗、或 refactor 的事）。
+4. 除非遇到底下明確寫出的 STOP 條件，否則一路做到產出 green handoff 為止；中途不要停下來問「要不要繼續」。真的遇到 STOP 條件時，就停下來、把停止原因（`stop_reason`）與該去找誰回報清楚。
 
-### Phase 1 — RECEIVE red handoff
-> produces: `$$payload`, `$$target_feature_files`, `$$red_handoff`, `$$arguments_path`
+## SOP
 
-1. `$$payload` = READ caller payload with `target_feature_files`, `red_handoff`, optional `arguments_path`, optional `task_id`.
-2. `$$target_feature_files` = PARSE `$$payload.target_feature_files` as non-empty path list.
-3. `$$red_handoff` = PARSE `$$payload.red_handoff` using [`references/handoff-schemas.md`](references/handoff-schemas.md).
-4. ASSERT `$$red_handoff.status == completed` and `$$red_handoff.stop_reason == none`.
-5. ASSERT `$$red_handoff.target_feature_files` equals `$$target_feature_files`.
-6. `$$arguments_path` = DERIVE caller override or `${AIBDD_CONFIG_DIR}/arguments.yml` per [`references/execute-config-contract.md`](references/execute-config-contract.md).
-7. ASSERT `$$arguments_path` exists; on failure STOP with `missing_arguments_path`.
+1. RESOLVE arguments：把後續會用到的 `${VAR}` 一次綁定，resolver 的 stdout 原樣 EMIT 給用戶；非 0 退出就停下來並透傳 stderr（缺 `.aibdd/arguments.yml` 是 exit 1，缺鍵是 exit 2 並列出缺哪些鍵）。
+   ```bash
+   python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
+   ACCEPTANCE_RUNNER_RUNTIME_REF=${ACCEPTANCE_RUNNER_RUNTIME_REF}
+   STEP_DEFINITIONS_RUNTIME_REF=${STEP_DEFINITIONS_RUNTIME_REF}
+   FIXTURES_RUNTIME_REF=${FIXTURES_RUNTIME_REF}
+   FEATURE_ARCHIVE_RUNTIME_REF=${FEATURE_ARCHIVE_RUNTIME_REF}
+   EOF
+   ```
 
-### Phase 2 — VERIFY red still valid
-> produces: `$$config`, `$$runtime_refs`, `$$baseline_report`
+2. 上游指定的 target feature files 就是本次 scope，以 `$SCOPE_FEATURE_FILES` 變數稱之；請在對話中簡單復述一次 `$SCOPE_FEATURE_FILES`，復述完不停，直接進下一步。
 
-1. `$$config` = PARSE `$$arguments_path` as project config.
-2. `$$runtime_refs` = READ project-owned BDD stack runtime refs from `$$config`.
-3. ASSERT runtime refs include runner command, feature visibility, step glob visibility, fixture contract, archive behavior, report output, and readable Red Pre-Red hook (`RED_PREHANDLING_HOOK_REF`).
-4. `$$baseline_report` = TRIGGER acceptance runner for `$$target_feature_files` through `ACCEPTANCE_RUNNER_RUNTIME_REF`.
-5. `$red_kind` = CLASSIFY `$$baseline_report.first_failure` using [`references/legal-red-classification.md`](references/legal-red-classification.md).
-6. ASSERT `$red_kind` is `value_difference` or `expected_exception`; on failure STOP route `/aibdd-red-execute`.
-7. ASSERT not all target feature files are green; on failure STOP with `red_invalid_already_green`.
+3. 接住 red handoff：READ 呼叫者交來的 `red_handoff`，依 `references/handoff-schemas.md` 解析；確認 `status` 是 `completed`、`stop_reason` 是 `none`；確認 `red_handoff.target_feature_files` 和 `$SCOPE_FEATURE_FILES` 完全一致，不一致就停下來，把可路由的 target 不符原因記成 `stop_reason`。
 
-### Phase 3 — VERIFY handoff drift
-> produces: `$$runtime_snapshot`
+4. READ `${ACCEPTANCE_RUNNER_RUNTIME_REF}`、`${STEP_DEFINITIONS_RUNTIME_REF}`、`${FIXTURES_RUNTIME_REF}`、`${FEATURE_ARCHIVE_RUNTIME_REF}`，理解如何在本專案跑測試、step／fixture／歸檔分別在哪。
 
-1. `$contracts_dsl_glob` = COMPUTE `${CONTRACTS_DIR}/*.dsl.yml` from `$$config`.
-2. `$data_dsl_glob` = COMPUTE `${DATA_DIR}/*.dsl.yml` from `$$config`.
-3. `$regular_dsl_paths` = GLOB `$contracts_dsl_glob` then `$data_dsl_glob` in stable filename order.
-4. `$shared_dsl_path` = COMPUTE `${BOUNDARY_SHARED_DSL}` from `$$config`.
-5. `$dsl_now` = DERIVE current merged DSL index from `$regular_dsl_paths` then `$shared_dsl_path`, using the same merge order and uniqueness rules as `aibdd-red-execute` Phase 3.
-6. `$preset_now` = DERIVE current core preset registry from active `${PRESET_KIND}` in `$$config`.
-7. `$visibility_now` = TRIGGER runtime visibility checks for target features and step globs.
-8. ASSERT every handoff `dsl_entry_id`, `matched_l1`, preset tuple, `target_part_path`, `step_def_path`, and binding keys matches `$dsl_now` and `$preset_now`.
-9. ASSERT `$visibility_now` sees the same target features and step definitions as the Red snapshot.
-10. `$$runtime_snapshot` = DERIVE current runtime ref path and content fingerprints including `RED_PREHANDLING_HOOK_REF`.
-11. ASSERT `$$runtime_snapshot` does not drift from `$$red_handoff.runtime_refs_snapshot` for this target set; on failure STOP with routeable drift reason.
+5. EXECUTE `steps/verify-no-drift.md`：確認從紅到現在 runtime 沒有飄移。
 
-### Phase 4 — LOOP product code to green
-> produces: `$$loop_history`, `$$product_files_modified`, `$$final_report`
+6. [LOOP] EXECUTE `steps/turn-green-edit-product-code.md`：反覆改產品程式碼直到全綠。
 
-1. `$$loop_history` = COMPUTE empty ordered list.
-2. `$$product_files_modified` = COMPUTE empty ordered set.
-3. LOOP until all target feature files green, max 5
-   3.1 `$$final_report` = TRIGGER acceptance runner for `$$target_feature_files`.
-   3.2 BRANCH `$$final_report.outcome`
-       `passed` → RETURN green
-       `failed` → CONTINUE
-   3.3 `$signature` = DERIVE stable first-failure signature from `$$final_report` per [`references/green-oscillation-detection.md`](references/green-oscillation-detection.md).
-   3.4 MARK `$signature` in `$$loop_history`.
-   3.5 `$oscillation` = DETECT strict two-signature ping-pong in `$$loop_history` with default threshold 3.
-   3.6 ASSERT `$oscillation` is false; on failure STOP with `oscillation_detected`.
-   3.7 `$failure_kind` = CLASSIFY `$$final_report.first_failure` as product gap, test bug, runtime drift, or architecture veto.
-   3.8 BRANCH `$failure_kind`
-       `product_gap` → CONTINUE
-       `test_bug` → STOP route `/aibdd-red-execute`
-       `runtime_drift` → STOP route project BDD stack config
-       `architecture_veto` → STOP with `architecture_veto`
-   3.9 `$patch` = APPLY product-code change only for the first runner failure.
-   3.10 ASSERT `$patch` touches no feature, archive, step-def, DSL, core ref, runtime ref, fixture convention, or BDD constitution file.
-   3.11 MARK `$patch.files` in `$$product_files_modified`.
-   END LOOP
-4. ASSERT `$$final_report.outcome == passed`; on budget exhaustion STOP with `loop_budget_exceeded`.
-
-### Phase 5 — EMIT green handoff
-
-1. ASSERT `$$product_files_modified` contains product code only.
-2. `$green_handoff` = RENDER schema from [`references/handoff-schemas.md`](references/handoff-schemas.md), `$$red_handoff`, `$$final_report`, `$$loop_history`, `$$product_files_modified`, and `$$runtime_snapshot`.
-3. EMIT `$green_handoff` to caller.
-
-## §3 CROSS-REFERENCES
-
-- `/aibdd-red-execute` — produces the legal Red handoff consumed here.
-- `/aibdd-refactor-execute` — consumes the Green handoff and performs behavior-preserving cleanup.
-- `/aibdd-plan` — resolves source reference, DSL, preset, or architecture veto issues.
+7. READ `references/handoff-schemas.md` and REPORT：確認動過的只有產品程式碼，render green handoff 交回呼叫者，或遵照上游所指定的 report 方式。

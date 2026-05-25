@@ -2,7 +2,7 @@
 
 ## Role
 
-`java-e2e` renders web-backend preset handlers into Java Cucumber step definitions for API-level end-to-end tests using Spring Boot + MockMvc + Testcontainers.
+`java-e2e` renders web-service preset handlers into Java Cucumber step definitions for API-level end-to-end tests using Spring Boot + MockMvc + Testcontainers.
 
 This variant only defines rendering mechanics. It does not classify sentence parts and does not select handlers.
 
@@ -48,7 +48,7 @@ public class ScenarioContext {
 
 ## Step File Layout
 
-Directories under `steps/<function-package-slug>/` map to handlers in [`step-classification.yml`](../step-classification.yml) (hyphen in handler name → snake_case folder):
+Directories under `steps/<function-package-slug>/` map to handlers in [`../handlers/`](../handlers/) (hyphen in handler name → snake_case folder):
 
 ```text
 src/test/java/${BASE_PACKAGE}/
