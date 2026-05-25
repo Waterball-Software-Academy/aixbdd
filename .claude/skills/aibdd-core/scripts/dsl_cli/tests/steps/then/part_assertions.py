@@ -181,6 +181,17 @@ def step_assert_column_target(context, table: str, col: str, expected: str):
     )
 
 
+@then('the column "{table}.{col}" has has_increment {expected}')
+def step_assert_column_has_increment(context, table: str, col: str, expected: str):
+    part = _part_by_table_name(context, table)
+    matches = [c for c in part.columns if c.name == col]
+    assert matches, f"{table}: no column named {col!r}"
+    expected_bool = expected.strip().lower() == "true"
+    assert matches[0].has_increment == expected_bool, (
+        f"{table}.{col}.has_increment: expected {expected_bool}, got {matches[0].has_increment}"
+    )
+
+
 @then('the column "{table}.{col}" has has_default {expected}')
 def step_assert_column_has_default(context, table: str, col: str, expected: str):
     part = _part_by_table_name(context, table)
