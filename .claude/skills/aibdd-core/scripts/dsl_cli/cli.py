@@ -5,8 +5,9 @@ Subcommands:
                             --specs <path>... --dsl <path>...
                             [--boundaries-root <path>]
   eval                      --dsl <path>... [--shared-dsl <path>]
-  query                     --handler <id>... [--dsl <path>...]
-                            [--shared-dsl <path>] [--source-scope regular|shared|all]
+  query                     [--handler <id>...] [--step-text <text>]
+                            [--dsl <path>...] [--shared-dsl <path>]
+                            [--source-scope regular|shared|all]
 
 `--boundaries-root` defaults to the canonical on-disk location
 (.claude/skills/aibdd-core/assets/boundaries/) so production callers pass only
@@ -43,7 +44,8 @@ def _build_parser() -> argparse.ArgumentParser:
     ev.add_argument("--shared-dsl", type=Path, default=None)
 
     q = subs.add_parser("query")
-    q.add_argument("--handler", action="append", required=True)
+    q.add_argument("--handler", action="append", default=None)
+    q.add_argument("--step-text", default=None)
     q.add_argument("--dsl", action="append", type=Path, default=[])
     q.add_argument("--shared-dsl", type=Path, default=None)
     q.add_argument(
@@ -68,12 +70,20 @@ def main(argv: list[str] | None = None) -> int:
         print(render_eval_report(report))
         return 0 if report.status == "PASS" else 1
     if args.command == "query":
+        handlers = args.handler or []
+        if not handlers and not args.step_text:
+            print(
+                "query requires at least one of --handler or --step-text",
+                file=sys.stderr,
+            )
+            return 1
         try:
             matches = run_query(
                 args.dsl,
-                args.handler,
+                handlers if handlers else None,
                 args.shared_dsl,
                 args.source_scope,
+                step_text=args.step_text,
             )
         except ValueError as exc:
             print(str(exc), file=sys.stderr)

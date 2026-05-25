@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from dsl_cli.catalog import query_by_handlers
+from dsl_cli.catalog import query_catalog
 from dsl_cli.diff import compute_unresolved
 from dsl_cli.dsl_reader import index_resolved_parts, load_dsl_files
 from dsl_cli.eval_rules.rules import evaluate
@@ -87,17 +87,24 @@ def run_eval(
 
 def run_query(
     dsl_paths: list[Path],
-    handlers: list[str],
+    handlers: list[str] | None = None,
     shared_dsl_path: Path | None = None,
     source_scope: str = "regular",
+    step_text: str | None = None,
 ) -> list[CatalogMatch]:
     if source_scope not in ("regular", "shared", "all"):
         raise ValueError(
             f"source_scope must be regular|shared|all, got {source_scope!r}"
         )
-    return query_by_handlers(
+    handler_list = handlers or []
+    if not handler_list and not step_text:
+        raise ValueError(
+            "query requires at least one of --handler or --step-text"
+        )
+    return query_catalog(
         dsl_paths=dsl_paths,
-        handlers=handlers,
+        handlers=handler_list if handler_list else None,
+        step_text=step_text,
         shared_dsl_path=shared_dsl_path,
         source_scope=source_scope,  # type: ignore[arg-type]
     )
