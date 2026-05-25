@@ -7,10 +7,10 @@
 
 | Family | Path pattern | Owner | Purpose |
 |---|---|---|---|
-| Project config | `.aibdd/arguments.yml`, `specs/architecture/boundary.yml` | `/aibdd-kickoff` | boundary-aware path and topology seed |
+| Project config | `.aibdd/arguments.yml`, `specs/architecture/boundary.yml`, `specs/shared/dsl.yml` (preset seed) | `/aibdd-kickoff` | boundary-aware path, topology seed, and boundary shared DSL baseline |
 | Discovery truth | `specs/packages/NN-*/activities/`, `features/`, `specs/plans/NNN-*/reports/impact-matrix.yml`, `specs/plans/NNN-*/reports/discovery-sourcing.md`, `specs/plans/NNN-*/spec.md` summary | `/aibdd-discovery` plus form skills | accepted external behavior and atomic rules |
 | Boundary technical truth | `specs/boundary-map.yml`, `specs/contracts/`, `specs/data/`, `specs/test-strategy.yml` | `/aibdd-plan` + boundary state specifier skill | owner-scoped implementation truth |
-| DSL truth | `specs/contracts/*.dsl.yml`, `specs/data/*.dsl.yml`, `specs/shared/dsl.yml` | `/aibdd-plan` | flat entry mapping truth for red-usable steps |
+| DSL truth | `specs/contracts/*.dsl.yml`, `specs/data/*.dsl.yml`, `specs/shared/dsl.yml` | `/aibdd-plan` (part-derived); kickoff seeds `specs/shared/dsl.yml` baseline | flat entry mapping truth for red-usable steps |
 | Plan package work records | `specs/plans/NNN-*/plan.md`, `research.md`, `implementation/sequences/*.sequence.mmd`, `implementation/internal-structure.class.mmd` | `/aibdd-plan` | session-specific reasoning and implementation plan |
 
 ## Ownership Rules
@@ -24,7 +24,7 @@
 - `data/`（directory owned by `/aibdd-plan`; concrete state file format is delegated by boundary profile, e.g. DBML via `/aibdd-form-entity-spec`）
 - `test-strategy.yml`
 - part-derived `contracts/*.dsl.yml` and `data/*.dsl.yml`
-- boundary shared `dsl.yml`
+- boundary shared `dsl.yml` extensions beyond the kickoff preset seed
 
 Plan-package files may reference these facts but must not duplicate them as the only source of truth.
 

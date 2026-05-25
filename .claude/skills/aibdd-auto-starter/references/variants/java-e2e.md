@@ -69,7 +69,7 @@ ${PROJECT_ROOT}/
 │       ├── contracts/                                  # operation contracts; web-service 由 /aibdd-form-api-spec 產出 OpenAPI
 │       ├── data/                                       # boundary state truth; web-service 由 /aibdd-form-entity-spec 產出 DBML
 │       ├── shared/
-│       │   └── dsl.yml                                 # boundary shared DSL truth
+│       │   └── dsl.yml                                 # kickoff：boundary shared DSL preset seed
 │       ├── test-strategy.yml
 │       └── packages/                                   # caller-context 提供 slug；Discovery 建 `NN-<slug>/`
 ├── docker-compose.yml                                  # local PostgreSQL（單一 service）

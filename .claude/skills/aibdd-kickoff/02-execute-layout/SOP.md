@@ -4,15 +4,15 @@
 
 ## Stack 查表（step 7、step 8 依此填值）
 
-| `$decisions.stack` | tail dir | `$role` | `$type` | `$description_suffix`（接於 `<tlb_id> ` 之後） |
-|---|---|---|---|---|
-| `python_e2e` | `python-e2e` | `backend` | `web-service` | `Python FastAPI backend service` |
-| `java_e2e` | `java-e2e` | `backend` | `web-service` | `Java Spring Boot backend service` |
-| `nextjs_playwright` | `nextjs-playwright` | `frontend` | `web-app` | `Next.js + Playwright frontend application` |
+| `$decisions.stack` | tail dir | `$role` | `$type` | `$preset_kind` | `$description_suffix`（接於 `<tlb_id> ` 之後） |
+|---|---|---|---|---|---|
+| `python_e2e` | `python-e2e` | `backend` | `web-service` | `web-backend` | `Python FastAPI backend service` |
+| `java_e2e` | `java-e2e` | `backend` | `web-service` | `web-backend` | `Java Spring Boot backend service` |
+| `nextjs_playwright` | `nextjs-playwright` | `frontend` | `web-app` | `web-frontend` | `Next.js + Playwright frontend application` |
 
 ## Steps
 
-1. DERIVE `$decisions_json` ← JSON-serialize `$decisions` 加上 `project_root: ${PROJECT_ROOT}` 與 `boundary_codebase_subdir`（缺則 `""`）。
+1. DERIVE `$decisions_json` ← JSON-serialize `$decisions` 加上 `project_root: ${PROJECT_ROOT}`、`boundary_codebase_subdir`（缺則 `""`）、`stack: $decisions.stack`。
 
 2. WRITE `${PROJECT_ROOT}/.aibdd-kickoff-decisions.json` ← `$decisions_json`。**本步僅允許 WRITE 此暫存檔**。
 
@@ -21,6 +21,7 @@
 4. DELETE `${PROJECT_ROOT}/.aibdd-kickoff-decisions.json`。
 
 5. DERIVE `$dst` ← `$result_json.boundary_codebase_root`。
+   DERIVE `$shared_dsl_path` ← `$result_json.shared_dsl_path`。
 
 6. DERIVE `$tlb_id` ← `$decisions.tlb_id`（缺則 `"backend"`）。 從 Stack 查表取 `$role` / `$type` / `$description_suffix`，組 `$description = "${tlb_id} ${description_suffix}"`。
 
@@ -56,9 +57,11 @@
 
 15. **ASSERT** `${dst}/.aibdd/arguments.yml`、`boundary.yml`、`component-diagram.class.mmd` 三檔**全部不含** `${KICKOFF_` 子字串（grep 結果為空）。若有殘留 → 向 user 告知殘留位置並 STOP。
 
-16. IF path_exists(`${PLAN_PATH}`) → DELETE `${PLAN_PATH}`（清理 File First 暫存檔）。
+16. **ASSERT** `$shared_dsl_path` 存在，且檔案內容**不含** `<backend-variant-id>` 或 `<frontend-variant-id>` placeholder。
 
-17. 向 user 說道（`{artifact_list}` = 列出 `${dst}` 下產出的 9 個 artifact 的 bullet 清單）：
+17. IF path_exists(`${PLAN_PATH}`) → DELETE `${PLAN_PATH}`（清理 File First 暫存檔）。
+
+18. 向 user 說道（`{artifact_list}` = 列出 `${dst}` 下產出的 10 個 artifact 的 bullet 清單，含 `${shared_dsl_path}`）：
 
     ```text
     Kickoff 已完成。

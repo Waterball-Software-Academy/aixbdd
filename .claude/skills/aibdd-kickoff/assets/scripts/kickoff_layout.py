@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """
-/aibdd-kickoff layout copier (pure file copy).
+/aibdd-kickoff layout copier (pure file copy + shared DSL seed).
 
 Copies the invariant template tree (assets/templates/shared/) to the target
-boundary codebase root. All placeholder substitution and per-stack tail
-appending are handled by 02-execute-layout/SOP.md as post-copy LLM Edit ops.
+boundary codebase root, then materializes specs/shared/dsl.yml from the active
+boundary preset's shared-dsl-template.yml.
+
+Placeholder substitution and per-stack tail appending are handled by
+02-execute-layout/SOP.md as post-copy LLM Edit ops.
 
 Usage:
   python3 kickoff_layout.py --decisions-file <path.json>
@@ -12,13 +15,15 @@ Usage:
 decisions.json shape:
   {
     "project_root": "/abs/path",
-    "boundary_codebase_subdir": "" | "backend" | ...
+    "boundary_codebase_subdir": "" | "backend" | ...,
+    "stack": "python_e2e" | "java_e2e" | "nextjs_playwright"
   }
 
-Other fields (stack / tlb_id / project_spec_language / ...) are read by the SOP,
+Other fields (tlb_id / project_spec_language / ...) are read by the SOP,
 not by this script.
 
-Emits JSON to stdout: {"ok": true, "boundary_codebase_root": "..."}.
+Emits JSON to stdout:
+  {"ok": true, "boundary_codebase_root": "...", "shared_dsl_path": "..."}.
 """
 
 from __future__ import annotations
@@ -31,6 +36,52 @@ from pathlib import Path
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SHARED_DIR = SCRIPT_DIR.parent / "templates" / "shared"
+SKILLS_DIR = SCRIPT_DIR.parent.parent.parent
+BOUNDARIES_ROOT = SKILLS_DIR / "aibdd-core" / "assets" / "boundaries"
+SPECS_ROOT_DIR = "specs"
+
+STACK_SHARED_DSL: dict[str, dict[str, str]] = {
+    "python_e2e": {
+        "boundary_asset_dir": "web-service",
+        "variant_placeholder": "<backend-variant-id>",
+        "variant": "python-e2e",
+    },
+    "java_e2e": {
+        "boundary_asset_dir": "web-service",
+        "variant_placeholder": "<backend-variant-id>",
+        "variant": "java-e2e",
+    },
+    "nextjs_playwright": {
+        "boundary_asset_dir": "web-frontend",
+        "variant_placeholder": "<frontend-variant-id>",
+        "variant": "nextjs-playwright",
+    },
+}
+
+
+def materialize_shared_dsl(dst: Path, stack: str) -> Path:
+    mapping = STACK_SHARED_DSL.get(stack)
+    if mapping is None:
+        raise ValueError(f"unsupported stack for shared DSL seed: {stack}")
+
+    template_path = (
+        BOUNDARIES_ROOT
+        / mapping["boundary_asset_dir"]
+        / "shared-dsl-template.yml"
+    )
+    if not template_path.is_file():
+        raise FileNotFoundError(f"shared DSL template not found: {template_path}")
+
+    content = template_path.read_text()
+    content = content.replace(
+        mapping["variant_placeholder"],
+        mapping["variant"],
+    )
+
+    shared_dsl_path = dst / SPECS_ROOT_DIR / "shared" / "dsl.yml"
+    shared_dsl_path.parent.mkdir(parents=True, exist_ok=True)
+    shared_dsl_path.write_text(content)
+    return shared_dsl_path
 
 
 def main() -> int:
@@ -41,19 +92,29 @@ def main() -> int:
     decisions = json.loads(Path(args.decisions_file).read_text())
     project_root = Path(decisions["project_root"])
     subdir = decisions.get("boundary_codebase_subdir", "")
+    stack = decisions.get("stack")
+    if not stack:
+        raise SystemExit("decisions.json must include stack")
+
     dst = project_root / subdir if subdir else project_root
 
     shutil.copytree(SHARED_DIR, dst, dirs_exist_ok=True)
 
-    # Strip seed .gitkeep at project root if present (legacy hygiene).
     seed_gitkeep = project_root / ".gitkeep"
     if seed_gitkeep.exists():
         seed_gitkeep.unlink()
 
-    print(json.dumps({
-        "ok": True,
-        "boundary_codebase_root": str(dst),
-    }))
+    shared_dsl_path = materialize_shared_dsl(dst, stack)
+
+    print(
+        json.dumps(
+            {
+                "ok": True,
+                "boundary_codebase_root": str(dst),
+                "shared_dsl_path": str(shared_dsl_path),
+            }
+        )
+    )
     return 0
 
 

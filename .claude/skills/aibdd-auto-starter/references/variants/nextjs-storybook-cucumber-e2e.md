@@ -49,7 +49,7 @@ ${PROJECT_ROOT}/
 │       ├── contracts/
 │       ├── data/
 │       ├── shared/
-│       │   └── dsl.yml
+│       │   └── dsl.yml                    # kickoff：boundary shared DSL preset seed
 │       ├── test-strategy.yml
 │       └── packages/                       # caller-context 提供 slug；Discovery 建 `NN-<slug>/`
 ├── package.json                            # next/react/vite/storybook/playwright/vitest 依賴

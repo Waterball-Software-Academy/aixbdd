@@ -117,5 +117,5 @@ RED_PREHANDLING_HOOK_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/prehandling-before-red-p
 # =============================================================================
 # 以下由 02-execute-layout/SOP.md append per-stack/<stack>/arguments.tail.yml
 # 該 tail 含 STARTER_VARIANT、section 7 stack-specific paths、preset contract ref
-# 與（nextjs 才有的）PRESET_KIND / PROJECT_SLUG / TLB_ID。
+# 與 per-stack tail 中的 PRESET_KIND /（nextjs 才有的）PROJECT_SLUG / TLB_ID。
 # =============================================================================

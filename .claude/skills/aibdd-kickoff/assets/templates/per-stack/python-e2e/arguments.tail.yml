@@ -5,6 +5,9 @@
 # STARTER_VARIANT — kickoff 本專案技術的 technical archetype。
 STARTER_VARIANT: python-e2e
 
+# PRESET_KIND — boundary preset；backend stack 必填。
+PRESET_KIND: web-backend
+
 # -----------------------------------------------------------------------------
 # 7. PYTHON_E2E_STARTER_OUTPUT_PATHS — walking skeleton 落點；由 /aibdd-auto-starter 產出實體碼。
 # -----------------------------------------------------------------------------

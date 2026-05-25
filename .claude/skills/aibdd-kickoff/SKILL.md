@@ -1,5 +1,5 @@
 ---
-description: 專案初始化引導；支援 Python E2E、Java E2E 兩個 stack，收集唯一 TLB 名稱，產出 arguments.yml、boundary.yml、component-diagram.class.mmd 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Vue/Svelte 等其他 frontend 框架、Unit Test only、Mobile，或其他尚未支援的 stack。
+description: 專案初始化引導；支援 Python E2E、Java E2E 兩個 stack，收集唯一 TLB 名稱，產出 arguments.yml、boundary.yml、component-diagram.class.mmd、specs/shared/dsl.yml 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Vue/Svelte 等其他 frontend 框架、Unit Test only、Mobile，或其他尚未支援的 stack。
 metadata:
   skill-type: planner
   source: project-level
@@ -9,7 +9,7 @@ name: aibdd-kickoff
 
 # aibdd-kickoff
 
-Initialize an AIBDD backend (Python E2E or Java E2E) by deriving stack-aware config and writing one top-level boundary truth skeleton.
+Initialize an AIBDD project by deriving stack-aware config and writing one top-level boundary truth skeleton, including boundary shared DSL seed at `${BOUNDARY_SHARED_DSL}`.
 
 嚴格遵照底下 Principles 來執行 SOP。
 

@@ -8,7 +8,7 @@ One specs root = one boundary。`${SPECS_ROOT_DIR}` 就是該 boundary 的 truth
 
 ## Ground truth
 
-1. **`${SPECS_ROOT_DIR}`** — 規格工作區根（例：`specs`），同時是 boundary truth root。內含 `architecture/boundary.yml`、`boundary-map.yml`、`contracts/`、`data/`、`shared/`、`packages/`、`plans/`、`test-strategy.yml`。
+1. **`${SPECS_ROOT_DIR}`** — 規格工作區根（例：`specs`），同時是 boundary truth root。內含 `architecture/boundary.yml`、`boundary-map.yml`、`contracts/`、`data/`、`shared/`、`packages/`、`plans/`、`test-strategy.yml`。`/aibdd-kickoff` 會從 active boundary preset 的 `shared-dsl-template.yml` 寫入 `${BOUNDARY_SHARED_DSL}`。
 2. **`${BOUNDARY_YML}`** — 單一 boundary 宣告（top-level `id` / `level` / `role` / `type` / `description`，非 array）；`id` 用作 component diagram / package metadata 的語意 tag，不用於展開檔案系統路徑。
 3. **`TRUTH_FUNCTION_PACKAGE` / `FEATURE_SPECS_DIR` / `ACTIVITIES_DIR` / `TRUTH_TEST_PLAN_DIR`** — 借位（slot）形態；kickoff 寫入 `<<NN-functional-module>>` slot literal，runtime 同時存在多個 functional module instance，yaml 不指任一 active。各 skill 由 caller-context 取得當前 functional module slug，`/aibdd-discovery` 只在 filesystem 建 `NN-<slug>/` 目錄，不改寫 yaml。
 4. **`CURRENT_PLAN_PACKAGE`** — 借位（slot）形態；kickoff 寫入 `<<NNN-plan-slug>>` slot literal，runtime 同時存在多個 plan package instance。caller 在呼叫 plan / tasks / implement 等 skill 時透過 CLI arg 或 caller payload 指定當前 plan slug，arguments.yml 不追蹤 active。

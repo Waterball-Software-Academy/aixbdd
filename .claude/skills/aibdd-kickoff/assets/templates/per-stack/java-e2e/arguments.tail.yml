@@ -5,6 +5,9 @@
 # STARTER_VARIANT — kickoff 本專案技術的 technical archetype。
 STARTER_VARIANT: java-e2e
 
+# PRESET_KIND — boundary preset；backend stack 必填。
+PRESET_KIND: web-backend
+
 # -----------------------------------------------------------------------------
 # 7. JAVA_E2E_STARTER_OUTPUT_PATHS — Maven coordinates / Java 套件落點 / 版本鎖在本檔。
 # 想自訂 GROUP_ID 或 BASE_PACKAGE 請直接編此檔；想升版改下面 version 區塊。
