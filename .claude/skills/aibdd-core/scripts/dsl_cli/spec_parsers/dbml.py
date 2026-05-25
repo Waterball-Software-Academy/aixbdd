@@ -56,15 +56,16 @@ _INLINE_REF_RE = re.compile(
 )
 
 
-def _parse_options(options_chunk: str | None) -> tuple[bool, bool, bool, str | None]:
-    """Return (is_pk, has_explicit_not_null, has_default, default_value)."""
+def _parse_options(options_chunk: str | None) -> tuple[bool, bool, bool, str | None, bool]:
+    """Return (is_pk, has_explicit_not_null, has_default, default_value, has_increment)."""
     if not options_chunk:
-        return False, False, False, None
+        return False, False, False, None, False
     tokens = [tok.strip() for tok in options_chunk.split(",")]
     is_pk = any(tok == "pk" or tok.startswith("pk ") for tok in tokens)
     has_not_null = any(tok == "not null" for tok in tokens)
+    has_increment = any(tok == "increment" for tok in tokens)
     default_value = _extract_default_value(tokens)
-    return is_pk, has_not_null, default_value is not None, default_value
+    return is_pk, has_not_null, default_value is not None, default_value, has_increment
 
 
 def _extract_default_value(tokens: list[str]) -> str | None:
@@ -123,7 +124,7 @@ def _parse_columns(body: str, spec_label: str, table_name: str):
             continue
         col_name = m.group("name")
         col_type = m.group("type")
-        is_pk, has_not_null, has_default, default_value = _parse_options(m.group("options"))
+        is_pk, has_not_null, has_default, default_value, has_increment = _parse_options(m.group("options"))
         nullable = not (has_not_null or is_pk)
         yield Column(
             name=col_name,
@@ -132,6 +133,7 @@ def _parse_columns(body: str, spec_label: str, table_name: str):
             is_pk=is_pk,
             has_default=has_default,
             default_value=default_value,
+            has_increment=has_increment,
             target_part_path=f"{spec_label}#{table_name}.{col_name}",
         )
 
