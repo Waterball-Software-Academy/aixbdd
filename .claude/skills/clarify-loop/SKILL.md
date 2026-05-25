@@ -20,7 +20,7 @@ name: clarify-loop
 ### Phase 2 — NORMALIZE questions
 
 1. SORT questions per [`references/question-priority.md`](references/question-priority.md)。
-2. TRANSLATE `context/question/options/recommendation_rationale` per [`references/simplified-wording.md`](references/simplified-wording.md)。
+2. （非常重要）TRANSLATE `context/question/options/recommendation_rationale` 嚴格遵照 `references/simplified-wording.md` 的白話文友善用字來提問。
 3. 產出 `translated_questions`（僅資料準備，不派發工具）。
 
 ### Phase 3 — DETECT tooling + ROUTE + route payload validate
