@@ -67,6 +67,7 @@ class Column:
     is_pk: bool
     has_default: bool
     target_part_path: str
+    default_value: str | None = None
 
 
 @dataclass(frozen=True)
