@@ -36,7 +36,9 @@
 
    4.1 READ 該 entry 之 `target_part_path` 所指 spec 節點原文（OpenAPI operation / DBML table 等），辨識業務 actor / operation / object。
 
-   4.2 從 skeleton 的「候選參數註解區塊」逐條決定該 candidate 進 `param_bindings`（必要、會出現在 format 中）或 `datatable_bindings`（可選 / 走 DataTable）；改 binding key 為業務術語（依 `${DSL_KEY_LOCALE}`），binding 的 `target` 路徑**原樣帶過**，禁止修改。
+   4.2 **Candidate block 處理**：從 skeleton 的「候選參數註解區塊」逐條決定該 candidate 進 `param_bindings`（必要、會出現在 format 中）或 `datatable_bindings`（可選 / 走 DataTable）；改 binding key 為業務術語（依 `${DSL_KEY_LOCALE}`），binding 的 `target` 路徑**原樣帶過**，禁止修改。
+
+   **預填 `datatable_bindings` 改名**：plugin 在 HARNESS 階段可能已直接預填部分 `datatable_bindings`（例如 `state-builder` 對 NOT-NULL non-auto-increment-pk column）。這些 key 預設以 raw DBML column name 填入，**不會**經過 candidate block 流程。SEMANTIC 須逐一審視已預填的 key，依 `${DSL_KEY_LOCALE}` 規則改名為業務術語（若 column name 已符合慣例可保留）；`target` 路徑同樣**原樣帶過**，禁止修改。
 
    4.3 寫入 `format` 業務句（actor-operation-object 句型，遵 `aibdd-core::references/sentence-parts-framework/default.md`）；引用 binding key 用 `{key}` 占位。
 
