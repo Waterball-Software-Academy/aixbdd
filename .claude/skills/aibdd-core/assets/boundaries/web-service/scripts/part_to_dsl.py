@@ -118,6 +118,7 @@ def _for_dbml_table(part):
                 default_value=c.default_value if c.has_default else "<FILL IN>",
             )
             for c in part.not_null_columns
+            if not c.is_pk
         },
     )
     verifier = DSLInstructionTemplate(
