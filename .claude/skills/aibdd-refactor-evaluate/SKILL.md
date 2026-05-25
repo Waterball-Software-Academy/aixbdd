@@ -3,143 +3,88 @@ name: aibdd-refactor-evaluate
 description: Evaluate a completed AIBDD Refactor Worker run by checking strict dev constitution conformance and final full acceptance suite all pass.
 metadata:
   user-invocable: true
-  source: project-level dogfooding
 ---
 
 # aibdd-refactor-evaluate
 
-Evaluate whether a completed Refactor Worker run remained constitutional and behavior-safe.
+檢查一次已完成的 Refactor 跑次，是不是既守住開發憲章、又維持行為安全。兩件事要同時成立：嚴格符合開發憲章、以及最終整套 acceptance 測試全過。這支 skill 只做判斷、出一份評估報告，不去修任何東西。
 
-<!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
-> **Program-like SKILL.md — self-contained notation**
->
-> **3 verb classes** (type auto-derived from verb name):
-> - **D** = Deterministic — no LLM judgment required; future scripting candidate
-> - **S** = Semantic — LLM reasoning required
-> - **I** = Interactive — yields turn to user
->
-> **Yield discipline** (executor 鐵律): **ONLY** `I` verbs yield turn to the user. `D` and `S` verbs MUST NOT pause for user reaction. In particular:
-> - `EMIT $x to user` is **fire-and-forget** — continue immediately to the next step; do not wait for acknowledgment.
-> - `WRITE` / `CREATE` / `DELETE` are side effects, **not** phase boundaries — execution continues to the next sub-step.
-> - Phase transitions (Phase N → Phase N+1) and sub-step transitions are **non-yielding**.
-> - Mid-SOP messages of the form 「要繼續嗎？」/「先 review 一下？」/「先 checkpoint？」/「先停下來確認？」/「want me to proceed?」/「should I continue?」are **FORBIDDEN**. The ONLY way to ask the user is an `[USER INTERACTION] $reply = ASK ...` step.
-> - `STOP` / `RETURN` are terminations, not yields — no next step follows.
->
-> **SSA bindings**: `$x = VERB args` (productive steps name their output);
-> `$x` is phase-local; `$$x` crosses phases (declared in phase header's `> produces:` line).
->
-> **Side effect**: `VERB target ← $payload` — `←` arrow = "write into target".
->
-> **Control flow**: `BRANCH $check ? then : else` (binary) or indented arms (multi);
-> `GOTO #N.M` = jump to Phase N step M (literal `#phase.step`).
->
-> **Canonical verb table** (T = D / S / I):
->
-> | Verb | T | Meaning |
-> |---|---|---|
-> | READ | D | 讀檔 → bytes / text |
-> | WRITE | D | 寫檔（內容已備好） |
-> | CREATE | D | 建立目錄 / 空檔 |
-> | DELETE | D | 刪檔（rollback） |
-> | COMPUTE | D | 純運算 |
-> | DERIVE | D | 從既定規則推算 |
-> | PARSE | D | 字串 → in-memory 結構 |
-> | RENDER | D | template + vars → string |
-> | ASSERT | D | 斷言 invariant；fail-stop |
-> | MATCH | D | regex / pattern 比對 |
-> | TRIGGER | D | 啟動 process / subagent / tool / script；output 可 bind |
-> | DELEGATE | D | 呼叫其他 skill |
-> | MARK | D | 紀錄狀態（譬如 TodoWrite） |
-> | BRANCH | D | 分支（吃 `$check` / `$kind` binding） |
-> | GOTO | D | 跳 `#phase.step` literal |
-> | IF / ELSE / END IF | D | 條件 sub-step |
-> | LOOP / END LOOP | D | 迴圈（必標 budget + exit） |
-> | RETURN | D | 提前結束 phase |
-> | STOP | D | 終止整個 skill |
-> | EMIT | D | 輸出已生成資料（fire-and-forget；**不 yield**，continue 下一 step） |
-> | WAIT | D | 等待已 spawn 的 process |
-> | THINK | S | 內部判斷（不印 user） |
-> | CLASSIFY | S | 多類別分類 → enum 之一 |
-> | JUDGE | S | 二元語意判斷 |
-> | DECIDE | S | 從 user reply / context 推結論 |
-> | DRAFT | S | 生成 prose / 訊息 |
-> | EDIT | S | LLM 推 patch 改既有檔 |
-> | PARAPHRASE | S | 改寫 / 翻譯 prose |
-> | CRITIQUE | S | 批評 / 建議 |
-> | SUMMARIZE | S | 抽取重點 |
-> | EXPLAIN | S | 對 user 解釋 why |
-> | ASK | I | 問 user 等回應（仍配 `[USER INTERACTION]` tag）；**唯一允許 yield turn 給 user 的 verb**。**Planner-level skill** 對 user 的提問**必須 `DELEGATE /clarify-loop`**，不得直接 `ASK`（其他角色的 skill 自決）。 |
-<!-- VERB-GLOSSARY:END -->
+## 這支 skill 在做什麼
 
-## §1 REFERENCES
+1. 接住上游交來的 Refactor 證據：refactor handoff 或一組明確的檔案指標。
+2. 把最終全套測試報告、開發憲章、以及這次整理涉及的程式碼讀進來。
+3. 嚴格比對程式碼有沒有違反開發憲章的硬性條款。
+4. 檢查最終全套測試是不是真的全過。
+5. 依兩項結果給出 `PASS` 或 `FAIL`，把評估報告交回呼叫者。
 
-```yaml
-references:
-  - path: references/evaluate-input-contract.md
-    purpose: Defines Refactor evaluate payload and artifact pointer requirements
-  - path: references/evaluate-report-schema.md
-    purpose: Defines Refactor evaluate PASS FAIL Veto report fields
-  - path: references/dev-constitution-check.md
-    purpose: Defines strict dev constitution conformance evidence and Veto standard
-```
+## 執行原則
 
-## §2 SOP
+1. 依序執行、不要跳步；每做一步，在訊息中講出你正在做哪一步。
+2. 你是評估者，不是修理工：只判斷、只記 findings、只出報告。
+3. 只認那一份最終的全套測試報告當證據；不要拿 target-only 的子集報告頂替。
+4. 憲章判斷要嚴格：任何被違反的 MUST 或 MUST NOT 都不能被降級成「僅供參考」。
+5. 除非遇到底下明確寫出的 STOP 條件（證據檔指標缺失），否則一路做到產出評估報告為止；中途不要停下來問「要不要繼續」。
 
-### Phase 1 — RECEIVE Refactor evidence
-> produces: `$$payload`, `$$report_path`, `$$dev_constitution_path`, `$$code_scope`
+## 參考文件
 
-1. `$$payload` = READ caller payload with `refactor_handoff` or explicit artifact pointers.
-2. `$$report_path` = PARSE final full acceptance suite test report path per [`references/evaluate-input-contract.md`](references/evaluate-input-contract.md).
-3. `$$dev_constitution_path` = PARSE resolved `${DEV_CONSTITUTION_PATH}` from payload or project config pointer.
-4. `$$code_scope` = PARSE product codebase root and changed-file scope used for constitution checking.
-5. ASSERT `$$report_path` exists; on failure STOP with `missing_refactor_full_suite_report`.
-6. ASSERT `$$dev_constitution_path` exists; on failure STOP with `missing_dev_constitution_path`.
-7. ASSERT `$$code_scope` is present; on failure STOP with `missing_constitution_check_scope`.
+讀到需要時再打開：
 
-### Phase 2 — LOAD evidence
-> produces: `$$test_report`, `$$dev_constitution`, `$$scoped_code`
+1. [references/evaluate-input-contract.md](references/evaluate-input-contract.md)：定義 Refactor evaluate 的 payload 與各種證據檔指標的要求。
+2. [references/evaluate-report-schema.md](references/evaluate-report-schema.md)：定義 Refactor evaluate 的 PASS／FAIL／Veto 報告欄位。
+3. [references/dev-constitution-check.md](references/dev-constitution-check.md)：定義嚴格的開發憲章符合性證據與 Veto 標準。
 
-1. `$$test_report` = READ `$$report_path`.
-2. `$$dev_constitution` = READ `$$dev_constitution_path`.
-3. `$$scoped_code` = READ product files in `$$code_scope`.
-4. ASSERT `$$test_report` identifies the run as the full acceptance suite, not a target-only subset.
-5. ASSERT `$$test_report` is runner-native evidence and contains no DSL mapping fields.
+## SOP
 
-### Phase 3 — CHECK dev constitution strict
-> produces: `$$constitution_findings`
+### Phase 1 — 接住 Refactor 的證據
 
-1. `$$constitution_findings` = COMPUTE empty ordered list.
-2. `$rules` = PARSE mandatory and prohibitive clauses from `$$dev_constitution` per [`references/dev-constitution-check.md`](references/dev-constitution-check.md).
-3. LOOP per `$rule` in `$rules`
-   3.1 `$violation` = JUDGE `$$scoped_code` against `$rule`.
-   3.2 IF `$violation` == true:
-       3.2.1 MARK `$$constitution_findings` with `$rule`
-       END IF
-   END LOOP
-4. ASSERT constitution judgment is strict; no violated MUST or MUST NOT may be downgraded to advisory.
+1. RESOLVE arguments：把本 phase 會引用到的 `${VAR}` 一次綁定，resolver 的 stdout 原樣 EMIT 給用戶；非 0 退出就停下來並透傳 stderr。
+   ```bash
+   python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
+   DEV_CONSTITUTION_PATH=${DEV_CONSTITUTION_PATH}
+   EOF
+   ```
+2. 接住呼叫者交來的 `refactor_handoff`（或等價的一組明確檔案指標）。
+3. 解析出「最終全套 acceptance 測試報告」的路徑（規則見 evaluate-input-contract.md）。
+4. 取開發憲章路徑：payload 有給就用，沒有就用上一步 resolver 綁定的 `${DEV_CONSTITUTION_PATH}`。
+5. 解析出這次要做憲章檢查的範圍：產品程式碼的根目錄與「改了哪些檔」的範圍。
+6. 確認報告路徑存在；找不到就停下來，回報 `stop_reason: missing_refactor_full_suite_report`。
+7. 確認開發憲章路徑存在；找不到就停下來，回報 `stop_reason: missing_dev_constitution_path`。
+8. 確認檢查範圍有給；沒有就停下來，回報 `stop_reason: missing_constitution_check_scope`。
 
-### Phase 4 — CHECK full suite all pass
-> produces: `$$test_findings`
+### Phase 2 — 把證據讀進來
 
-1. `$$test_findings` = COMPUTE empty ordered list.
-2. `$failures_zero` = MATCH `$$test_report` has `0 failed`.
-3. IF `$failures_zero` == false:
-   3.1 MARK `$$test_findings` with `full_suite_failed`
-4. `$errors_zero` = MATCH `$$test_report` has `0 errors`.
-5. IF `$errors_zero` == false:
-   5.1 MARK `$$test_findings` with `full_suite_error`
-6. `$skip_safe` = MATCH `$$test_report` contains no scenario hidden by improper skip, xfail, deselect, or collection omission.
-7. IF `$skip_safe` == false:
-   7.1 MARK `$$test_findings` with `not_assertion_passed`
+1. 讀進那份測試報告。
+2. 讀進開發憲章。
+3. 讀進檢查範圍裡的那些產品程式碼檔。
+4. 確認報告本身標示這次跑的是「全套 acceptance 測試」，不是只跑 target 的子集。
+5. 確認報告是執行器原生的證據，裡面沒有混進任何 DSL 對應的欄位。
 
-### Phase 5 — EMIT Refactor evaluation
-> produces: `$$evaluation_report`
+### Phase 3 — 嚴格檢查開發憲章
 
-1. `$verdict` = DERIVE `PASS` when `$$constitution_findings` and `$$test_findings` are empty, else `FAIL`.
-2. `$$evaluation_report` = RENDER report per [`references/evaluate-report-schema.md`](references/evaluate-report-schema.md) using `$$report_path`, `$$dev_constitution_path`, `$$code_scope`, `$$constitution_findings`, `$$test_findings`, and `$verdict`.
-3. EMIT `$$evaluation_report` to caller.
+1. 先準備一份空的憲章 findings 清單。
+2. 依 dev-constitution-check.md，從開發憲章解析出強制條款（MUST）與禁止條款（MUST NOT）。
+3. 逐一檢查每一條條款：
+   1. 拿範圍內的程式碼去判斷有沒有違反這一條。
+   2. 違反了，就把這一條記進憲章 findings。
+4. 憲章判斷要嚴格：任何被違反的 MUST 或 MUST NOT 都不能被降級成「僅供參考」。
 
-## §3 CROSS-REFERENCES
+### Phase 4 — 檢查全套測試是不是全過
 
-- `/aibdd-refactor-execute` — Worker skill that produces the Refactor run evidence evaluated here.
-- `/speckit-constitution` — owns changes to `${DEV_CONSTITUTION_PATH}` outside the evaluator.
+1. 先準備一份空的測試 findings 清單。
+2. 看報告是不是 `0 failed`。
+   1. 不是，就把 `full_suite_failed` 記進測試 findings。
+3. 看報告是不是 `0 errors`。
+   1. 不是，就把 `full_suite_error` 記進測試 findings。
+4. 看報告裡有沒有場景被不當的 skip、xfail、deselect 或收集遺漏給藏起來。
+   1. 有，就把 `not_assertion_passed` 記進測試 findings。
+
+### Phase 5 — 交出 Refactor 評估結果
+
+1. 決定 verdict：憲章 findings 與測試 findings 都是空的就 `PASS`，否則 `FAIL`。
+2. 依 evaluate-report-schema.md，用報告路徑、開發憲章路徑、檢查範圍、憲章 findings、測試 findings、以及 verdict，render 出評估報告。
+3. 把評估報告交回給呼叫者。
+
+## 完成後接給誰
+
+1. `/aibdd-refactor-execute`：產生這裡所評估的 Refactor 證據的 Worker skill。
+2. `/speckit-constitution`：`${DEV_CONSTITUTION_PATH}` 的變更歸它管，不在評估者範圍內。

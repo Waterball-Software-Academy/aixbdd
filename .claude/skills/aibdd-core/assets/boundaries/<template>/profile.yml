@@ -1,0 +1,65 @@
+# =============================================================================
+# <boundary-id> boundary preset — profile.yml（authoring template）
+# =============================================================================
+#
+# 這是新增一個 boundary preset 時的起手式。把本目錄整包複製成
+# boundaries/<your-boundary>/，逐檔把 <尖括號 placeholder> 換成真值。
+#
+# profile.yml 宣告一個 boundary preset 的「身分」與「規格產出 / 履約綁定」。
+# 它不是 runtime truth；專案實際 active boundary 來自
+# specs/architecture/boundary.yml 的 `type` 欄位，type 對應到 boundaries/<type>/。
+#
+# 真正會讀本檔的消費者（而且只讀下列欄位，不讀其他）：
+#   1. /aibdd-plan 02-contracts-design — 讀 state_specifier /
+#      operation_contract_specifier / component_contract_specifier 的
+#      {skill, format}，決定用哪個 formulation skill 把 contract / state 寫進
+#      ${CONTRACTS_DIR} / ${DATA_DIR}。
+#   2. aibdd-core references/spec-package-paths.md — 引用同一批 specifier 欄位
+#      作為「目錄固定、格式與 skill 由 profile 決定」的路徑 SSOT。
+#   3. /aibdd-auto-starter prehandling — 讀 *_specifier.skill 決定哪些 section 適用。
+#
+# 規則：沒有被上述消費者讀到的欄位都是純宣告。不要在這裡堆「沒有 reader 的 hint」
+# （例如靜態 test_strategy / io_boundary 區塊）——那只會增加維護面積與 AI 誤判。
+# =============================================================================
+
+id: <boundary-id>            # 唯一識別字，通常等於目錄名與 boundary.yml 的 type
+role: <backend|frontend>     # boundary 角色；決定上游 discovery / uiux 是否適用
+
+description: >
+  <一段話描述此 boundary 的測試邊界與規格如何表達。例：Backend HTTP API
+  boundary，persistent state 以 DBML 表達、由 state specifier skill formulate。>
+
+# --- 規格產出綁定（/aibdd-plan 02-contracts-design 直接讀取）--------------------
+# 每個 specifier 宣告「某一類 truth 由哪個 skill、以什麼格式、寫到哪個目錄」。
+# 不適用的 specifier 填 skill: none / format: none（見下方 ephemeral 範例註解）。
+
+state_specifier:                        # persistent state truth（資料模型）
+  skill: <formulation-skill-or-none>    # 例：/aibdd-form-entity-spec；無持久狀態填 none
+  format: <dbml|none>
+  semantics: <persistent|ephemeral-mock>
+  output_dir_key: DATA_DIR              # 寫入目錄對應的 arguments.yml 變數 key
+  default_filename: <name-or-empty>     # 例：domain.dbml；無則空字串 ""
+
+operation_contract_specifier:           # operation contract truth（對外操作介面）
+  skill: <formulation-skill>            # 例：/aibdd-form-api-spec
+  format: <openapi|...>
+  output_dir_key: CONTRACTS_DIR
+  default_filename: <name>              # 例：api.yml
+
+# component_contract_specifier 只有 UI boundary 需要；純後端 boundary 整段刪除。
+# 宣告 Story-export-level 的 UI truth，作為 boundary invariant 的 binding anchor。
+component_contract_specifier:
+  skill: <ui-formulation-skill>         # 例：/aibdd-form-story-spec
+  format: <csf3|...>
+  output_dir_key: <FE_STORIES_DIR|...>
+  default_filename: <name-or-empty>
+
+# --- persistence handler（plan / SBE 的 persistence-ownership coverage gate 參考）--
+persistence_handler:
+  handler_id: <state-setup-handler>     # 例：state-builder（backend）/ mock-state-given（frontend）
+  state_ref_pattern: "<ref-pattern>"    # 例：data/*.dbml#<table>
+  coverage_gate: <deferred-v1|active>   # 本 boundary 的 required-field 覆蓋閘門狀態
+
+# --- L4 binding target 允許前綴（check_dsl_entries.py 讀取；無此需求整段刪除）------
+allowed_l4_target_prefixes:
+  - <prefix>/        # 每條前綴附一句語意說明（例：contracts/ — OpenAPI ref）

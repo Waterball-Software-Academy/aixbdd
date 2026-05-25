@@ -97,12 +97,9 @@ BOUNDARY_PACKAGE_DSL: ${TRUTH_FUNCTION_PACKAGE}/dsl.yml
 # 8. BDD_STRATEGY_REFS — invariant 部分（preset contract ref 因 backend/frontend 而異，在 tail）
 # -----------------------------------------------------------------------------
 
-GHERKIN_RULE_BODY_PREFIX_POLICY_REF: .claude/skills/aibdd-core/references/gherkin-rule-body-prefix-policy/four-rules-prefix.md
 GHERKIN_EXECUTABLE_STEP_LANGUAGE_REF: .claude/skills/aibdd-core/references/i18n/${PROJECT_SPEC_LANGUAGE}.md
-FILENAME_AXES_CONVENTION_REF: .claude/skills/aibdd-core/references/filename-axes-convention/nn-prefix-then-title.md
 FILENAME_AXES_TITLE_LANGUAGE_REF: .claude/skills/aibdd-core/references/i18n/${PROJECT_SPEC_LANGUAGE}.md
 SENTENCE_PARTS_FRAMEWORK_REF: .claude/skills/aibdd-core/references/sentence-parts-framework/default.md
-DSL_OUTPUT_CONTRACT_REF: .claude/skills/aibdd-core/references/dsl-output-contract/red-usable-flat-entry.md
 
 # -----------------------------------------------------------------------------
 # 9. PROJECT_OWNED_BDD_STACK（starter 產生實體文件；本檔只宣告路徑）

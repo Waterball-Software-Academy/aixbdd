@@ -15,10 +15,9 @@ Formulation skill。只負責把 `discovery.02-activity-analyze` 已完成的 Ac
 | ID | Path | Phase scope | Purpose |
 |---|---|---|---|
 | R1 | `aibdd-core::spec-package-paths.md` | global | kickoff boundary-aware path SSOT |
-| R2 | `aibdd-core::report-contract.md` | global | DELEGATE report 規範 |
-| R3 | `references/role-and-contract.md` | Phase 1 | caller payload schema + role boundary |
-| R4 | `references/format-reference.md` | Phase 2 | Activity element → `.activity` syntax mapping |
-| R5 | `scripts/decoder.py` | Phase 4 | `.activity` DSL decoder（同時為 SKILL.md Phase 4 syntax validator 與 BDD subject；spec SSOT = `scripts/tests/activity-decode.feature` + `scripts/tests/activity-benchmark.feature`） |
+| R2 | `references/role-and-contract.md` | Phase 1 | caller payload schema + role boundary |
+| R3 | `references/format-reference.md` | Phase 2 | Activity element → `.activity` syntax mapping |
+| R4 | `scripts/decoder.py` | Phase 4 | `.activity` DSL decoder（同時為 SKILL.md Phase 4 syntax validator 與 BDD subject；spec SSOT = `scripts/tests/activity-decode.feature` + `scripts/tests/activity-benchmark.feature`） |
 
 ## §2 SOP
 
@@ -94,7 +93,7 @@ Formulation skill。只負責把 `discovery.02-activity-analyze` 已完成的 Ac
 ### Phase 5 — RETURN report｜回傳 caller 訊號
 > produces: `$$report`
 
-1. `$$report` = DRAFT report JSON per `aibdd-core::report-contract.md` ← {status: "completed", target_path: `$$target_path`, written_paths: `$$written_paths`, syntax_valid: `$$validation_report.ok`, validation_report: `$$validation_report`}
+1. `$$report` = DRAFT report JSON ← {status: "completed", target_path: `$$target_path`, written_paths: `$$written_paths`, syntax_valid: `$$validation_report.ok`, validation_report: `$$validation_report`}
 2. RETURN `$$report`
 
 ## §3 FAILURE & FALLBACK

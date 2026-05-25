@@ -18,6 +18,11 @@ explicit artifact pointers:
 - `acceptance_runner_runtime_ref`: resolved `${ACCEPTANCE_RUNNER_RUNTIME_REF}`
   command/report configuration when available.
 
+When a `resolved ${...}` value above is absent from the payload, it is bound by
+`resolve_args.py` from `.aibdd/arguments.yml`. The `red_handoff` runtime
+snapshot takes precedence over a re-resolved value, so the evaluator checks the
+paths Red actually used rather than paths that may have drifted since.
+
 ## Evidence Boundary
 
 The evaluator may read only:

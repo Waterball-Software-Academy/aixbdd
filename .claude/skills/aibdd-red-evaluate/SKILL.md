@@ -3,153 +3,90 @@ name: aibdd-red-evaluate
 description: Evaluate a completed AIBDD Red Worker run using runtime-visible feature files, step definitions, and test report evidence. Veto false red and hollow red before Green may consume the run.
 metadata:
   user-invocable: true
-  source: project-level dogfooding
 ---
 
 # aibdd-red-evaluate
 
-Evaluate whether a completed Red Worker run produced a legal, meaningful red.
+檢查一次已完成的 Red 跑出來的紅燈，到底是不是「合法又有意義」的紅燈。只有通過這關（verdict `PASS`），下游的 green 才可以接手。這支 skill 只做判斷、出一份評估報告，不去修任何東西。
 
-<!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
-> **Program-like SKILL.md — self-contained notation**
->
-> **3 verb classes** (type auto-derived from verb name):
-> - **D** = Deterministic — no LLM judgment required; future scripting candidate
-> - **S** = Semantic — LLM reasoning required
-> - **I** = Interactive — yields turn to user
->
-> **Yield discipline** (executor 鐵律): **ONLY** `I` verbs yield turn to the user. `D` and `S` verbs MUST NOT pause for user reaction. In particular:
-> - `EMIT $x to user` is **fire-and-forget** — continue immediately to the next step; do not wait for acknowledgment.
-> - `WRITE` / `CREATE` / `DELETE` are side effects, **not** phase boundaries — execution continues to the next sub-step.
-> - Phase transitions (Phase N → Phase N+1) and sub-step transitions are **non-yielding**.
-> - Mid-SOP messages of the form 「要繼續嗎？」/「先 review 一下？」/「先 checkpoint？」/「先停下來確認？」/「want me to proceed?」/「should I continue?」are **FORBIDDEN**. The ONLY way to ask the user is an `[USER INTERACTION] $reply = ASK ...` step.
-> - `STOP` / `RETURN` are terminations, not yields — no next step follows.
->
-> **SSA bindings**: `$x = VERB args` (productive steps name their output);
-> `$x` is phase-local; `$$x` crosses phases (declared in phase header's `> produces:` line).
->
-> **Side effect**: `VERB target ← $payload` — `←` arrow = "write into target".
->
-> **Control flow**: `BRANCH $check ? then : else` (binary) or indented arms (multi);
-> `GOTO #N.M` = jump to Phase N step M (literal `#phase.step`).
->
-> **Canonical verb table** (T = D / S / I):
->
-> | Verb | T | Meaning |
-> |---|---|---|
-> | READ | D | 讀檔 → bytes / text |
-> | WRITE | D | 寫檔（內容已備好） |
-> | CREATE | D | 建立目錄 / 空檔 |
-> | DELETE | D | 刪檔（rollback） |
-> | COMPUTE | D | 純運算 |
-> | DERIVE | D | 從既定規則推算 |
-> | PARSE | D | 字串 → in-memory 結構 |
-> | RENDER | D | template + vars → string |
-> | ASSERT | D | 斷言 invariant；fail-stop |
-> | MATCH | D | regex / pattern 比對 |
-> | TRIGGER | D | 啟動 process / subagent / tool / script；output 可 bind |
-> | DELEGATE | D | 呼叫其他 skill |
-> | MARK | D | 紀錄狀態（譬如 TodoWrite） |
-> | BRANCH | D | 分支（吃 `$check` / `$kind` binding） |
-> | GOTO | D | 跳 `#phase.step` literal |
-> | IF / ELSE / END IF | D | 條件 sub-step |
-> | LOOP / END LOOP | D | 迴圈（必標 budget + exit） |
-> | RETURN | D | 提前結束 phase |
-> | STOP | D | 終止整個 skill |
-> | EMIT | D | 輸出已生成資料（fire-and-forget；**不 yield**，continue 下一 step） |
-> | WAIT | D | 等待已 spawn 的 process |
-> | THINK | S | 內部判斷（不印 user） |
-> | CLASSIFY | S | 多類別分類 → enum 之一 |
-> | JUDGE | S | 二元語意判斷 |
-> | DECIDE | S | 從 user reply / context 推結論 |
-> | DRAFT | S | 生成 prose / 訊息 |
-> | EDIT | S | LLM 推 patch 改既有檔 |
-> | PARAPHRASE | S | 改寫 / 翻譯 prose |
-> | CRITIQUE | S | 批評 / 建議 |
-> | SUMMARIZE | S | 抽取重點 |
-> | EXPLAIN | S | 對 user 解釋 why |
-> | ASK | I | 問 user 等回應（仍配 `[USER INTERACTION]` tag）；**唯一允許 yield turn 給 user 的 verb**。**Planner-level skill** 對 user 的提問**必須 `DELEGATE /clarify-loop`**，不得直接 `ASK`（其他角色的 skill 自決）。 |
-<!-- VERB-GLOSSARY:END -->
+## 這支 skill 在做什麼
 
-## §1 REFERENCES
+1. 接住上游交來的 Red 證據：red handoff 或一組明確的檔案指標。
+2. 把執行器看得到的 feature 檔、step definition、測試報告讀進來。
+3. 跑 Type A 硬性關卡：揪出「假紅燈」（其實是環境壞掉、不是行為缺口造成的紅）。
+4. 跑 Type B 判斷：揪出「空心紅燈」（測試紅了，但根本沒在測使用者看得到的行為）。
+5. 依兩關結果給出 `PASS` 或 `FAIL`，把評估報告交回呼叫者。
 
-```yaml
-references:
-  - path: references/evaluate-input-contract.md
-    purpose: Defines Red evaluate payload and artifact pointer requirements
-  - path: references/evaluate-report-schema.md
-    purpose: Defines Red evaluate PASS FAIL Veto report fields
-  - path: references/hollow-red-rubric.md
-    purpose: Defines semantic hollow-red Veto signals for failing tests that do not test user-visible behavior
-```
+## 執行原則
 
-## §2 SOP
+1. 依序執行、不要跳步；每做一步，在訊息中講出你正在做哪一步。
+2. 你是評估者，不是修理工：只判斷、只記 findings、只出報告，不去改 feature／step-def／產品程式碼。
+3. 除非遇到底下明確寫出的 STOP 條件（通常是證據檔指標缺失），否則一路做到產出評估報告為止；中途不要停下來問「要不要繼續」。
+4. Type A 與 Type B 都是硬性關卡：只要任一關有 findings，verdict 就是 `FAIL`，不能把 finding 降級成「僅供參考」。
 
-### Phase 1 — RECEIVE Red evidence
-> produces: `$$payload`, `$$target_feature_files`, `$$report_path`, `$$runtime_feature_root`, `$$step_def_root`, `$$step_def_files`
+## 參考文件
 
-1. `$$payload` = READ caller payload with `red_handoff` or explicit artifact pointers.
-2. `$$target_feature_files` = PARSE `target_feature_files` per [`references/evaluate-input-contract.md`](references/evaluate-input-contract.md).
-3. `$$report_path` = PARSE final test report path from payload or `red_handoff.behavior_test_report.report_path`.
-4. `$$runtime_feature_root` = PARSE resolved `${FEATURE_ARCHIVE_RUNTIME_REF}` root from payload or runtime snapshot.
-5. `$$step_def_root` = PARSE resolved `${STEP_DEFINITIONS_RUNTIME_REF}` root from payload or runtime snapshot.
-6. `$$step_def_files` = PARSE touched step definition files from payload or `red_handoff.step_defs_touched`.
-7. ASSERT every required artifact pointer exists; on failure STOP with `missing_red_evaluation_artifact`.
+讀到需要時再打開：
 
-### Phase 2 — LOAD visible artifacts
-> produces: `$$test_report`, `$$runtime_features`, `$$step_defs`
+1. [references/evaluate-input-contract.md](references/evaluate-input-contract.md)：定義 Red evaluate 的 payload 與各種證據檔指標的要求。
+2. [references/evaluate-report-schema.md](references/evaluate-report-schema.md)：定義 Red evaluate 的 PASS／FAIL／Veto 報告欄位。
+3. [references/hollow-red-rubric.md](references/hollow-red-rubric.md)：定義「空心紅燈」的語意判斷訊號——也就是測試雖然失敗，卻沒在測使用者看得到的行為。
 
-1. `$$test_report` = READ `$$report_path`.
-2. `$$runtime_features` = READ every target feature file under `$$runtime_feature_root`.
-3. `$$step_defs` = READ every path in `$$step_def_files`.
-4. ASSERT every `$$step_def_files` path is under `$$step_def_root`.
-5. ASSERT `$$test_report` is runner-native evidence and contains no DSL mapping fields.
+## SOP
 
-### Phase 3 — CHECK Type A hard gates
-> produces: `$$type_a_findings`
+### Phase 1 — 接住 Red 的證據
 
-1. `$$type_a_findings` = COMPUTE empty ordered list.
-2. `$collection_ok` = MATCH `$$test_report` contains collected entries for every target feature and Scenario.
-3. IF `$collection_ok` == false:
-   3.1 MARK `$$type_a_findings` with `runner_visibility_failed`
-4. `$missing_step_free` = MATCH `$$test_report` contains no missing, undefined, skipped, xfail, deselected, import, syntax, fixture, or environment error for target Scenarios.
-5. IF `$missing_step_free` == false:
-   5.1 MARK `$$type_a_findings` with `false_red_runner_error`
-6. LOOP per `$step_def` in `$$step_defs`
-   6.1 `$matcher_ok` = MATCH `$step_def` matcher against target Scenario step prose without free-form widening.
-   6.2 IF `$matcher_ok` == false:
-       6.2.1 MARK `$$type_a_findings` with `step_matcher_not_grounded`
-       END IF
-   6.3 `$body_ok` = MATCH `$step_def` body contains no empty body, `pass`, `RED-PENDING`, placeholder throw, unimplemented marker, or direct production internal import.
-   6.4 IF `$body_ok` == false:
-       6.4.1 MARK `$$type_a_findings` with `invalid_step_definition_body`
-       END IF
-   END LOOP
-7. `$failure_ok` = MATCH `$$test_report` first and target failures are assertion/value-difference or expected-exception failures with feature, Scenario, step, and message locations.
-8. IF `$failure_ok` == false:
-   8.1 MARK `$$type_a_findings` with `not_legal_red_failure`
+1. RESOLVE arguments：把本 phase 會引用到的 `${VAR}` 一次綁定，resolver 的 stdout 原樣 EMIT 給用戶；非 0 退出就停下來並透傳 stderr。
+   ```bash
+   python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
+   FEATURE_ARCHIVE_RUNTIME_REF=${FEATURE_ARCHIVE_RUNTIME_REF}
+   STEP_DEFINITIONS_RUNTIME_REF=${STEP_DEFINITIONS_RUNTIME_REF}
+   EOF
+   ```
+2. 接住呼叫者交來的 `red_handoff`（或等價的一組明確檔案指標）。
+3. 解析出這次要評估的 `target_feature_files`（規則見 evaluate-input-contract.md）。
+4. 找出最終測試報告的路徑：payload 有給就用，沒有就用 `red_handoff.behavior_test_report.report_path`。
+5. 找出歸檔後 feature 的根目錄、以及 step definition 的根目錄：以 `red_handoff` 的 runtime snapshot 為準（那是 Red 實際用的路徑），snapshot 沒有才退用上一步 resolver 綁定的 `${FEATURE_ARCHIVE_RUNTIME_REF}`、`${STEP_DEFINITIONS_RUNTIME_REF}`。
+6. 找出這次動過的 step definition 檔清單：payload 有給就用，沒有就用 `red_handoff.step_defs_touched`。
+7. 確認上面每一個必要的證據指標都存在；只要缺一個，就停下來，回報 `stop_reason: missing_red_evaluation_artifact`。
 
-### Phase 4 — JUDGE hollow red
-> produces: `$$type_b_findings`
+### Phase 2 — 把看得到的證據讀進來
 
-1. `$$type_b_findings` = COMPUTE empty ordered list.
-2. LOOP per `$scenario_report` in `$$test_report.target_scenario_reports`
-   2.1 `$evidence_pack` = DERIVE failing step, failure message, feature text, and matching step definition body for `$scenario_report`.
-   2.2 `$hollow_red` = JUDGE `$evidence_pack` against [`references/hollow-red-rubric.md`](references/hollow-red-rubric.md).
-   2.3 IF `$hollow_red` == true:
-       2.3.1 MARK `$$type_b_findings` with `hollow_red`
-       END IF
-   END LOOP
-3. ASSERT Type B is a hard gate; hollow-red findings cannot be downgraded to advisory.
+1. 讀進測試報告。
+2. 讀進歸檔根目錄底下、每一個 target feature 檔。
+3. 讀進 step definition 檔清單裡的每一個檔。
+4. 確認每一個 step-def 檔都落在 step definition 的根目錄底下。
+5. 確認測試報告是「執行器原生的證據」，裡面沒有混進任何 DSL 對應的欄位。
 
-### Phase 5 — EMIT Red evaluation
-> produces: `$$evaluation_report`
+### Phase 3 — 跑 Type A 硬性關卡（揪假紅燈）
 
-1. `$verdict` = DERIVE `PASS` when `$$type_a_findings` and `$$type_b_findings` are empty, else `FAIL`.
-2. `$$evaluation_report` = RENDER report per [`references/evaluate-report-schema.md`](references/evaluate-report-schema.md) using `$$target_feature_files`, artifact pointers, `$$type_a_findings`, `$$type_b_findings`, and `$verdict`.
-3. EMIT `$$evaluation_report` to caller.
+1. 先準備一份空的 findings 清單。
+2. 看測試報告有沒有把每一個 target feature 與 Scenario 都收集進來。
+   1. 沒有，就把 `runner_visibility_failed` 記進 findings。
+3. 看測試報告裡，target Scenario 有沒有出現缺步驟、未定義、被略過、xfail、被 deselect、import 錯、語法錯、fixture 錯、或環境錯。
+   1. 只要有其中之一，就把 `false_red_runner_error` 記進 findings。
+4. 逐一檢查每一個 step definition：
+   1. 看它的 matcher 有沒有確實貼著 target Scenario 步驟的句子，沒有自由放寬。對不上，就把 `step_matcher_not_grounded` 記進 findings。
+   2. 看它的內容有沒有出現空 body、`pass`、`RED-PENDING`、佔位用的 throw、未實作標記、或直接 import 產品內部。有任一項，就把 `invalid_step_definition_body` 記進 findings。
+5. 看報告裡「第一個失敗」與其他 target 失敗，是不是 assertion／值差異或預期例外造成的，而且帶有 feature、Scenario、step、訊息的位置。
+   1. 不是，就把 `not_legal_red_failure` 記進 findings。
 
-## §3 CROSS-REFERENCES
+### Phase 4 — 判斷空心紅燈（Type B）
 
-- `/aibdd-red-execute` — Worker skill that produces the Red run evidence evaluated here.
-- `/aibdd-green-execute` — may consume only Red runs whose evaluation verdict is `PASS`.
+1. 先準備一份空的 findings 清單。
+2. 逐一檢查報告裡每一個 target Scenario 的結果：
+   1. 整理出一組證據：失敗的那一步、失敗訊息、feature 文字、以及對應的 step definition 內容。
+   2. 拿這組證據對照 hollow-red-rubric.md，判斷它是不是空心紅燈。
+   3. 是空心紅燈，就把 `hollow_red` 記進 findings。
+3. Type B 是硬性關卡：空心紅燈的 finding 不能被降級成「僅供參考」。
+
+### Phase 5 — 交出 Red 評估結果
+
+1. 決定 verdict：Type A 與 Type B 的 findings 都是空的就 `PASS`，否則 `FAIL`。
+2. 依 evaluate-report-schema.md，用 `target_feature_files`、各證據指標、Type A findings、Type B findings、以及 verdict，render 出評估報告。
+3. 把評估報告交回給呼叫者。
+
+## 完成後接給誰
+
+1. `/aibdd-red-execute`：產生這裡所評估的 Red 證據的 Worker skill。
+2. `/aibdd-green-execute`：只能接收評估 verdict 為 `PASS` 的 Red 跑次。

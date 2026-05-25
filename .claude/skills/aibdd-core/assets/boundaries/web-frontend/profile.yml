@@ -56,16 +56,6 @@ allowed_l4_target_prefixes:
   - "url:"          # url-then targets
   - "route:"        # route-given targets
 
-test_strategy:
-  layer: e2e
-  io_boundary:
-    do_not_mock:
-      - Next.js app (dev server)
-      - React component rendering
-      - browser DOM
-    must_stub:
-      - backend API (via Playwright `page.route` interception in the fixture closure per nextjs-playwright variant; mock state lives in test-process, not dev-server)
-
 # Future Expansion (not active in v1):
 #   state_specifier: Zod-schema-based mock data-model formulation skill
 #     (frontend equivalent of /aibdd-form-entity-spec)

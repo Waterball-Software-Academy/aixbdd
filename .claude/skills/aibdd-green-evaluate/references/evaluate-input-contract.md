@@ -13,6 +13,10 @@ explicit artifact pointers:
 - `acceptance_runner_runtime_ref`: resolved `${ACCEPTANCE_RUNNER_RUNTIME_REF}`
   command/report configuration when available.
 
+When the runner configuration pointer is absent from the payload, it is bound by
+`resolve_args.py` from `.aibdd/arguments.yml`; an embedded pointer takes
+precedence.
+
 ## Evidence Boundary
 
 The evaluator may read only the final full-suite report and the explicit runner

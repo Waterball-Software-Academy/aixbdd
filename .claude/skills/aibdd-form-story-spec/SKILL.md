@@ -98,8 +98,6 @@ component file、不創造 design system 元件、不挑 Story 數量、不寫�
 references:
   - path: aibdd-core::spec-package-paths.md
     purpose: kickoff boundary-aware path SSOT
-  - path: aibdd-core::report-contract.md
-    purpose: DELEGATE report 規範
   - path: aibdd-core::preset-contract/web-frontend.md
     purpose: Story export 作為 boundary I4 binding anchor 的契約
   - path: aibdd-core::assets/boundaries/web-frontend/variants/nextjs-playwright.md
@@ -326,7 +324,7 @@ references:
 ### Phase 5 — RETURN report｜回傳 caller 訊號
 > produces: `$$report`
 
-1. `$$report` = DRAFT report JSON per `aibdd-core::report-contract.md` ← {
+1. `$$report` = DRAFT report JSON ← {
      status: "completed",
      target_dir: `$$target_dir`,
      component_target_path: `$$component_target_path`,

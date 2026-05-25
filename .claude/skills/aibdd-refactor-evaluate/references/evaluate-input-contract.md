@@ -17,6 +17,10 @@ explicit artifact pointers:
 - `acceptance_runner_runtime_ref`: resolved `${ACCEPTANCE_RUNNER_RUNTIME_REF}`
   command/report configuration when available.
 
+When a `resolved ${...}` value above is absent from the payload, it is bound by
+`resolve_args.py` from `.aibdd/arguments.yml`; an embedded pointer takes
+precedence.
+
 ## Evidence Boundary
 
 The evaluator may read only the full-suite report, the resolved dev

@@ -22,12 +22,3 @@ persistence_handler:
   handler_id: state-builder
   state_ref_pattern: "data/*.dbml#<table>"
   coverage_gate: deferred-v1
-
-test_strategy:
-  layer: e2e
-  io_boundary:
-    do_not_mock:
-      - FastAPI app
-      - SQLAlchemy persistence
-      - PostgreSQL test database
-    must_stub: []

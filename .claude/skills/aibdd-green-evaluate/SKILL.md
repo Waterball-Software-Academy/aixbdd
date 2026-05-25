@@ -3,123 +3,70 @@ name: aibdd-green-evaluate
 description: Evaluate a completed AIBDD Green Worker run by checking only the final full acceptance suite test report. Pass only when the suite is truly all green.
 metadata:
   user-invocable: true
-  source: project-level dogfooding
 ---
 
 # aibdd-green-evaluate
 
-Evaluate whether a completed Green Worker run ended with a truly all-green full acceptance suite.
+檢查一次已完成的 Green 跑次，是不是真的以「整套 acceptance 測試全綠」收尾。只看那一份最終的全套測試報告；只有真的全綠才給 `PASS`。這支 skill 只做判斷、出一份評估報告，不去修任何東西。
 
-<!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
-> **Program-like SKILL.md — self-contained notation**
->
-> **3 verb classes** (type auto-derived from verb name):
-> - **D** = Deterministic — no LLM judgment required; future scripting candidate
-> - **S** = Semantic — LLM reasoning required
-> - **I** = Interactive — yields turn to user
->
-> **Yield discipline** (executor 鐵律): **ONLY** `I` verbs yield turn to the user. `D` and `S` verbs MUST NOT pause for user reaction. In particular:
-> - `EMIT $x to user` is **fire-and-forget** — continue immediately to the next step; do not wait for acknowledgment.
-> - `WRITE` / `CREATE` / `DELETE` are side effects, **not** phase boundaries — execution continues to the next sub-step.
-> - Phase transitions (Phase N → Phase N+1) and sub-step transitions are **non-yielding**.
-> - Mid-SOP messages of the form 「要繼續嗎？」/「先 review 一下？」/「先 checkpoint？」/「先停下來確認？」/「want me to proceed?」/「should I continue?」are **FORBIDDEN**. The ONLY way to ask the user is an `[USER INTERACTION] $reply = ASK ...` step.
-> - `STOP` / `RETURN` are terminations, not yields — no next step follows.
->
-> **SSA bindings**: `$x = VERB args` (productive steps name their output);
-> `$x` is phase-local; `$$x` crosses phases (declared in phase header's `> produces:` line).
->
-> **Side effect**: `VERB target ← $payload` — `←` arrow = "write into target".
->
-> **Control flow**: `BRANCH $check ? then : else` (binary) or indented arms (multi);
-> `GOTO #N.M` = jump to Phase N step M (literal `#phase.step`).
->
-> **Canonical verb table** (T = D / S / I):
->
-> | Verb | T | Meaning |
-> |---|---|---|
-> | READ | D | 讀檔 → bytes / text |
-> | WRITE | D | 寫檔（內容已備好） |
-> | CREATE | D | 建立目錄 / 空檔 |
-> | DELETE | D | 刪檔（rollback） |
-> | COMPUTE | D | 純運算 |
-> | DERIVE | D | 從既定規則推算 |
-> | PARSE | D | 字串 → in-memory 結構 |
-> | RENDER | D | template + vars → string |
-> | ASSERT | D | 斷言 invariant；fail-stop |
-> | MATCH | D | regex / pattern 比對 |
-> | TRIGGER | D | 啟動 process / subagent / tool / script；output 可 bind |
-> | DELEGATE | D | 呼叫其他 skill |
-> | MARK | D | 紀錄狀態（譬如 TodoWrite） |
-> | BRANCH | D | 分支（吃 `$check` / `$kind` binding） |
-> | GOTO | D | 跳 `#phase.step` literal |
-> | IF / ELSE / END IF | D | 條件 sub-step |
-> | LOOP / END LOOP | D | 迴圈（必標 budget + exit） |
-> | RETURN | D | 提前結束 phase |
-> | STOP | D | 終止整個 skill |
-> | EMIT | D | 輸出已生成資料（fire-and-forget；**不 yield**，continue 下一 step） |
-> | WAIT | D | 等待已 spawn 的 process |
-> | THINK | S | 內部判斷（不印 user） |
-> | CLASSIFY | S | 多類別分類 → enum 之一 |
-> | JUDGE | S | 二元語意判斷 |
-> | DECIDE | S | 從 user reply / context 推結論 |
-> | DRAFT | S | 生成 prose / 訊息 |
-> | EDIT | S | LLM 推 patch 改既有檔 |
-> | PARAPHRASE | S | 改寫 / 翻譯 prose |
-> | CRITIQUE | S | 批評 / 建議 |
-> | SUMMARIZE | S | 抽取重點 |
-> | EXPLAIN | S | 對 user 解釋 why |
-> | ASK | I | 問 user 等回應（仍配 `[USER INTERACTION]` tag）；**唯一允許 yield turn 給 user 的 verb**。**Planner-level skill** 對 user 的提問**必須 `DELEGATE /clarify-loop`**，不得直接 `ASK`（其他角色的 skill 自決）。 |
-<!-- VERB-GLOSSARY:END -->
+## 這支 skill 在做什麼
 
-## §1 REFERENCES
+1. 接住上游交來的 Green 證據：green handoff 或一組明確的檔案指標。
+2. 把那份「最終全套 acceptance 測試報告」讀進來，確認它真的是全套、不是只跑 target 的子集。
+3. 檢查報告是不是真的零失敗、零錯誤，而且沒有用不當的 skip／xfail／deselect 把場景藏起來。
+4. 依檢查結果給出 `PASS` 或 `FAIL`，把評估報告交回呼叫者。
 
-```yaml
-references:
-  - path: references/evaluate-input-contract.md
-    purpose: Defines Green evaluate payload and final full-suite report pointer requirements
-  - path: references/evaluate-report-schema.md
-    purpose: Defines Green evaluate PASS FAIL Veto report fields
-```
+## 執行原則
 
-## §2 SOP
+1. 依序執行、不要跳步；每做一步，在訊息中講出你正在做哪一步。
+2. 你是評估者，不是修理工：只判斷、只記 findings、只出報告。
+3. 只認那一份最終的全套測試報告當證據；不要拿 target-only 的子集報告頂替。
+4. 除非遇到底下明確寫出的 STOP 條件（報告檔指標缺失），否則一路做到產出評估報告為止；中途不要停下來問「要不要繼續」。
 
-### Phase 1 — RECEIVE Green report
-> produces: `$$payload`, `$$report_path`, `$$runner_ref`
+## 參考文件
 
-1. `$$payload` = READ caller payload with `green_handoff` or explicit artifact pointers.
-2. `$$report_path` = PARSE final full acceptance suite test report path per [`references/evaluate-input-contract.md`](references/evaluate-input-contract.md).
-3. `$$runner_ref` = PARSE resolved `${ACCEPTANCE_RUNNER_RUNTIME_REF}` command/report config when supplied.
-4. ASSERT `$$report_path` exists; on failure STOP with `missing_green_full_suite_report`.
+讀到需要時再打開：
 
-### Phase 2 — LOAD full-suite report
-> produces: `$$test_report`
+1. [references/evaluate-input-contract.md](references/evaluate-input-contract.md)：定義 Green evaluate 的 payload，以及最終全套報告指標的要求。
+2. [references/evaluate-report-schema.md](references/evaluate-report-schema.md)：定義 Green evaluate 的 PASS／FAIL／Veto 報告欄位。
 
-1. `$$test_report` = READ `$$report_path`.
-2. ASSERT `$$test_report` identifies the run as the full acceptance suite, not a target-only subset.
-3. ASSERT `$$test_report` is runner-native evidence and contains no DSL mapping fields.
+## SOP
 
-### Phase 3 — CHECK all pass
-> produces: `$$findings`
+### Phase 1 — 接住 Green 的報告
 
-1. `$$findings` = COMPUTE empty ordered list.
-2. `$failures_zero` = MATCH `$$test_report` has `0 failed`.
-3. IF `$failures_zero` == false:
-   3.1 MARK `$$findings` with `full_suite_failed`
-4. `$errors_zero` = MATCH `$$test_report` has `0 errors`.
-5. IF `$errors_zero` == false:
-   5.1 MARK `$$findings` with `full_suite_error`
-6. `$skip_safe` = MATCH `$$test_report` contains no scenario hidden by improper skip, xfail, deselect, or collection omission.
-7. IF `$skip_safe` == false:
-   7.1 MARK `$$findings` with `not_assertion_passed`
+1. RESOLVE arguments：把本 phase 會引用到的 `${VAR}` 一次綁定，resolver 的 stdout 原樣 EMIT 給用戶；非 0 退出就停下來並透傳 stderr。
+   ```bash
+   python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
+   ACCEPTANCE_RUNNER_RUNTIME_REF=${ACCEPTANCE_RUNNER_RUNTIME_REF}
+   EOF
+   ```
+2. 接住呼叫者交來的 `green_handoff`（或等價的一組明確檔案指標）。
+3. 解析出「最終全套 acceptance 測試報告」的路徑（規則見 evaluate-input-contract.md）。
+4. 確認報告路徑存在；找不到就停下來，回報 `stop_reason: missing_green_full_suite_report`。
 
-### Phase 4 — EMIT Green evaluation
-> produces: `$$evaluation_report`
+### Phase 2 — 把全套報告讀進來
 
-1. `$verdict` = DERIVE `PASS` when `$$findings` is empty, else `FAIL`.
-2. `$$evaluation_report` = RENDER report per [`references/evaluate-report-schema.md`](references/evaluate-report-schema.md) using `$$report_path`, `$$runner_ref`, `$$findings`, and `$verdict`.
-3. EMIT `$$evaluation_report` to caller.
+1. 讀進那份測試報告。
+2. 確認報告本身標示這次跑的是「全套 acceptance 測試」，不是只跑 target 的子集。
+3. 確認報告是執行器原生的證據，裡面沒有混進任何 DSL 對應的欄位。
 
-## §3 CROSS-REFERENCES
+### Phase 3 — 檢查是不是真的全過
 
-- `/aibdd-green-execute` — Worker skill that produces the final full acceptance suite report evaluated here.
-- `/aibdd-refactor-execute` — may proceed only after Green evaluation verdict is `PASS`.
+1. 先準備一份空的 findings 清單。
+2. 看報告是不是 `0 failed`。
+   1. 不是，就把 `full_suite_failed` 記進 findings。
+3. 看報告是不是 `0 errors`。
+   1. 不是，就把 `full_suite_error` 記進 findings。
+4. 看報告裡有沒有場景被不當的 skip、xfail、deselect 或收集遺漏給藏起來。
+   1. 有，就把 `not_assertion_passed` 記進 findings。
+
+### Phase 4 — 交出 Green 評估結果
+
+1. 決定 verdict：findings 是空的就 `PASS`，否則 `FAIL`。
+2. 依 evaluate-report-schema.md，用報告路徑、runner 設定、findings、以及 verdict，render 出評估報告。
+3. 把評估報告交回給呼叫者。
+
+## 完成後接給誰
+
+1. `/aibdd-green-execute`：產生這裡所評估的最終全套 acceptance 報告的 Worker skill。
+2. `/aibdd-refactor-execute`：只有在 Green 評估 verdict 為 `PASS` 之後才可以接著做。
