@@ -181,6 +181,50 @@ def step_assert_column_target(context, table: str, col: str, expected: str):
     )
 
 
+@then('the column "{table}.{col}" has has_increment {expected}')
+def step_assert_column_has_increment(context, table: str, col: str, expected: str):
+    part = _part_by_table_name(context, table)
+    matches = [c for c in part.columns if c.name == col]
+    assert matches, f"{table}: no column named {col!r}"
+    expected_bool = expected.strip().lower() == "true"
+    assert matches[0].has_increment == expected_bool, (
+        f"{table}.{col}.has_increment: expected {expected_bool}, got {matches[0].has_increment}"
+    )
+
+
+@then('the column "{table}.{col}" has has_default {expected}')
+def step_assert_column_has_default(context, table: str, col: str, expected: str):
+    part = _part_by_table_name(context, table)
+    matches = [c for c in part.columns if c.name == col]
+    assert matches, f"{table}: no column named {col!r}"
+    expected_bool = expected.strip().lower() == "true"
+    assert matches[0].has_default == expected_bool, (
+        f"{table}.{col}.has_default: expected {expected_bool}, got {matches[0].has_default}"
+    )
+
+
+@then('the column "{table}.{col}" has default_value "{expected}"')
+def step_assert_column_default_value(context, table: str, col: str, expected: str):
+    part = _part_by_table_name(context, table)
+    matches = [c for c in part.columns if c.name == col]
+    assert matches, f"{table}: no column named {col!r}"
+    actual = matches[0].default_value
+    assert actual == expected, (
+        f"{table}.{col}.default_value: expected {expected!r}, got {actual!r}"
+    )
+
+
+@then('the column "{table}.{col}" has default_value null')
+def step_assert_column_default_value_null(context, table: str, col: str):
+    part = _part_by_table_name(context, table)
+    matches = [c for c in part.columns if c.name == col]
+    assert matches, f"{table}: no column named {col!r}"
+    actual = matches[0].default_value
+    assert actual is None, (
+        f"{table}.{col}.default_value: expected None, got {actual!r}"
+    )
+
+
 def _maybe_assert(col, row, heading: str, getter):
     if heading not in row.headings:
         return

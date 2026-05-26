@@ -31,6 +31,7 @@ from __future__ import annotations
 from dsl_cli.models import (
     ApiOperationPart,
     CandidateBinding,
+    DatatableBinding,
     DbmlRefPart,
     DbmlTablePart,
     DSLInstructionTemplate,
@@ -99,6 +100,7 @@ def _fallback_op_id(part):
 
 
 def _for_dbml_table(part):
+    not_null_names = {c.name for c in part.not_null_columns}
     builder = DSLInstructionTemplate(
         handler="state-builder",
         name=f"{part.table_name}.state-builder",
@@ -107,7 +109,17 @@ def _for_dbml_table(part):
         candidate_bindings=tuple(
             CandidateBinding(key=c.name, target=c.target_part_path)
             for c in part.columns
+            if c.name not in not_null_names
         ),
+        datatable_bindings={
+            c.name: DatatableBinding(
+                target=c.target_part_path,
+                required=False,
+                default_value=c.default_value if c.has_default else "<FILL IN>",
+            )
+            for c in part.not_null_columns
+            if not (c.is_pk and c.has_increment)
+        },
     )
     verifier = DSLInstructionTemplate(
         handler="state-verifier",

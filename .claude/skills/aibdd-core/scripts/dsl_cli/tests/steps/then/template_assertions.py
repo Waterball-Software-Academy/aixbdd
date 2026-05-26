@@ -48,3 +48,36 @@ def step_assert_template_target_part_path(context, name: str, expected: str):
         f"template {name}.target_part_path mismatch:\n"
         f"  expected: {expected}\n  actual:   {t.target_part_path}"
     )
+
+
+@then('template "{name}" has no datatable_binding "{key}"')
+def step_assert_no_datatable_binding(context, name: str, key: str):
+    t = _by_name(context, name)
+    assert key not in t.datatable_bindings, (
+        f"template {name} should NOT have datatable_binding {key!r}, but it does"
+    )
+
+
+@then('template "{name}" datatable_binding "{key}" has required {expected}')
+def step_assert_datatable_required(context, name: str, key: str, expected: str):
+    t = _by_name(context, name)
+    assert key in t.datatable_bindings, (
+        f"template {name} has no datatable_binding {key!r}; got {list(t.datatable_bindings)}"
+    )
+    expected_bool = expected.strip().lower() == "true"
+    actual = t.datatable_bindings[key].required
+    assert actual == expected_bool, (
+        f"template {name}.datatable_bindings[{key}].required: expected {expected_bool}, got {actual}"
+    )
+
+
+@then('template "{name}" datatable_binding "{key}" has default_value "{expected}"')
+def step_assert_datatable_default_value(context, name: str, key: str, expected: str):
+    t = _by_name(context, name)
+    assert key in t.datatable_bindings, (
+        f"template {name} has no datatable_binding {key!r}; got {list(t.datatable_bindings)}"
+    )
+    actual = t.datatable_bindings[key].default_value
+    assert actual == expected, (
+        f"template {name}.datatable_bindings[{key}].default_value: expected {expected!r}, got {actual!r}"
+    )
