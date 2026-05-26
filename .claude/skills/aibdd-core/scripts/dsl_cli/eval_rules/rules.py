@@ -86,6 +86,14 @@ def rule_schema_completeness(entry: DSLEntry, entry_file: Path):
                 entry_file=entry_file,
                 message=f"必要欄 {field} 為空",
             )
+    for key, b in entry.datatable_bindings.items():
+        if b.default_value is not None and b.default_value.strip() == "<FILL IN>":
+            yield Violation(
+                rule_id="schema-completeness",
+                entry_name=entry.name,
+                entry_file=entry_file,
+                message=f"datatable_bindings[{key}].default_value 仍為 `<FILL IN>` 占位符；SEMANTIC 階段尚未填入",
+            )
 
 
 def rule_format_key_binding_bijection(entry: DSLEntry, entry_file: Path):
