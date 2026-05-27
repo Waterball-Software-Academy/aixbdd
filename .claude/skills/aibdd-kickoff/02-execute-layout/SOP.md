@@ -40,7 +40,7 @@
     - `${KICKOFF_BOUNDARY_DESCRIPTION}` → `$description`
 
 11. **永遠執行** — 填 diagram placeholder。Edit `${dst}/specs/architecture/component-diagram.class.mmd`：
-    - `${KICKOFF_BOUNDARY_TYPE}` → `$type`
+    - `${KICKOFF_BOUNDARY_TYPE}` → `$type` 並把 `-` 全部替換為 `_`（Mermaid `<<...>>` annotation 只接受 `[A-Za-z0-9_]+`，連字符會觸發 parse error；boundary.yml 端不受此規則影響，維持原 hyphen 寫法）。
 
 12. IF `$decisions.stack == java_e2e`：
     DERIVE `$base_package`：
