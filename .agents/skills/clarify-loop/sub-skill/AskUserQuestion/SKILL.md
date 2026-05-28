@@ -1,3 +1,11 @@
+---
+name: ask-user-question
+description: "clarify-loop AskUserQuestion route。"
+metadata:
+  user-invocable: false
+  source: project-level
+---
+
 # clarify-loop sub-skill: AskUserQuestion
 
 此文件只定義 ask-question 路徑。外層 router 已完成 payload intake / 排序 / 白話文重寫，這裡承接互動、回收答案、resolve 與 sweep。

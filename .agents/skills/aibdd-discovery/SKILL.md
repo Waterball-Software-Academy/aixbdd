@@ -1,3 +1,11 @@
+---
+name: aibdd-discovery
+description: "AIBDD Discovery SOP。"
+metadata:
+  user-invocable: true
+  source: project-level
+---
+
 # AIxBDD - Discovery
 
 嚴格遵照底下 Principles 來執行 SOP。
@@ -60,4 +68,3 @@
 3. EXECUTE the sub-sop: `03-atomic-rules-analyze/SOP.md`
 
 4. 和用戶說道（可使用不同詞彙但維持語意）：「OK 基本上 /aibdd-discovery 所有分析步驟都完成了，如沒問題，可以執行 /aibdd-plan，來正式進入內外部邊界介面的規劃以及 DSL 的設計。」
-

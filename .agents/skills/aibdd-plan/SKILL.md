@@ -1,3 +1,11 @@
+---
+name: aibdd-plan
+description: "AIBDD Plan SOP。"
+metadata:
+  user-invocable: true
+  source: project-level
+---
+
 # AIxBDD - Plan
 
 嚴格遵照底下 Principles 來執行 SOP。

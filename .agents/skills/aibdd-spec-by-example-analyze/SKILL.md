@@ -1,3 +1,11 @@
+---
+name: aibdd-spec-by-example-analyze
+description: "AIBDD Spec by Example Analyze SOP。"
+metadata:
+  user-invocable: true
+  source: project-level
+---
+
 # AIxBDD - Spec by Example Analyze
 
 嚴格遵照底下 Principles 來執行 SOP。

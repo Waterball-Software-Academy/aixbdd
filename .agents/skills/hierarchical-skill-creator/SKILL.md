@@ -1,3 +1,11 @@
+---
+name: hierarchical-skill-creator
+description: "Hierarchical skill 撰寫格式。"
+metadata:
+  user-invocable: true
+  source: project-level
+---
+
 # Hierarchical Skill 撰寫格式 — 九大特徵
 
 每條規則以 **bullet + 強情態定義 + 行內 `✗`／`✓` 對照** 呈現；先把規則本身定義清楚再貼具象正反例，避免脫錨。
