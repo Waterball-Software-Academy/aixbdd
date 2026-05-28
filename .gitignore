@@ -1,16 +1,19 @@
-# Deny everything by default — this repo only tracks .claude/skills.
+# Deny everything by default — this repo only tracks the skills tree.
 # Everything else in the working tree is a side-effect of running skills.
 /*
 /specs/
 
-# Re-allow the path down to .claude/skills
+# Re-allow the path down to the skills tree (canonical) and the Claude symlink.
 !/.gitignore
 !/README.md
 !/LICENSE
 !/NOTICE
+!/.agents/
+/.agents/*
+!/.agents/skills/
 !/.claude/
 /.claude/*
-!/.claude/skills/
+!/.claude/skills
 
 # Still ignore noise even inside tracked paths
 .DS_Store
@@ -20,4 +23,5 @@ __pycache__/
 
 # Generated reasoning quality reports (programlike-skill-creator Phase 7 output;
 # regenerated on each eval_reasoning_*.py run).
+.agents/skills/**/.quality/
 .claude/skills/**/.quality/

@@ -37,6 +37,20 @@ If ordinary AI coding feels magical right up until it becomes expensive, flaky, 
 - **PMs, BAs, and spec owners** who want a workflow where business intent survives contact with implementation.
 - **Teams already using AI coding agents** but tired of reruns, shallow fixes, and "green" outputs that were never truly grounded.
 
+## Skill Layout
+
+The canonical skill tree lives at `.agents/skills/` (Agent Skills standard). `.claude/skills` is a symlink that points to it, so Claude Code and Codex both load the same files without duplication.
+
+**Windows users:** Git does not create symlinks by default on Windows. Before cloning, enable symlink support so `.claude/skills` resolves correctly:
+
+```bash
+# One-time, global
+git config --global core.symlinks true
+
+# Or per-clone
+git clone -c core.symlinks=true <repo-url>
+```
+
 ## Quick Start
 
 1. Run `/aibdd-kickoff` (Pick the tech-stack, full-loaded with aibdd configuration)
