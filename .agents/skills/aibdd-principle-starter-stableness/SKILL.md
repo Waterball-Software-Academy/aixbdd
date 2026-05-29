@@ -1,3 +1,11 @@
+---
+name: aibdd-principle-starter-stableness
+description: "AIBDD starter stableness 原則。"
+metadata:
+  user-invocable: true
+  source: project-level
+---
+
 # aibdd-principle-starter-stableness
 
 AI x BDD Starter 穩定性原則。

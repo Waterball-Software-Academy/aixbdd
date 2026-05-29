@@ -1,3 +1,11 @@
+---
+name: specformula-fork
+description: "clarify-loop SpecFormula fork route。"
+metadata:
+  user-invocable: false
+  source: project-level
+---
+
 # clarify-loop sub-skill: SpecFormula-Fork
 
 此文件只定義 `specformula-fork` 路徑。外層 router 已完成 payload intake / 排序 / 白話文重寫，這裡只做 SpecFormula `fork` 工具專屬驗證與派發。

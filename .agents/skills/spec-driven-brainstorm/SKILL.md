@@ -1,3 +1,11 @@
+---
+name: spec-driven-brainstorm
+description: "Spec-driven brainstorm SOP。"
+metadata:
+  user-invocable: true
+  source: project-level
+---
+
 # Spec-Driven Brainstorm
 
 引導 user 把對話式 ideation 逐步沉澱成 issue-organized `spec.md`；每輪自動推斷下一個應深入的 subsection；`spec.md` 永遠維持 absolute design — 無 hedging、無歷史脈絡、無 brainstorming variants 殘留。
