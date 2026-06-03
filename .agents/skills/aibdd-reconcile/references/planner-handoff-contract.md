@@ -19,10 +19,15 @@ Every cascaded planner receives a payload with these fields:
 | `reconciliation.record_path` | yes | Root-level `RECONCILE_RECORD.md` path. |
 | `reconciliation.mode` | yes | `start_new` or `merge_existing`. |
 
-## Discovery Payload
+## Flows-Specify Payload
 
-`/aibdd-discovery` may ignore the reconciliation object if it does not need it for runtime decisions,
+`/aibdd-flows-specify` may ignore the reconciliation object if it does not need it for runtime decisions,
 but the payload must still echo the shared fields so downstream phases have one stable caller contract.
+
+## Rules-Specify Payload
+
+`/aibdd-rules-specify` may ignore the reconciliation object as well, but it must tolerate the shared
+fields and must run only after `/aibdd-flows-specify` has produced the feature-file skeletons it consumes.
 
 ## Plan Payload
 

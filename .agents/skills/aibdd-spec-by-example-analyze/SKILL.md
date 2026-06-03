@@ -46,11 +46,11 @@ metadata:
 
 請執行到哪讀到哪，千萬不要提早閱讀後續文件，這會讓用戶起始體驗到的延遲度很久，SOP 寫啥就做啥，沒叫你 [THINK/REASONING] 就絕對不准啟用 EXTENDED THINKING。
 
-0. 在 CWD 底下 grep 搜尋 `**/arguments.yml` 檔案，做 parameters binding for all following phases，這些參數後續每一 phase 都會用到。此檔案一定存在，如不存在請直接停止執行，向使用者回報：「我在 ${CWD} 底下找不到 **/arguments.yml 檔案，你是否已經執行過 /aibdd-kickoff、/aibdd-discovery、/aibdd-plan 了？」
+0. 在 CWD 底下 grep 搜尋 `**/arguments.yml` 檔案，做 parameters binding for all following phases，這些參數後續每一 phase 都會用到。此檔案一定存在，如不存在請直接停止執行，向使用者回報：「我在 ${CWD} 底下找不到 **/arguments.yml 檔案，你是否已經執行過 /aibdd-kickoff、/aibdd-flows-specify、/aibdd-rules-specify、/aibdd-plan 了？」
 
 1. BIND feature files——TRIGGER impact matrix query（只取本輪確定要改寫的 `.feature`：`update`／`add`），將 stdout JSON 之 `entries` 物化成 `${SCOPED_FEATURE_PATHS}`；後續所有 sub-SOP 一律沿用 `${SCOPED_FEATURE_PATHS}`。
    ```bash
-   python3 .claude/skills/aibdd-discovery/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+   python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
      --matrix ${IMPACT_MATRIX_YML} query \
      --suffix .feature \
      --change-type update \

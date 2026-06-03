@@ -6,7 +6,7 @@
 
 ## §1 角色定位
 
-Formulation skill。綁定 DSL = `.activity`（扁平事件流）。被 `aibdd-discovery` DELEGATE；只把上游 `activity_analysis.activity` 中的 modeling elements 翻譯成 artifact，不自行重新分析需求、不檢查顆粒度、不新增 Actor / Action / Decision / Fork。
+Formulation skill。綁定 DSL = `.activity`（扁平事件流）。被 `/aibdd-flows-specify` DELEGATE；只把上游 `activity_analysis.activity` 中的 modeling elements 翻譯成 artifact，不自行重新分析需求、不檢查顆粒度、不新增 Actor / Action / Decision / Fork。
 
 ## §2 入口契約 — 推理包 schema
 
@@ -30,6 +30,6 @@ Formulation skill。綁定 DSL = `.activity`（扁平事件流）。被 `aibdd-d
 
 ## §4 上游責任邊界
 
-- `self-contained`、phase-slice merge、feature-index anti-pattern、以及 branch terminal 完整性屬於上游 `/aibdd-discovery` 的建模責任。
+- `self-contained`、phase-slice merge、feature-index anti-pattern、以及 branch terminal 完整性屬於上游 `/aibdd-flows-specify` 的建模責任。
 - 本 skill **不得**因為看起來流程不完整就自行補 STEP、補 branch target、補 terminal feature。
 - 若 caller payload 顯示此 Activity 尚未建模完成（例如 `exit_status != complete` 或 `graph_gaps[]` 非空），本 skill 必須拒絕落檔，而不是把半成品翻譯成 `.activity` artifact。

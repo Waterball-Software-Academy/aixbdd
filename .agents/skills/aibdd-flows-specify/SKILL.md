@@ -1,14 +1,14 @@
 ---
-name: aibdd-discovery
-description: "AIBDD Discovery SOP。"
+name: aibdd-flows-specify
+description: "AIBDD Flows Specify SOP。把本輪需求敘事收斂為 spec.md SSOT、掃描 boundary truth、維護 impact matrix、拆分 function package charters，再依 API 級顆粒度把每段需求流程萃取成 business-action `.feature` 清單（rule-less 骨架）。TRIGGER when 使用者下 /aibdd-flows-specify、要開始需求探索／盤點本輪要做哪些 feature 與其範圍切分、或被 /aibdd-reconcile cascade 委派最上游 planner。SKIP when CWD 下找不到 arguments.yml（請先 /aibdd-kickoff）、或本輪只是要為既有 `.feature` 列舉 atomic rule（改用 /aibdd-rules-specify）。"
 metadata:
   user-invocable: true
   source: project-level
 ---
 
-# AIxBDD - Discovery
+# AIxBDD - Flows Specify
 
-嚴格遵照底下 Principles 來執行 SOP。
+嚴格遵照底下 Principles 來執行 SOP。本 skill 是 plan 迭代的最上游 planner：先收斂需求真相與影響範圍（Phase 01），再把需求流程萃取成 feature file 清單（Phase 02）。完成後交棒 `/aibdd-rules-specify` 為每個 `.feature` 列舉 atomic rules。
 
 ## PRINCIPLE: CWD 為產出錨點
 
@@ -34,23 +34,21 @@ metadata:
 - **Tier 0（phase）**：對應本檔 `# SOP` 最外層每一項；每一項對應一個 sub-SOP 目錄（例：`01-sourcing-and-packaging/`）。這一層的勾選語意是「該 phase 的細項已全部展開**且**依 `SOP.md` 跑完」。
 - **Tier 1（phase 內細項）**：僅在目前執行中的 phase 建立；對應該 phase `SOP.md` 裡**第一層編號步驟**拆解出的動作（`READ`／`WRITE`／`DERIVE` 等）。編號建議：`(phase序)`、`(phase序-子序)`（例：`1`、`1-1`），跨輪可對照；**進入該 phase 時**以 **`TODOCREATE`／`TASKCREATE`（或等效）** 補齊子項。
 
-**Tier 0 範例**（語意範本；實務請用 **`TODOCREATE`／`TASKCREATE`（或等效）** 建立對應任務，結構對齊即可。`<NN-subsop>` 為占位符，以本檔 `# SOP` 實際路徑取代）：
+**Tier 0 範例**（語意範本；實務請用 **`TODOCREATE`／`TASKCREATE`（或等效）** 建立對應任務，結構對齊即可）：
 
 ```markdown
-- [ ] (1) 展開並執行至完成：`01-<NN-subsop>/SOP.md`（細項見下）。
-- [ ] (2) 展開並執行至完成：`02-<NN-subsop>/SOP.md`。
-- [ ] (3) 展開並執行至完成：`03-<NN-subsop>/SOP.md`。
+- [ ] (1) 展開並執行至完成：`01-sourcing-and-packaging/SOP.md`（細項見下）。
+- [ ] (2) 展開並執行至完成：`02-feature-file-list-analyze/SOP.md`。
 ```
 
 **進入 (1) 後**才把 (1) 拆成 Tier 1；其餘 phase 在 Tier 0 維持單列：
 
 ```markdown
-- [ ] (1) 展開並執行至完成：`01-<NN-subsop>/SOP.md`。
-    - [ ] (1-1) READ：`01-<NN-subsop>/SOP.md` 步驟 0 …
+- [ ] (1) 展開並執行至完成：`01-sourcing-and-packaging/SOP.md`。
+    - [ ] (1-1) READ：`01-sourcing-and-packaging/SOP.md` 步驟 0 …
     - [ ] (1-2) WRITE：`<該步授權產出路徑>`
     - [ ] (1-3) 依該 `SOP.md` 其餘編號步驟續跑 …
-- [ ] (2) 展開並執行至完成：`02-<NN-subsop>/SOP.md`。
-- [ ] (3) 展開並執行至完成：`03-<NN-subsop>/SOP.md`。
+- [ ] (2) 展開並執行至完成：`02-feature-file-list-analyze/SOP.md`。
 ```
 
 **(1)** 的子項全部完成後，以 **`TODOCREATE`／`TASKCREATE`（或等效）** 將 Tier 0 之 **(1)** 標為完成，再對 **(2)** 重複「展開 → 跑完」，依序往後。**未完成當前 phase** 前，**不要**為後續 phase 預開檔案層級的細項。
@@ -65,6 +63,4 @@ metadata:
 
 2. EXECUTE the sub-sop: `02-feature-file-list-analyze/SOP.md`
 
-3. EXECUTE the sub-sop: `03-atomic-rules-analyze/SOP.md`
-
-4. 和用戶說道（可使用不同詞彙但維持語意）：「OK 基本上 /aibdd-discovery 所有分析步驟都完成了，如沒問題，可以執行 /aibdd-plan，來正式進入內外部邊界介面的規劃以及 DSL 的設計。」
+3. 和用戶說道（可使用不同詞彙但維持語意）：「OK，/aibdd-flows-specify 已完成需求收斂、影響矩陣、function package 拆分與 feature file 清單萃取（rule-less 骨架）。如沒問題，接著執行 /aibdd-rules-specify，為每個 `.feature` 列舉其驗收用的 atomic rules。」

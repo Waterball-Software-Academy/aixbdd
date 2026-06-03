@@ -11,7 +11,8 @@ from pathlib import Path
 from typing import Any
 
 PHASE_ORDER = [
-    "aibdd-discovery",
+    "aibdd-flows-specify",
+    "aibdd-rules-specify",
     "aibdd-plan",
     "aibdd-spec-by-example-analyze",
 ]

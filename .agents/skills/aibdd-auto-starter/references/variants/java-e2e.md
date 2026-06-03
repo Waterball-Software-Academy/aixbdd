@@ -2,7 +2,7 @@
 
 技術棧：Spring Boot 4.0.6 + Spring `JdbcClient` + Cucumber 7.34.3 + Testcontainers (PostgreSQL via `@ServiceConnection`) + Flyway + JJWT 0.12.6
 
-> **本骨架定位**：以「最小可運轉」為目標的 walking skeleton——`Application.java` 只掛 `@SpringBootApplication`，唯一 endpoint 是 `GET /health`，acceptance 由 `RunCucumberTest`（JUnit Platform Suite）驅動，並已備好 `ScenarioContext`／`CommonThen`／`JwtHelper`／`DatabaseCleanupHook` 等共用 fixture。後續 `/aibdd-discovery` → `/aibdd-red` → `/aibdd-green` 會在此基礎上長出 controller / service / repository / step definitions。
+> **本骨架定位**：以「最小可運轉」為目標的 walking skeleton——`Application.java` 只掛 `@SpringBootApplication`，唯一 endpoint 是 `GET /health`，acceptance 由 `RunCucumberTest`（JUnit Platform Suite）驅動，並已備好 `ScenarioContext`／`CommonThen`／`JwtHelper`／`DatabaseCleanupHook` 等共用 fixture。後續 `/aibdd-flows-specify` → `/aibdd-rules-specify` → `/aibdd-red` → `/aibdd-green` 會在此基礎上長出 controller / service / repository / step definitions。
 
 ---
 
@@ -382,7 +382,7 @@ public class ScenarioContextHelper {
 | `{{SPECS_ROOT_DIR}}` | arguments.yml | 規格檔案根目錄 | `specs` |
 | `{{BOUNDARY_YML}}` | arguments.yml | boundary 清單（通常 `specs/architecture/boundary.yml`） | `specs/architecture/boundary.yml` |
 | `{{CONTRACTS_DIR}}` | arguments.yml | boundary operation contract directory；Java `web-service` contract files 為 OpenAPI（由 `/aibdd-form-api-spec` 產出） | `specs/backend/contracts` |
-| `{{FEATURE_SPECS_DIR}}` | arguments.yml（`/aibdd-discovery` bind 後展開） | Discovery accepted rule / behavior truth 根 | `specs/backend/packages/01-計費/features` |
+| `{{FEATURE_SPECS_DIR}}` | arguments.yml（`/aibdd-flows-specify` bind 後展開） | Discovery accepted rule / behavior truth 根 | `specs/backend/packages/01-計費/features` |
 | `{{ACTIVITIES_DIR}}` | arguments.yml（bind 後展開） | Discovery accepted `.activity` truth 根 | `specs/backend/packages/01-計費/activities` |
 | `{{DATA_DIR}}` | arguments.yml | boundary state truth directory；Java `web-service` state files 為 DBML（由 `/aibdd-form-entity-spec` 產出） | `specs/backend/data` |
 | `{{DEV_CONSTITUTION_PATH}}` | arguments.yml | 開發基礎建設 bridge guideline | `.aibdd/dev-constitution.md` |
@@ -492,7 +492,7 @@ template 檔名規則：`__` 表示路徑分隔符 `/`；filename 中的 `BASE_P
 5. **Cucumber Dry Run**：`mvn test -Dcucumber.execution.dry-run=true` 不報 `UndefinedStepException` / `AmbiguousStepDefinitionException`；應收集到至少 `HealthCheck.feature` 的一個 scenario（dry-run 不啟動完整 Spring context，僅檢 step matcher）。
 6. **執行測試**：`mvn test` 能完整跑 `RunCucumberTest`（需 Docker daemon）；至少包含 `HealthCheck.feature` 一個 scenario。
 7. **本地開發啟動**：`docker compose up -d` 啟動 starter 內建的 PostgreSQL，再 `mvn spring-boot:run`（用 `Application.main`）即可手動 hit endpoint。
-8. **Migration**：啟動時 Flyway 自動套用 `src/main/resources/db/migration/V*__*.sql`（starter 預設無 migration 檔，本步驟在 `/aibdd-discovery` → schema-analysis 後才有資料可驗證）。
+8. **Migration**：啟動時 Flyway 自動套用 `src/main/resources/db/migration/V*__*.sql`（starter 預設無 migration 檔；migration 由 Red 前的 `schema-analysis` hook（`.aibdd/bdd-stack/prehandling-before-red-phase.md`，即 `${RED_PREHANDLING_HOOK_REF}`）依 `${DATA_DIR}` 下的 DBML（上游由 `/aibdd-plan` → `/aibdd-form-entity-spec` 產出）生成後才有資料可驗證）。
 
 ---
 
@@ -517,7 +517,7 @@ Walking skeleton 已建立完成。
 1. cd ${PROJECT_ROOT}
 2. mvn clean test                                # 執行 RunCucumberTest（需 Docker）
 3. docker compose up -d && mvn spring-boot:run   # 本地手動啟動 app（需 Docker）
-5. /aibdd-discovery — 開始需求探索
+5. /aibdd-flows-specify — 開始規劃系統流程
 
 新增功能：
 - 在 src/test/resources/features/<current_spec_package>/ 下新增 .feature

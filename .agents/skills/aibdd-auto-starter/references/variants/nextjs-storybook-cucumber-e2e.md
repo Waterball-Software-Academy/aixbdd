@@ -267,5 +267,5 @@ Frontend walking skeleton 已建立完成。
 3. npm run dev                   # 啟動 Next.js 16 開發伺服器（port 3000）
 4. npm run storybook             # 啟動 Storybook（port 6006）
 5. npm run test:e2e              # 跑 Cucumber + Playwright 冒煙測試
-6. /aibdd-discovery — 開始需求探索
+6. /aibdd-flows-specify — 開始規劃系統流程
 ```

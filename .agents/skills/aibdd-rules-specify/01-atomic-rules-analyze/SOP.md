@@ -21,7 +21,7 @@
    EOF
    ```
 
-1. [LOOP] FOR EACH 上一 Phase 產出的 Feature File - EXECUTE `steps/enumerage-atomic-rule-for-feature-file.md` 遵照裡面指示來列舉此 Feature File 所有 atomic rules （每一個 Feature File 開設一個 TODO TASK，每個 TASK 進行底下兩步驟）
+1. [LOOP] FOR EACH 上游 `/aibdd-flows-specify` 產出的 Feature File - EXECUTE `steps/enumerage-atomic-rule-for-feature-file.md` 遵照裡面指示來列舉此 Feature File 所有 atomic rules （每一個 Feature File 開設一個 TODO TASK，每個 TASK 進行底下兩步驟）
 
 2. （此步驟必須嚴格遵守，至少要有一條澄清項目）`$NEED_TO_CLARIFY`, `$NEED_TO_FIX` = DO FAITHFUL REASONING 針對所有與範疇內相關的 Feature Files 依照 `steps/derive-findings.md` 中的分析切角去進行深度分析，並找到所有需要修正、澄清的地方。
 

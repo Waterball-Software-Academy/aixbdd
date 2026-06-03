@@ -54,12 +54,13 @@ git clone -c core.symlinks=true <repo-url>
 ## Quick Start
 
 1. Run `/aibdd-kickoff` (Pick the tech-stack, full-loaded with aibdd configuration)
-2. Run `/aibdd-discovery` (Address what you wanna build)
-3. Run `/aibdd-plan` (No arguments needed)
-4. Run `/aibdd-tasks`  (No arguments needed)
-5. Run `/aibdd-implement`  (No arguments needed)
-6. Run `/aibdd-red-execute`, then `/aibdd-green-execute`, then `/aibdd-refactor-execute`
-7. When reality changes, use `/aibdd-reconcile`
+2. Run `/aibdd-flows-specify` (Address what you wanna build — extract the feature/flow list)
+3. Run `/aibdd-rules-specify` (Enumerate atomic acceptance rules per feature)
+4. Run `/aibdd-plan` (No arguments needed)
+5. Run `/aibdd-tasks`  (No arguments needed)
+6. Run `/aibdd-implement`  (No arguments needed)
+7. Run `/aibdd-red-execute`, then `/aibdd-green-execute`, then `/aibdd-refactor-execute`
+8. When reality changes, use `/aibdd-reconcile`
 
 Stop there. You will know very quickly whether you want agents guessing, or agents executing against acceptance truth.
 
@@ -69,10 +70,13 @@ Stop there. You will know very quickly whether you want agents guessing, or agen
 You:    We need refund handling for cancelled orders, with inventory return,
         approval rules, and audit visibility.
 
-You:    /aibdd-discovery
+You:    /aibdd-flows-specify
 AIBDD:  [sources the raw idea against boundary truth]
         [asks only the missing questions]
-        [writes activity artifacts and feature-rule skeletons]
+        [writes the rule-less feature-file list]
+
+You:    /aibdd-rules-specify
+AIBDD:  [enumerates atomic acceptance rules into each feature]
 
 You:    /aibdd-plan
 AIBDD:  [locks technical boundary truth]
@@ -107,17 +111,18 @@ That is a spec pipeline.
 
 AIBDD is a process, not a bag of commands. The skills run in the order software should be made:
 
-**Clarify -> Discover -> Plan -> Derive Acceptance -> Execute -> Evaluate -> Reconcile**
+**Clarify -> Specify Flows -> Specify Rules -> Plan -> Derive Acceptance -> Execute -> Evaluate -> Reconcile**
 
-Each stage feeds the next. Discovery writes the artifacts plan consumes. Plan records the DSL and feature scope that tasks and the red gate consume. Tasks become live execution. Execution is evaluated through red, green, and refactor gates. When something changes upstream, reconcile cascades the correction from the earliest affected planner so you do not have to fake consistency by hand.
+Each stage feeds the next. Flows + rules specification writes the artifacts plan consumes. Plan records the DSL and feature scope that tasks and the red gate consume. Tasks become live execution. Execution is evaluated through red, green, and refactor gates. When something changes upstream, reconcile cascades the correction from the earliest affected planner so you do not have to fake consistency by hand.
 
 | Skill | Your specialist | What it does |
 |---|---|---|
 | `/aibdd-kickoff` | **Project initializer** | Binds the project context, stack-aware config, boundary skeleton, and core AIBDD paths so the rest of the pipeline has a real starting point. |
 | `/clarify-loop` | **Clarification router** | Collects missing information in a controlled, file-first way instead of letting agents improvise around ambiguity. |
-| `/aibdd-discovery` | **Root planner** | Turns raw ideas into boundary-aware discovery truth, sourcing reports, activity intent, and feature-rule skeletons. |
-| `/aibdd-form-activity` | **Flow formulator** | Writes `.activity` DSL from discovery output and validates the syntax so flow truth is explicit and machine-usable. |
-| `/aibdd-plan` | **Technical planner** | Converts accepted discovery truth into technical boundary truth, implementation planning, and red-usable DSL mappings without creating shadow truth. |
+| `/aibdd-flows-specify` | **Root planner** | Turns raw ideas into boundary-aware sourcing truth, impact matrix, function-package charters, and the rule-less feature-file list. |
+| `/aibdd-rules-specify` | **Rule specifier** | Enumerates atomic acceptance rules into each feature skeleton, then fixes or clarifies findings. |
+| `/aibdd-form-activity` | **Flow formulator** | Writes `.activity` DSL from flows-specify output and validates the syntax so flow truth is explicit and machine-usable. |
+| `/aibdd-plan` | **Technical planner** | Converts accepted flows/rules truth into technical boundary truth, implementation planning, and red-usable DSL mappings without creating shadow truth. |
 | `/aibdd-form-api-spec`, `/aibdd-form-entity-spec`, `/aibdd-form-story-spec` | **Contract formulators** | Translate the planner's reasoning package into the boundary's declared contract format — OpenAPI, DBML, or Storybook CSF3 + component. Delegated by plan; they format truth, they do not decide scope. |
 | `/aibdd-tasks` | **Task graph builder** | Generates structured `tasks.md` from the accepted plan package, preserving implementation topology and execution order. |
 | `/aibdd-implement` | **Execution driver** | Turns every checkbox into a live todo item and keeps task state synchronized with actual execution. |

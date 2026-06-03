@@ -1,6 +1,6 @@
 ---
 name: aibdd-uiux-discovery-lite
-description: 從 /aibdd-discovery 產出機械推導 happy-path-only 視覺 brief：只納入 .feature 明確提到的畫面，或沒有明確畫面時每個 feature 的第一條 happy/success Scenario；只畫 primary/canonical 狀態，不展開錯誤、拒絕、loading、hover/active 等全狀態矩陣。emit design/uiux-prompt.md + design/style-profile.yml，可交給 /aibdd-uiux-draw 產 minimal design.pen。TRIGGER when 使用者下 /aibdd-uiux-discovery-lite、想先畫 happy path、MVP 視覺草圖、或覺得 /aibdd-uiux-discovery 畫太多情況。SKIP when 需要完整 state coverage、錯誤/空狀態設計、或 feature 未完成。
+description: 從 /aibdd-flows-specify + /aibdd-rules-specify 產出機械推導 happy-path-only 視覺 brief：只納入 .feature 明確提到的畫面，或沒有明確畫面時每個 feature 的第一條 happy/success Scenario；只畫 primary/canonical 狀態，不展開錯誤、拒絕、loading、hover/active 等全狀態矩陣。emit design/uiux-prompt.md + design/style-profile.yml，可交給 /aibdd-uiux-draw 產 minimal design.pen。TRIGGER when 使用者下 /aibdd-uiux-discovery-lite、想先畫 happy path、MVP 視覺草圖、或覺得 /aibdd-uiux-discovery 畫太多情況。SKIP when 需要完整 state coverage、錯誤/空狀態設計、或 feature 未完成。
 metadata:
   user-invocable: true
   source: project-level dogfooding
@@ -8,7 +8,7 @@ metadata:
 
 # aibdd-uiux-discovery-lite
 
-Happy-path 視覺探索規劃器｜從 `/aibdd-discovery` 產物推導 **feature-mentioned screens only** 的最小 Pencil brief。它保留下游需要的三個合約 section（`COMPONENT CATALOG` / `FRAME COMPOSITION TABLE` / `ANCHOR NAME TABLE`），但把 component state 收斂成 primary/canonical 狀態，避免完整 `/aibdd-uiux-discovery` 的 component × state 展開造成畫面爆炸。
+Happy-path 視覺探索規劃器｜從 `/aibdd-flows-specify + /aibdd-rules-specify` 產物推導 **feature-mentioned screens only** 的最小 Pencil brief。它保留下游需要的三個合約 section（`COMPONENT CATALOG` / `FRAME COMPOSITION TABLE` / `ANCHOR NAME TABLE`），但把 component state 收斂成 primary/canonical 狀態，避免完整 `/aibdd-uiux-discovery` 的 component × state 展開造成畫面爆炸。
 
 <!-- VERB-GLOSSARY:BEGIN — auto-rendered from programlike-skill-creator/references/verb-cheatsheet.md by render_verb_glossary.py; do not hand-edit -->
 > **Program-like SKILL.md — self-contained notation**
@@ -112,7 +112,7 @@ references:
    2.3 `$features` = COMPUTE list of `${FEATURE_SPECS_DIR}/**/*.feature`
    2.4 ASSERT `$spec_path` exists ∧ length(`$activities`) ≥ 1 ∧ length(`$features`) ≥ 1
    2.5 IF assertion fails:
-       2.5.1 EMIT "discovery 產物缺失；請先跑 /aibdd-discovery" to user
+       2.5.1 EMIT "discovery 產物缺失；請先跑 /aibdd-flows-specify + /aibdd-rules-specify" to user
        2.5.2 STOP
 
 3. TLB 必須是 frontend；後端 boundary 直接終止。
@@ -239,7 +239,7 @@ references:
 
 ## §3 CROSS-REFERENCES
 
-- `/aibdd-discovery` — 上游；產出 spec.md / activities / features / atomic-rules 為本 skill 的 INPUT SSOT
+- `/aibdd-flows-specify + /aibdd-rules-specify` — 上游；產出 spec.md / activities / features / atomic-rules 為本 skill 的 INPUT SSOT
 - `/aibdd-uiux-discovery` — full 版；需要完整 component state matrix / error state coverage 時改用它
 - `/clarify-loop` — DELEGATE 對象；本 skill 只問 lite 必要軸
 - `/aibdd-uiux-draw` — 直接下游；讀 `design/uiux-prompt.md` + `design/style-profile.yml`，依 prompt 的 lite mode 產 `.pen`

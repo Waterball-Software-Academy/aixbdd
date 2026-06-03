@@ -26,18 +26,18 @@
 5. TRIGGER wrapper 子步驟
    1. `init`：`${IMPACT_MATRIX_YML}` 尚不存在時執行一次；已存在則略過。
       ```bash
-      python3 .claude/skills/aibdd-discovery/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} init
       ```
    2. `upsert`：對步驟 3 scope 內每一 impacted 檔各執行一次；`change_type` 依步驟 4 選定。
       ```bash
-      python3 .claude/skills/aibdd-discovery/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} upsert \
         --path <path> --change-type <change_type> --impact-summary "<summary>"
       ```
    3. `validate`：全部 `upsert` 完成後執行一次；`ok` 為 false 則回到 `upsert` 修正。
       ```bash
-      python3 .claude/skills/aibdd-discovery/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} validate
       ```
 

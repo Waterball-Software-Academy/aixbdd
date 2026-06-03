@@ -3,7 +3,7 @@
 AIBDD skills 的 specs 目錄樹 SSOT。
 
 1. 每個 `specs/` root，都是為單一一個 Boundary 存放其相關計劃及產品規格的 root。
-2. 每一次 plan 的迭代始於一次 `/aibdd-discovery` 執行。
+2. 每一次 plan 的迭代始於 `/aibdd-flows-specify`（萃取 activity 與 feature 清單）再接 `/aibdd-rules-specify`（列舉 atomic rules）。
 
 ## 目錄樹
 

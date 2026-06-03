@@ -1,7 +1,7 @@
-**FAITHFUL REASONING：FOR EACH 上一 Phase 產出的 Feature File，列舉其中的所有 atomic rules**：
+**FAITHFUL REASONING：FOR EACH 上游 `/aibdd-flows-specify` 產出的 Feature File，列舉其中的所有 atomic rules**：
 
 1.  **READ** `rules/atomic-rule-granularity.md`，atomic rule 的顆粒度、命名句型、4 種類型前綴、原子化判定、禁止自生**全部**以此檔為準。
-2. 對每個 Feature File：依其 Phase 02 已綁定之 Action，到 **`${PLAN_SPEC}`** 找對應的 user raw idea 敘述段落；找不到對應句子 → 該 Feature 不產 rule，列為「來源缺失」交後續步驟澄清。
+2. 對每個 Feature File：依其在 `/aibdd-flows-specify`（`02-feature-file-list-analyze`）已綁定之 Action，到 **`${PLAN_SPEC}`** 找對應的 user raw idea 敘述段落；找不到對應句子 → 該 Feature 不產 rule，列為「來源缺失」交後續步驟澄清。
 
 3. **UPDATE FILES** — **READ** `templates/atomic-rule-format.template.feature`。**FOR EACH** 本 TASK 對應之 `.feature`（路徑須落在 **`${FEATURE_SPECS_DIR}`** 下）：將步驟 **1** 為**該檔**推理出之 `$RULES` 子集（僅含鎖定此檔者）依**模板之縮排與區塊結構**寫入同一檔案。
       - **語意、類型前綴、原子化與禁止腦補**以 `rules/atomic-rule-granularity.md` 為準；**檔案版面**（`Feature:` 下之縮排、`Rule:` 區塊、選用之 `- ` 補充行、`# TODO - 待 SBE`）以模板為準。

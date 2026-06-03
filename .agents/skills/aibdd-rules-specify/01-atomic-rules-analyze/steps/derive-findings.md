@@ -1,7 +1,7 @@
 # Rule 疑慮分析切角
 
 1. 目的
-   1. 本檔只列出在 `03-atomic-rules-analyze` 中，對當前 `.feature` 內 `Rule:` 可能產生疑慮的分析切角。
+   1. 本檔只列出在 `01-atomic-rules-analyze`（`/aibdd-rules-specify`）中，對當前 `.feature` 內 `Rule:` 可能產生疑慮的分析切角。
    2. 本檔將切角分成兩類：
       1. `$NEED_TO_CLARIFY`：代表目前需求真相不足，後續應交給外層 clarify 流程。
       2. `$NEED_TO_FIX`：代表目前 rules 已可直接判定有問題，應回到前面步驟重推或重寫，不必先訪談。

@@ -4,7 +4,7 @@
 
 1. TRIGGER impact matrix query（排除 `read_only_compare`）：
    ```bash
-   python3 .claude/skills/aibdd-discovery/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+   python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
      --matrix ${IMPACT_MATRIX_YML} query \
      --suffix .feature \
      --change-type update \
