@@ -2,6 +2,7 @@
 
 - **Action↔feature 綁定來源（本 phase 的落檔清單）** → 上游 Phase 02（`02-activity-analyze`）萃取之 `$Actions`（每個帶 `binds_feature` 契約路徑）；其已落檔之 `.activity`（Action 節點 `binds_feature`）為持久 SSOT
 - **Feature 規格／`.feature` 根目錄** → `${FEATURE_SPECS_DIR}`（= `${TRUTH_FUNCTION_PACKAGE}/features`，per function package 借位解析）
+- **影響矩陣（本 phase 回寫新 feature 的 `add` entry）** → `${IMPACT_MATRIX_YML}`；entry `path` 相對 `${TRUTH_BOUNDARY_ROOT}`
 
 請注意，所有路徑都是相對於 ${CWD} 所在路徑，請勿新增任何檔案是並非在 ${CWD} 之中，不可妥協。
 
@@ -16,10 +17,12 @@
    ACTIVITIES_DIR=${ACTIVITIES_DIR}
    CURRENT_PLAN_PACKAGE=${CURRENT_PLAN_PACKAGE}
    FEATURE_SPECS_DIR=${FEATURE_SPECS_DIR}
+   IMPACT_MATRIX_YML=${IMPACT_MATRIX_YML}
    PLAN_REPORTS_DIR=${PLAN_REPORTS_DIR}
    PLAN_SPEC=${PLAN_SPEC}
    PROJECT_SPEC_LANGUAGE=${PROJECT_SPEC_LANGUAGE}
    TRUTH_BOUNDARY_PACKAGES_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}
+   TRUTH_BOUNDARY_ROOT=${TRUTH_BOUNDARY_ROOT}
    TRUTH_FUNCTION_PACKAGE=${TRUTH_FUNCTION_PACKAGE}
    EOF
    ```
@@ -41,4 +44,6 @@
 
 2. 若有無法落檔的 `binds_feature`（步驟 1 記錄）：DELEGATE `/clarify-loop`，帶 `delegated_intake`（`phase`=`aibdd-flows-specify/03-feature-file-list-analyze`、`raw_items`=各問題一句話描述、`anchors`=對應 Action／`.activity`／預期 feature 路徑）。澄清結論若改變檔名或綁定，回步驟 1 修正落檔（如同步改了 `.activity` 的 `binds_feature`，請回 `02-activity-analyze` 重送該 flow）。
 
-3. 向使用者說道（語意不變、詞彙可改）：「OK，本輪需求已被拆成下列 feature file 清單（各為 rule-less 骨架，且與 `.activity` 的 Action 節點一一對應）：<逐一列出檔案路徑與對應業務意圖>。接著 /aibdd-rules-specify 會為每個 `.feature` 列舉其驗收用的 atomic rules。」
+3. **WRITEBACK impact matrix（本輪新增之 `.feature` → `add`）** — EXECUTE [`steps/impact-matrix-writeback.md`](steps/impact-matrix-writeback.md)：把步驟 1 **本輪新建**之每個 `.feature` 以其 `binds_feature`（相對 `${TRUTH_BOUNDARY_ROOT}`）`upsert`（`change_type=add`）回寫 `${IMPACT_MATRIX_YML}`，再 `validate`。此為本輪 feature `add` entry 的**唯一**產生點；既有未改寫之 `.feature` 已由 sourcing 寫入對應 entry，**不**在本步重寫。
+
+4. 向使用者說道（語意不變、詞彙可改）：「OK，本輪需求已被拆成下列 feature file 清單（各為 rule-less 骨架，且與 `.activity` 的 Action 節點一一對應），並已將新 feature 以 `add` 回寫影響矩陣：<逐一列出檔案路徑與對應業務意圖>。接著 /aibdd-rules-specify 會為每個 `.feature` 列舉其驗收用的 atomic rules。」
