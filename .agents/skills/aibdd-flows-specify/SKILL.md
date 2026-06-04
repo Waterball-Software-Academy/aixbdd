@@ -1,6 +1,6 @@
 ---
 name: aibdd-flows-specify
-description: "AIBDD Flows Specify SOP。把本輪需求敘事收斂為 spec.md SSOT、掃描 boundary truth、維護 impact matrix、拆分 function package charters，再依 API 級顆粒度把每段需求流程萃取成 business-action `.feature` 清單（rule-less 骨架）。TRIGGER when 使用者下 /aibdd-flows-specify、要開始需求探索／盤點本輪要做哪些 feature 與其範圍切分、或被 /aibdd-reconcile cascade 委派最上游 planner。SKIP when CWD 下找不到 arguments.yml（請先 /aibdd-kickoff）、或本輪只是要為既有 `.feature` 列舉 atomic rule（改用 /aibdd-rules-specify）。"
+description: "AIBDD Flows Specify SOP。把本輪需求敘事收斂為 spec.md SSOT、掃描 boundary truth、維護 impact matrix、拆分 function package charters，先依 API 級顆粒度把每段需求流程萃取成業務 Action、編織成可獨立驗收的 UAT flow 並交 /aibdd-form-activity 產出 `.activity` 活動圖，再把每個 Action 落成 business-action `.feature` 清單（rule-less 骨架）。TRIGGER when 使用者下 /aibdd-flows-specify、要開始需求探索／盤點本輪要做哪些 feature 與其範圍切分、或被 /aibdd-reconcile cascade 委派最上游 planner。SKIP when CWD 下找不到 arguments.yml（請先 /aibdd-kickoff）、或本輪只是要為既有 `.feature` 列舉 atomic rule（改用 /aibdd-rules-specify）。"
 metadata:
   user-invocable: true
   source: project-level
@@ -8,11 +8,11 @@ metadata:
 
 # AIxBDD - Flows Specify
 
-嚴格遵照底下 Principles 來執行 SOP。本 skill 是 plan 迭代的最上游 planner：先收斂需求真相與影響範圍（Phase 01），再把需求流程萃取成 feature file 清單（Phase 02）。完成後交棒 `/aibdd-rules-specify` 為每個 `.feature` 列舉 atomic rules。
+嚴格遵照底下 Principles 來執行 SOP。本 skill 是 plan 迭代的最上游 planner：先收斂需求真相與影響範圍（Phase 01），依 API 級顆粒度萃取業務 Action 並建模成可獨立驗收的 UAT flow、交 `/aibdd-form-activity` 產出 `.activity` 活動圖（Phase 02），再把每個 Action 落成 rule-less feature file 清單（Phase 03）。完成後交棒 `/aibdd-rules-specify` 為每個 `.feature` 列舉 atomic rules。
 
 ## PRINCIPLE: CWD 為產出錨點
 
-- 本 skill 與其 sub-SOP **所有經授權產生或修改的 artifact**，**一律**落在當次執行的工作目錄 **`CWD`** 所涵蓋之專案／規格樹內（相對路徑自 **`CWD`** 解析；本檔所列 `${SPECS_ROOT_DIR}`、`${CURRENT_PLAN_PACKAGE}`、`${PLAN_REPORTS_DIR}`、`${TRUTH_*}` 等皆以 **`CWD`** 為錨。
+- 本 skill 與其 sub-SOP **所有經授權產生或修改的 artifact**，**一律**落在當次執行的工作目錄 **`CWD`** 所涵蓋之專案／規格樹內（相對路徑自 **`CWD`** 解析；本檔所列 `${SPECS_ROOT_DIR}`、`${CURRENT_PLAN_PACKAGE}`、`${PLAN_REPORTS_DIR}`、`${ACTIVITIES_DIR}`、`${TRUTH_*}` 等皆以 **`CWD`** 為錨。
 - 【嚴禁】把應屬本流程的產物寫到 **`CWD` 外**的任意絕對路徑，或以「方便」為由落到未載明於當步 SOP 的其他根目錄。
 
 ## PRINCIPLE: Artifact output contract（硬限制）
@@ -38,7 +38,8 @@ metadata:
 
 ```markdown
 - [ ] (1) 展開並執行至完成：`01-sourcing-and-packaging/SOP.md`（細項見下）。
-- [ ] (2) 展開並執行至完成：`02-feature-file-list-analyze/SOP.md`。
+- [ ] (2) 展開並執行至完成：`02-activity-analyze/SOP.md`。
+- [ ] (3) 展開並執行至完成：`03-feature-file-list-analyze/SOP.md`。
 ```
 
 **進入 (1) 後**才把 (1) 拆成 Tier 1；其餘 phase 在 Tier 0 維持單列：
@@ -48,7 +49,8 @@ metadata:
     - [ ] (1-1) READ：`01-sourcing-and-packaging/SOP.md` 步驟 0 …
     - [ ] (1-2) WRITE：`<該步授權產出路徑>`
     - [ ] (1-3) 依該 `SOP.md` 其餘編號步驟續跑 …
-- [ ] (2) 展開並執行至完成：`02-feature-file-list-analyze/SOP.md`。
+- [ ] (2) 展開並執行至完成：`02-activity-analyze/SOP.md`。
+- [ ] (3) 展開並執行至完成：`03-feature-file-list-analyze/SOP.md`。
 ```
 
 **(1)** 的子項全部完成後，以 **`TODOCREATE`／`TASKCREATE`（或等效）** 將 Tier 0 之 **(1)** 標為完成，再對 **(2)** 重複「展開 → 跑完」，依序往後。**未完成當前 phase** 前，**不要**為後續 phase 預開檔案層級的細項。
@@ -61,6 +63,8 @@ metadata:
 
 1. EXECUTE the sub-sop: `01-sourcing-and-packaging/SOP.md`
 
-2. EXECUTE the sub-sop: `02-feature-file-list-analyze/SOP.md`
+2. EXECUTE the sub-sop: `02-activity-analyze/SOP.md`
 
-3. 和用戶說道（可使用不同詞彙但維持語意）：「OK，/aibdd-flows-specify 已完成需求收斂、影響矩陣、function package 拆分與 feature file 清單萃取（rule-less 骨架）。如沒問題，接著執行 /aibdd-rules-specify，為每個 `.feature` 列舉其驗收用的 atomic rules。」
+3. EXECUTE the sub-sop: `03-feature-file-list-analyze/SOP.md`
+
+4. 和用戶說道（可使用不同詞彙但維持語意）：「OK，/aibdd-flows-specify 已完成需求收斂、影響矩陣、function package 拆分、UAT flow 活動圖（`.activity`）與 feature file 清單（rule-less 骨架）。如沒問題，接著執行 /aibdd-rules-specify，為每個 `.feature` 列舉其驗收用的 atomic rules。」

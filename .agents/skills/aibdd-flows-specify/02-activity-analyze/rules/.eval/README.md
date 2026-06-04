@@ -1,11 +1,11 @@
 # Feature file list — API granularity benchmarks
 
-針對 `API-granularity.md` 中 **流程編排／自動推進**、**內建系統處理**、**僅可命名之分支** 等陷阱的評測集。
+針對 `apiwise-granularity.md` 中 **流程編排／自動推進**、**內建系統處理**、**僅可命名之分支** 等陷阱的評測集。
 
 ## 用法
 
 1. 僅將各 case 的 **需求原文** 提供給執行者（或 LLM）。
-2. 請其依 `API-granularity.md` 產出 feature file 清單。
+2. 請其依 `apiwise-granularity.md` 產出 feature file 清單。
 3. 與同檔 **預期產出**、**不應出現** 兩節比對；預期齊全且無誤拆即通過（順序不拘，同義檔名需人工對照）。
 
 ## 本集涵蓋的陷阱

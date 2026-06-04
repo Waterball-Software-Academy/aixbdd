@@ -8,7 +8,7 @@ metadata:
 
 # aibdd-form-activity
 
-Formulation skill。只負責把 `discovery.02-activity-analyze` 已完成的 Activity modeling elements 轉成 `.activity` 語法；不重新判斷 actor 合法性、action 顆粒度、reuse、operation partition、或需求語意。
+Formulation skill。只負責把 `/aibdd-flows-specify` 的 `02-activity-analyze` 已完成的 Activity modeling elements 轉成 `.activity` 語法；不重新判斷 actor 合法性、action 顆粒度、reuse、operation partition、或需求語意。
 
 ## §1 REFERENCES
 

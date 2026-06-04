@@ -119,7 +119,7 @@ Each stage feeds the next. Flows + rules specification writes the artifacts plan
 |---|---|---|
 | `/aibdd-kickoff` | **Project initializer** | Binds the project context, stack-aware config, boundary skeleton, and core AIBDD paths so the rest of the pipeline has a real starting point. |
 | `/clarify-loop` | **Clarification router** | Collects missing information in a controlled, file-first way instead of letting agents improvise around ambiguity. |
-| `/aibdd-flows-specify` | **Root planner** | Turns raw ideas into boundary-aware sourcing truth, impact matrix, function-package charters, and the rule-less feature-file list. |
+| `/aibdd-flows-specify` | **Root planner** | Turns raw ideas into boundary-aware sourcing truth, impact matrix, function-package charters, the UAT-flow activity diagrams (`.activity`), and the rule-less feature-file list bound to them. |
 | `/aibdd-rules-specify` | **Rule specifier** | Enumerates atomic acceptance rules into each feature skeleton, then fixes or clarifies findings. |
 | `/aibdd-form-activity` | **Flow formulator** | Writes `.activity` DSL from flows-specify output and validates the syntax so flow truth is explicit and machine-usable. |
 | `/aibdd-plan` | **Technical planner** | Converts accepted flows/rules truth into technical boundary truth, implementation planning, and red-usable DSL mappings without creating shadow truth. |
@@ -150,7 +150,7 @@ This is not "press one button and hope." AIBDD is human-in-the-loop, but the loo
 
 The chain from requirement to execution stays visible:
 
-`idea -> discovery -> activity / feature rules -> plan (DSL + feature scope) -> tasks -> red/green/refactor`
+`idea -> flows-specify (activity + feature list) -> rules-specify (feature rules) -> plan (DSL + feature scope) -> tasks -> red/green/refactor`
 
 That matters when you need audits, debugging, impact analysis, or simply a clean answer to "why did we build it this way?"
 
