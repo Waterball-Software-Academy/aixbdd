@@ -1,6 +1,6 @@
 # Atomic Rule 顆粒度
 
-- **一條 rule 永遠掛在一個 Action 上**：每條 rule 都從前一階段（`02b-feature-file-list-analyze`）已綁定之 Action 出發；脫離 Action 漂浮的 rule **不得**收下，一條 rule 跨多個 Action 的也**不得**收下。
+- **一條 rule 永遠掛在一個 Action 上**：每條 rule 都從上游 `/aibdd-flows-specify`（`02-activity-analyze` api-wise 萃取時綁定）之 Action 出發；脫離 Action 漂浮的 rule **不得**收下，一條 rule 跨多個 Action 的也**不得**收下。
 - **一條 rule＝一個類型前綴下的一個原子斷言**：rule 名稱必須命中下節「4 種類型前綴」之一，且只承載**單一主詞、單一動詞、單一條件**；複合斷言一律拆分（判定見「原子化判定」）。
 - **每個 Feature 至少要有一條「前置（參數）」rule**：用以驗證必要參數；所有「缺少必要參數」之檢查得合併為**單一**前置（參數）rule（下一階段以 Scenario Outline 展開），其他**領域特定**之參數約束仍各自獨立為原子 rule。
 - **必須能指回需求原文**：每條 rule 之主詞、條件都要在需求敘述或 discovery 報告的影響列中找得到對應出處；**不得**憑空長出原文沒有的內容（**自生**的判定見下節「禁止自生」）。

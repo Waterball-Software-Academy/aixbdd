@@ -42,7 +42,7 @@ features/                 # Cucumber Gherkin (playwright-bdd source)
 
 .storybook/               # Storybook framework config
 public/                   # Static assets (Storybook staticDirs)
-specs/                    # AIBDD spec packages (managed by /aibdd-discovery)
+specs/                    # AIBDD spec packages (managed by /aibdd-flows-specify & /aibdd-rules-specify)
 .aibdd/                   # AIBDD project config (kickoff-managed)
 ```
 
@@ -50,7 +50,8 @@ specs/                    # AIBDD spec packages (managed by /aibdd-discovery)
 
 This skeleton expects AIBDD tooling:
 
-1. `/aibdd-discovery` — capture requirements as activities + feature rules
+1. `/aibdd-flows-specify` — capture requirements as activities + features
+1. `/aibdd-rules-specify` — capture requirements as atomic rules in features
 2. `/aibdd-form-api-spec` — derive `api.yml` from contracts
 3. `/aibdd-auto-frontend-msw-api-layer` — generate Zod schemas, MSW handlers, API client functions
 4. `/aibdd-auto-frontend-nextjs-pages` — drive page implementation from `.activity` + `.feature` truth

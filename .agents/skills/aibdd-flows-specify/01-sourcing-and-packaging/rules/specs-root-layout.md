@@ -16,6 +16,7 @@ ${SPECS_ROOT_DIR}/
   packages/
     NN-<slug>/
       features/
+      activities/
   plans/
     NNN-<slug>/
       spec.md

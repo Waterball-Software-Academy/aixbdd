@@ -206,12 +206,12 @@ Generate a walking skeleton from kickoff arguments and starter templates. The va
    - `dry_run_passed`: `$$dry_run_passed`
 2. EMIT `$report` to caller
 3. `$post_install_hint` = DERIVE post-install / next-command hint for `$$variant` from `$$variant_contract`「完成後引導」section
-4. `$summary` = DRAFT plain-language summary from `$report`，並附帶：下游 `/aibdd-discovery` 必須以 `project_dir` 為工作目錄（`cwd`），使 `AIBDD_ARGUMENTS_PATH` / `BDD_CONSTITUTION_PATH`（bdd-stack 目錄錨點）/ `DEV_CONSTITUTION_PATH` 相對路徑與 `.aibdd/arguments.yml` 同框解析；starter 不產生、不改寫 `specs/`。並附上 `$post_install_hint`（依 variant 提示對應的 dependency install / dev-server 指令）。
+4. `$summary` = DRAFT plain-language summary from `$report`，並附帶：下游 `/aibdd-flows-specify` 必須以 `project_dir` 為工作目錄（`cwd`），使 `AIBDD_ARGUMENTS_PATH` / `BDD_CONSTITUTION_PATH`（bdd-stack 目錄錨點）/ `DEV_CONSTITUTION_PATH` 相對路徑與 `.aibdd/arguments.yml` 同框解析；starter 不產生、不改寫 `specs/`。並附上 `$post_install_hint`（依 variant 提示對應的 dependency install / dev-server 指令）。
 5. EMIT `$summary` to user
 
 ## §3 CROSS-REFERENCES
 
 - `/aibdd-kickoff` — 上游產生 `arguments.yml` 與專案邊界設定（含 `STARTER_VARIANT`）
-- `/aibdd-discovery` — walking skeleton 完成後的下一個需求探索入口
+- `/aibdd-flows-specify` — walking skeleton 完成後的下一個規劃系統流程入口
 - `/aibdd-auto-frontend-msw-api-layer` — frontend variant 後續以 OpenAPI 生成 MSW handlers + API client（Stage 1）
 - `/aibdd-auto-frontend-nextjs-pages` — frontend variant 後續逐 frame 落 Next.js 動態頁面（Stage 2）

@@ -90,9 +90,10 @@ Given `TARGET_PLAN_PACKAGE`, derive:
 
 Planner order is fixed:
 
-1. `aibdd-discovery`
-2. `aibdd-plan`
-3. `aibdd-spec-by-example-analyze`
+1. `aibdd-flows-specify`
+2. `aibdd-rules-specify`
+3. `aibdd-plan`
+4. `aibdd-spec-by-example-analyze`
 
 `replay_from` is computed by comparing the new earliest planner against `current_pointer`:
 

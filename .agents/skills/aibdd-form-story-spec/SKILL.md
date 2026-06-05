@@ -352,7 +352,7 @@ references:
 
 ## §3 CROSS-REFERENCES
 
-- `/aibdd-discovery` — upstream UI flow 收斂；留下 component / state hint 給前端 component-modeling planner（目前 chain 為 aspirational，尚無單一 producer 直接餵本 skill）。
+- `/aibdd-flows-specify` — upstream UI flow 收斂；留下 component / state hint 給前端 component-modeling planner（目前 chain 為 aspirational，尚無單一 producer 直接餵本 skill）。
 - `/aibdd-uiux-discovery` — upstream design brief；emit `design/uiux-prompt.md` + `design/style-profile.yml`，引導 user 在 Pencil 落 `design.pen`。本 skill 於 Phase 1 後段透過 `design_source.path` 接這個 `.pen` 做 cross-check。
 - `aibdd-pen-to-storybook`（adapter-only skill）— DELEGATE 對象；當 `design_source.kind == "pen"` 時 Phase 1 步驟 24–34 呼叫之取 `component_table` + `tokens` 做 cross-check。adapter skill 已簡化為 read-only：payload 只接受 `pen_path` + 可選 `screen_id`，回傳 fixed shape `{ status, mode, schema_version, token_count, tokens, component_count, component_table }`。**未來 sibling**：`aibdd-figma-to-storybook` / `aibdd-penpot-to-storybook` 等其他 design-source adapter 將遵循同一 return shape contract 並列。
 - `/aibdd-plan` — upstream caller；Phase 3 step 15.5 偵測 `${CURRENT_PLAN_PACKAGE}/design.pen` 存在時，自動把 `design_source` 注入本 skill 的 caller payload，並把 `target_dir` 推導為 `${TRUTH_BOUNDARY_ROOT}/contracts/components/<ComponentId>/`。

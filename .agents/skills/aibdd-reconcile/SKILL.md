@@ -13,9 +13,9 @@ metadata:
 
 嚴格遵照底下 PRINCIPLE 來執行 SOP。
 
-## PRINCIPLE: 只對齊三個 planner
+## PRINCIPLE: 只對齊這四個 planner
 
-- 本 skill 只會分類與重跑這三個 planner，固定上下游順序為 `aibdd-discovery` → `aibdd-plan` → `aibdd-spec-by-example-analyze`。
+- 本 skill 只會分類與重跑這四個 planner，固定上下游順序為 `aibdd-flows-specify` → `aibdd-rules-specify` → `aibdd-plan` → `aibdd-spec-by-example-analyze`。
 - 不分類、不重跑 `/aibdd-tasks` 與 `/aibdd-implement`；它們在本流程結束後一律視為過期，須由使用者另外重跑。
 - 不回捲整個 workspace 到舊 checkpoint，那是 `/aibdd-rewind` 的職責。
 - 不自行改動任何非 AIBDD 的產品程式碼，也不越過各 planner 的 ownership 邊界。

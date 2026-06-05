@@ -28,15 +28,15 @@
 
 1. ASSERT arguments 必備鍵齊全
    - 對上層已 PARSE 之 `${AIBDD_ARGUMENTS_PATH}` 逐項檢查下列鍵存在：`SPECS_ROOT_DIR`、`PLAN_SPEC`、`PLAN_REPORTS_DIR`、`IMPACT_MATRIX_YML`、`TRUTH_BOUNDARY_ROOT`、`TRUTH_BOUNDARY_PACKAGES_DIR`、`TRUTH_FUNCTION_PACKAGE`、`CONTRACTS_DIR`、`DATA_DIR`、`BOUNDARY_PACKAGE_DSL`、`BOUNDARY_SHARED_DSL`、`TEST_STRATEGY_FILE`、`BOUNDARY_YML`、`ACTIVITIES_DIR`、`FEATURE_SPECS_DIR`；`DSL_KEY_LOCALE` 為選填。
-   - 任一缺鍵 → 列出缺鍵，提示使用者回 `/aibdd-kickoff` 或 `/aibdd-discovery` 補綁後再執行本 skill，STOP。本步禁止順手補建 arguments.yml 任何欄位。
+   - 任一缺鍵 → 列出缺鍵，提示使用者回 `/aibdd-kickoff` 或 `/aibdd-flows-specify` 補綁後再執行本 skill，STOP。本步禁止順手補建 arguments.yml 任何欄位。
 
 2. ASSERT Discovery 真相已 accepted（READ-ONLY）
-   - `${PLAN_SPEC}` 存在且含需求敘事全文與 discovery sourcing pointer（章節對齊 `/aibdd-discovery`，例：`Discovery Sourcing Summary`）。
+   - `${PLAN_SPEC}` 存在且含需求敘事全文與 discovery sourcing pointer（章節對齊 `/aibdd-flows-specify`，例：`Discovery Sourcing Summary`）。
    - `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 存在。
    - `${IMPACT_MATRIX_YML}` 存在。
    - `${FEATURE_SPECS_DIR}` 下至少一份 rule-only `.feature` 檔。
    - `${ACTIVITIES_DIR}` 下若有 `.activity` 則納入 `activity_truth`；若無則視為空集合（Discovery 現行流程可不產 activity，不得因此 STOP）。
-   - 任一條件失敗 → 提示使用者回 `/aibdd-discovery` 補完，STOP。本步禁止補建或改寫 discovery markdown／feature／activity artifact。
+   - 任一條件失敗 → 提示使用者回 `/aibdd-flows-specify`（spec.md／feature 骨架）或 `/aibdd-rules-specify`（atomic rules）補完，STOP。本步禁止補建或改寫 discovery markdown／feature／activity artifact。
 
 3. READ：boundary type profile
    - PARSE `${BOUNDARY_YML}` 之 `type` 欄位為 `$boundary_type`。此 `$boundary_type` 欄位在後續 subsop 中會被使用到，需要被嚴格記住。若此欄位不存在則 STOP & 報錯。
@@ -51,7 +51,7 @@
 5. TRIGGER impact matrix query，BIND `$PLAN_MUTABLE_IMPACT_ENTRIES`
    1. 讀取本輪 plan mutable workset（含 `conditional_update`）：
       ```bash
-      python3 .claude/skills/aibdd-discovery/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} query \
         --change-type update \
         --change-type add \

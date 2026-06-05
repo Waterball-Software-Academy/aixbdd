@@ -11,9 +11,10 @@ and records one explicit reconciliation narrative for the session.
 
 The only planners this skill may classify or cascade are:
 
-1. `aibdd-discovery`
-2. `aibdd-plan`
-3. `aibdd-spec-by-example-analyze`
+1. `aibdd-flows-specify`
+2. `aibdd-rules-specify`
+3. `aibdd-plan`
+4. `aibdd-spec-by-example-analyze`
 
 `/aibdd-tasks` and `/aibdd-implement` are never part of the cascade chain.
 They become stale follow-up work after reconcile completes.
@@ -25,13 +26,14 @@ They become stale follow-up work after reconcile completes.
 - One non-empty trigger description
 
 The earliest planner is chosen by classifying the trigger description against the
-ownership of the three reconcilable planners. That ownership is stated inline in the
+ownership of the four reconcilable planners. That ownership is stated inline in the
 classify phase (`02-classify-and-open-session/SOP.md`), so no external relevance
 document is required:
 
-1. `aibdd-discovery` owns which features exist, feature-file scope, and atomic-rule extraction.
-2. `aibdd-plan` owns architecture/boundary, API/entity/contract design, implementation plan, and DSL synthesis.
-3. `aibdd-spec-by-example-analyze` owns Gherkin example shape, step-handler mapping, DSL arrangement, and concrete parameter values.
+1. `aibdd-flows-specify` owns which features exist, feature-file scope/cut, sourcing/packaging, and the impact matrix.
+2. `aibdd-rules-specify` owns atomic-rule extraction and correction per feature.
+3. `aibdd-plan` owns architecture/boundary, API/entity/contract design, implementation plan, and DSL synthesis.
+4. `aibdd-spec-by-example-analyze` owns Gherkin example shape, step-handler mapping, DSL arrangement, and concrete parameter values.
 
 ## Outputs
 
