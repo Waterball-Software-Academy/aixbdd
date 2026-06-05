@@ -20,15 +20,19 @@
 
 3. **(HARNESS) RUN** `dsl_cli generate-dsl-instructions`：
 
+   glob pattern 以單引號包住，由 `dsl_cli` 自行展開——勿讓 shell 先展開（保持引號）、勿改用 `shopt` / `setopt` 等 shell 專屬 glob 設定，以維持跨環境可攜。
+
    ```bash
    uv run .claude/skills/aibdd-core/scripts/cli/dsl_cli.py generate-dsl-instructions \
      --boundary <boundary> \
-     --specs ${CONTRACTS_DIR}/*.api.yml ${DATA_DIR}/*.dbml \
-     --dsl ${CONTRACTS_DIR}/*.dsl.yml ${DATA_DIR}/*.dsl.yml
+     --specs '${CONTRACTS_DIR}/*.api.yml' '${CONTRACTS_DIR}/*.openapi.yml' \
+             '${DATA_DIR}/*.dbml' '${DATA_DIR}/*.sql' \
+     --dsl '${CONTRACTS_DIR}/*.dsl.yml' '${DATA_DIR}/*.dsl.yml'
    ```
 
-   - dsl_cli 會依副檔名 dispatch 對應 spec_parser，取得所有 parts，與既有 `*.dsl.yml` 內 entry 之 `target_part_path` 做 prefix-match diff，把未 resolved 之 part 餵給 active boundary 之 part_to_dsl plugin (`assets/boundaries/<boundary>/scripts/part_to_dsl.py`) 取得 template skeleton，依 part 來源 spec 路由到對應 `*.dsl.yml`（`<spec>.api.yml` → `<spec>.dsl.yml`、`<file>.dbml` → `<file>.dsl.yml`），append。
+   - dsl_cli 會依副檔名 dispatch 對應 spec_parser，取得所有 parts，與既有 `*.dsl.yml` 內 entry 之 `target_part_path` 做 prefix-match diff，把未 resolved 之 part 餵給 active boundary 之 part_to_dsl plugin (`assets/boundaries/<boundary>/scripts/part_to_dsl.py`) 取得 template skeleton，依 part 來源 spec 路由到對應 `*.dsl.yml`（`<spec>.api.yml` / `<spec>.openapi.yml` → `<spec>.dsl.yml`、`<file>.dbml` → `<file>.dsl.yml`、`<file>.{mysql,pg,mssql}.sql` → `<file>.dsl.yml`），append。
    - 命令 idempotent — 已 resolved 之 part 不再產出 skeleton。
+   - glob 未匹配即丟棄（如 boundary 選 DDL 時 `*.dbml` 無檔）；混傳多種 spec 格式 / dialect 安全，CLI 只處理實際存在者。
    - 命令印出 `GenerationReport`（新增 entries 數量、各寫到哪個檔）。
 
 4. **(SEMANTIC) LOOP** per skeleton entry 其 `format` 仍為 `"<FILL IN>"`（順序：依 entry 在檔案中之出現順序、跨檔依檔名字典序）：
@@ -49,16 +53,17 @@
 
    ```bash
    uv run .claude/skills/aibdd-core/scripts/cli/dsl_cli.py eval \
-     --dsl ${CONTRACTS_DIR}/*.dsl.yml ${DATA_DIR}/*.dsl.yml \
+     --dsl '${CONTRACTS_DIR}/*.dsl.yml' '${DATA_DIR}/*.dsl.yml' \
      --shared-dsl ${BOUNDARY_SHARED_DSL}
    ```
 
-   套用 7 條 universal rules：
+   套用 8 條 universal rules：
 
    - `format-params-cap` — format 句型內 `{key}` 數量 ≤ 3
    - `datatable-cap` — datatable_bindings 中 required:true 且無 default_value 之欄位數 ≤ 6
    - `schema-completeness` — 必要欄不為空 / `<FILL IN>`
    - `name-uniqueness` — entry `name` 跨所有 `--dsl` 與 `--shared-dsl` 唯一
+   - `format-uniqueness` — dsl_step `format` 原始字串跨所有 `--dsl` 唯一（不正規化；同 format 字串即重複，與 `target_part_path` 是否相同無關；`<FILL IN>` / 空 format 不在此規則範圍，歸 `schema-completeness`）
    - `format-key-binding-bijection` — format 內 `{key}` ⇔ `param_bindings` 之 key 雙向覆蓋
    - `target-uri-scheme-validity` — 每個 binding 的 `target` 須命中 5 種 scheme 之一（Spec anchor / `response:` / `literal:` / `stub_payload:` / DBML anchor）
    - `residual-candidate-comment-block` — 不得殘留 skeleton 生成的 `# 候選參數...` 註解區塊
