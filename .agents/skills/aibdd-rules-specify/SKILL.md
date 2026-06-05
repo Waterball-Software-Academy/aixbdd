@@ -1,6 +1,6 @@
 ---
 name: aibdd-rules-specify
-description: "AIBDD Rules Specify SOP。為 /aibdd-flows-specify 產出的每個 rule-less `.feature` 骨架列舉 atomic rules（4 種類型前綴、單一主詞／單一條件、可指回需求原文），再跑 findings 分析（NEED_TO_FIX 就地修正、NEED_TO_CLARIFY 交 /clarify-loop）。TRIGGER when 使用者下 /aibdd-rules-specify、flows 完成後要為每個 feature 補驗收規則、或被 /aibdd-reconcile cascade 委派。SKIP when 尚無 `.feature` 骨架（請先 /aibdd-flows-specify）、或只是要改 scenario 的具體 example 值（那是 /aibdd-spec-by-example-analyze）。"
+description: "AIBDD Rules Specify SOP。為 /aibdd-flows-specify 產出的每個 rule-less `.feature` 骨架列舉 atomic rules（4 種類型前綴、單一主詞／單一條件、可指回需求原文），再跑 findings 分析（NEED_TO_FIX 就地修正、NEED_TO_CLARIFY 交 /clarify-loop）。TRIGGER when 使用者下 /aibdd-rules-specify、flows 完成後要為每個 feature 補驗收規則、或被 /aibdd-reconcile cascade 委派。SKIP when 尚無 `.feature` 骨架（請先 /aibdd-flows-specify）、或只是要為 atomic rule 補可跑 Example（那是 /aibdd-spec-by-example）。"
 metadata:
   user-invocable: true
   source: project-level
@@ -8,7 +8,7 @@ metadata:
 
 # AIxBDD - Rules Specify
 
-嚴格遵照底下 Principles 來執行 SOP。本 skill 接在 `/aibdd-flows-specify` 之後：為每個已萃取出的 rule-less `.feature` 骨架列舉 atomic rules，並對全部範疇內 feature 做疑慮分析（就地修正 or 交澄清）。完成後交棒 `/aibdd-plan` 進入內外部邊界介面規劃與 DSL 設計。
+嚴格遵照底下 Principles 來執行 SOP。本 skill 接在 `/aibdd-flows-specify` 之後：為每個已萃取出的 rule-less `.feature` 骨架列舉 atomic rules，並對全部範疇內 feature 做疑慮分析（就地修正 or 交澄清）。完成後交棒 `/aibdd-spec-by-example` 為每條 atomic rule 補可跑 Example。
 
 ## PRINCIPLE: CWD 為產出錨點
 
@@ -64,4 +64,4 @@ metadata:
 
 2. EXECUTE the sub-sop: `01-atomic-rules-analyze/SOP.md`
 
-3. 和用戶說道（可使用不同詞彙但維持語意）：「OK，每個 Feature File 對應的 atomic rules 都列舉並收斂完了，你本次需求的所有規則已定義在各 `.feature` 上，系統複雜度與後續實作將由這些規則的驗收測試所驅動。如沒問題，可以執行 /aibdd-plan，正式進入內外部邊界介面的規劃以及 DSL 的設計。」
+3. 和用戶說道（可使用不同詞彙但維持語意）：「OK，每個 Feature File 對應的 atomic rules 都列舉並收斂完了，你本次需求的所有規則已定義在各 `.feature` 上，系統複雜度與後續實作將由這些規則的驗收測試所驅動。如沒問題，可以執行 /aibdd-spec-by-example，為每條 atomic rule 補上可跑的 Example。」
