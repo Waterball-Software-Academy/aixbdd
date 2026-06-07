@@ -49,11 +49,12 @@ ${PY_TEST_FEATURES_DIR}/
       operation_response_success_and_failure/
       operation_response_success_readmodel/
       state_verifier/
+      state_relationship_verifier/
       time_control/
       external_stub/
 ```
 
-One generated step pattern should map to one `.py` file unless an existing shared common step already owns the exact matcher. Shared matchers outside the seven preset handlers are project-specific and are not part of this preset SSOT.
+One generated step pattern should map to one `.py` file unless an existing shared common step already owns the exact matcher. Shared matchers outside the eight preset handlers are project-specific and are not part of this preset SSOT.
 
 ## Behave Matcher Contract
 
@@ -72,7 +73,7 @@ One generated step pattern should map to one `.py` file unless an existing share
 - Do not make a second HTTP call in Then handlers.
 - Do not assert response payload in `operation-invoke`.
 - Do not use repository access in `operation-response-success-readmodel`.
-- Do not use HTTP access in `state-builder` or `state-verifier`.
+- Do not use HTTP access in `state-builder`, `state-verifier`, or `state-relationship-verifier`.
 - Do not sleep or read wall-clock time in `time-control`.
 - Do not make real external calls in `external-stub`.
 

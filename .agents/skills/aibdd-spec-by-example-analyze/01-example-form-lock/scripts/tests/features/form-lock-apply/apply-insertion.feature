@@ -42,7 +42,7 @@ Feature: apply form-lock Example skeleton insertion
                   When <dsl>
                   Then 操作失敗，錯誤為 "<具體錯誤訊息>"
                   # @dsl
-                  # handler-candidate-kinds: state-verifier
+                  # handler-candidate-kinds: state-verifier | state-relationship-verifier
                   # rule: 先讀 ${SKILL_HOME}/aibdd-core/assets/boundaries/web-service/dsl-arrangement-rules/shared-then-failure-law.md 理解失敗情境下 Then 怎麼推理，再用其中 `前置（狀態）` 小節判斷這裡該怎麼驗證操作失敗後系統狀態沒有變動。
                   And <dsl>
         """
@@ -74,7 +74,7 @@ Feature: apply form-lock Example skeleton insertion
                   When <dsl>
                   Then 操作成功
                   # @dsl
-                  # handler-candidate-kinds: state-verifier
+                  # handler-candidate-kinds: state-verifier | state-relationship-verifier
                   # rule: 先讀 ${SKILL_HOME}/aibdd-core/assets/boundaries/web-service/dsl-arrangement-rules/shared-then-success-law.md 理解成功情境下 Then 怎麼推理，再用其中 `後置（狀態）` 小節判斷這裡該怎麼驗證操作成功後系統狀態已經改成預期結果。
                   And <dsl>
         """
@@ -102,7 +102,7 @@ Feature: apply form-lock Example skeleton insertion
                   When <dsl>
                   Then 操作失敗，錯誤為 "<具體錯誤訊息>"
                   # @dsl
-                  # handler-candidate-kinds: state-verifier
+                  # handler-candidate-kinds: state-verifier | state-relationship-verifier
                   # rule: 先讀 ${SKILL_HOME}/aibdd-core/assets/boundaries/web-service/dsl-arrangement-rules/shared-then-failure-law.md 理解失敗情境下 Then 怎麼推理，再用其中 `前置（狀態）` 小節判斷這裡該怎麼驗證操作失敗後系統狀態沒有變動。
                   And <dsl>
         """
@@ -160,7 +160,7 @@ Feature: apply form-lock Example skeleton insertion
                   When <dsl>
                   Then 操作失敗，錯誤為 "<具體錯誤訊息>"
                   # @dsl
-                  # handler-candidate-kinds: state-verifier
+                  # handler-candidate-kinds: state-verifier | state-relationship-verifier
                   # rule: 先讀 ${SKILL_HOME}/aibdd-core/assets/boundaries/web-service/dsl-arrangement-rules/shared-then-failure-law.md 理解失敗情境下 Then 怎麼推理，再用其中 `前置（狀態）` 小節判斷這裡該怎麼驗證操作失敗後系統狀態沒有變動。
                   And <dsl>
         """
@@ -180,7 +180,7 @@ Feature: apply form-lock Example skeleton insertion
                   When <dsl>
                   Then 操作失敗，錯誤為 "<具體錯誤訊息>"
                   # @dsl
-                  # handler-candidate-kinds: state-verifier
+                  # handler-candidate-kinds: state-verifier | state-relationship-verifier
                   # rule: 先讀 ${SKILL_HOME}/aibdd-core/assets/boundaries/web-service/dsl-arrangement-rules/shared-then-failure-law.md 理解失敗情境下 Then 怎麼推理，再用其中 `前置（狀態）` 小節判斷這裡該怎麼驗證操作失敗後系統狀態沒有變動。
                   And <dsl>
         """
@@ -199,7 +199,7 @@ Feature: apply form-lock Example skeleton insertion
                   When <dsl>
                   Then 操作失敗，錯誤為 "<具體錯誤訊息>"
                   # @dsl
-                  # handler-candidate-kinds: state-verifier
+                  # handler-candidate-kinds: state-verifier | state-relationship-verifier
                   # rule: 先讀 ${SKILL_HOME}/aibdd-core/assets/boundaries/web-service/dsl-arrangement-rules/shared-then-failure-law.md 理解失敗情境下 Then 怎麼推理，再用其中 `前置（狀態）` 小節判斷這裡該怎麼驗證操作失敗後系統狀態沒有變動。
                   And <dsl>
         """
@@ -275,7 +275,7 @@ Feature: apply form-lock Example skeleton insertion
                   When <dsl>
                   Then 操作失敗，錯誤為 "<具體錯誤訊息>"
                   # @dsl
-                  # handler-candidate-kinds: state-verifier
+                  # handler-candidate-kinds: state-verifier | state-relationship-verifier
                   # rule: 先讀 ${SKILL_HOME}/aibdd-core/assets/boundaries/web-service/dsl-arrangement-rules/shared-then-failure-law.md 理解失敗情境下 Then 怎麼推理，再用其中 `前置（狀態）` 小節判斷這裡該怎麼驗證操作失敗後系統狀態沒有變動。
                   And <dsl>
         """
