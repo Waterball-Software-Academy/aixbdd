@@ -17,7 +17,7 @@
    EOF
    ```
 
-1. PARSE 從 `01-bind-and-load` 已載入之 merged `$BOUNDARY_PROFILE`（base profile.yml ⊕ `${BOUNDARY_YML}.profile_overrides`）取出 `operation_contract_specifier.{skill,format}` 與 `state_specifier.{skill,format}`；產出目錄分別對齊 `${CONTRACTS_DIR}`、`${DATA_DIR}`。沿用 `$PLAN_SCOPE` 與 `$PLAN_MUTABLE_IMPACT_ENTRIES` 約束本 phase 推導範圍。
+1. 從 `$BOUNDARY_PROFILE`（01-bind 已綁）取出 `operation_contract_specifier.{skill,format}` 與 `state_specifier.{skill,format}`，產出目錄分別對齊 `${CONTRACTS_DIR}`／`${DATA_DIR}`；沿用 `$PLAN_SCOPE`、`$PLAN_MUTABLE_IMPACT_ENTRIES` 約束本 phase 範圍。
 
 2. DERIVE operation contract `slice_list`：以 `${PLAN_SPEC}`、`$PLAN_SCOPE` 所涵蓋之 `${FEATURE_SPECS_DIR}/**` 為 SSOT 做系統分析（可加讀 `${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${ACTIVITIES_DIR}/**`），切出良好模組化、精準切分的 operation contract slice。每個 slice 必須含 `target_path` + `scope`，其中 `target_path` 為**相對於 `${CONTRACTS_DIR}` 的檔案路徑**（例：`api.yml`、`api/<resource>.yml`、`<boundary-id>/api.yml`，依切檔策略決定）。`target_path` **不得**含 `<<NN-functional-module>>` 借位子層 — `${CONTRACTS_DIR}` 在 SSOT 已是 flat directory（見 `aibdd-core::ssot/spec-package-paths.md`）。
 

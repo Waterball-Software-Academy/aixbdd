@@ -83,9 +83,12 @@ metadata:
    - `${ACTIVITIES_DIR}` 下若有 `.activity` 則納入 `activity_truth`；若無則視為空集合（不得因此 STOP）。
    - 任一條件失敗 → 提示使用者回 `/aibdd-flows-specify`（spec.md／feature 骨架）或 `/aibdd-rules-specify`（atomic rules）補完，STOP。本步禁止補建或改寫 discovery markdown／feature／activity artifact。
 
-4. READ：boundary type profile 與 operation specifier
-   - PARSE `${BOUNDARY_YML}` 之 `type` 欄位為 `$boundary_type`；若不存在則 STOP & 報錯。
-   - 自該 boundary profile 取出 `operation_contract_specifier.{skill,format}`；產出目錄對齊 `${CONTRACTS_DIR}`。
+4. RESOLVE `$BOUNDARY_PROFILE`——TRIGGER CLI，stdout（JSON）存入 `$BOUNDARY_PROFILE`；非 0 退出 → STOP 並透傳 stderr。取出 `operation_contract_specifier.{skill,format}`，產出目錄對齊 `${CONTRACTS_DIR}`。
+
+   ```bash
+   python3 .claude/skills/aibdd-core/scripts/cli/resolve_boundary_profile.py \
+     --boundary-yml ${BOUNDARY_YML}
+   ```
 
 5. BIND `$PLAN_SCOPE`（本輪 plan package + function package charters）
    1. READ `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 之 `## Function package charters` 與 `## Packaging decision`。

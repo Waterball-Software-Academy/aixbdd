@@ -38,18 +38,12 @@
    - `${ACTIVITIES_DIR}` 下若有 `.activity` 則納入 `activity_truth`；若無則視為空集合（Discovery 現行流程可不產 activity，不得因此 STOP）。
    - 任一條件失敗 → 提示使用者回 `/aibdd-flows-specify`（spec.md／feature 骨架）或 `/aibdd-rules-specify`（atomic rules）補完，STOP。本步禁止補建或改寫 discovery markdown／feature／activity artifact。
 
-3. READ：boundary type profile（含選填 overrides）
-   3.1 PARSE `${BOUNDARY_YML}` 之 `type` 欄位為 `$boundary_type`。若不存在則 STOP & 報錯。
-   3.2 READ `.claude/skills/aibdd-core/assets/boundaries/$boundary_type/profile.yml` → `$BOUNDARY_PROFILE_BASE`。檔案不存在 → STOP & 報錯（提示 boundary type 名稱與 assets 路徑）。
-   3.3 PARSE `${BOUNDARY_YML}.profile_overrides`（選填欄位）→ `$BOUNDARY_PROFILE_OVERRIDES`。未提供視為空 map。
-   3.4 DERIVE `$BOUNDARY_PROFILE`：
-       - 預設 = `$BOUNDARY_PROFILE_BASE`
-       - 對 `$BOUNDARY_PROFILE_OVERRIDES` 的每個 top-level key（如 `state_specifier`、`operation_contract_specifier`、`persistence_handler`），**整塊替換** `$BOUNDARY_PROFILE` 同名 key（不做 deep merge — 避免半混合 specifier 設定）。
-   3.5 ASSERT 合法性（任一失敗 → STOP 並回報具體違反項）：
-       - `$BOUNDARY_PROFILE_OVERRIDES` 的 keys 必須 ⊆ `$BOUNDARY_PROFILE_BASE` 的 top-level keys（不准新增未知欄位）。
-       - 任一 overridden `skill` 值（例：`/aibdd-form-ddl-spec`）對應的 SKILL.md 必須存在於 `.claude/skills/<name>/SKILL.md`。
-       - 任一 overridden `format` 值必須屬於該 overridden `skill` 對應 SKILL.md 入口契約所接受的 format 集合（由該 specifier skill 自行 SSOT；本 SOP 不重複列舉具體格式）。
-   3.6 `$boundary_type` 與 `$BOUNDARY_PROFILE` 在後續 sub-SOP 都會被引用，需要被嚴格記住。
+3. RESOLVE `$BOUNDARY_PROFILE`——TRIGGER CLI，stdout（JSON）原樣存入 `$BOUNDARY_PROFILE` 供後續 sub-SOP 引用。非 0 退出 → STOP 並透傳 stderr。
+
+   ```bash
+   python3 .claude/skills/aibdd-core/scripts/cli/resolve_boundary_profile.py \
+     --boundary-yml ${BOUNDARY_YML}
+   ```
 
 4. BIND `$PLAN_SCOPE`（本輪 plan package + function package charters）
    1. READ `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 之 `## Function package charters` 與 `## Packaging decision`。
@@ -76,4 +70,4 @@
    - READ code skeleton index（排除 ignored directories 與非主 worktree）。
    - 只 READ，不得 CREATE 任何空檔或目錄骨架。
 
-7. DERIVE `$PLAN_INPUTS = { plan_spec, discovery_report, plan_scope, plan_mutable_impact_entries, activity_truth, feature_truth, boundary_profile (= merged $BOUNDARY_PROFILE), existing_truth_bundle, code_skeleton }`，供後續 sub-SOP 引用；不落地。
+7. DERIVE `$PLAN_INPUTS = { plan_spec, discovery_report, plan_scope, plan_mutable_impact_entries, activity_truth, feature_truth, boundary_profile, existing_truth_bundle, code_skeleton }`，供後續 sub-SOP 引用；不落地。
