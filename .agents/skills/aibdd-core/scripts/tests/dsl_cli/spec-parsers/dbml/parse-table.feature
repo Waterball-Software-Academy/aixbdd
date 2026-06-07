@@ -1,4 +1,4 @@
-Feature: DBMLSpecParser collects one dbml_table Part per Table block
+Feature: DBMLSpecParser collects one table Part per Table block
 
   Background:
     Given a temporary file at "data/data.dbml" with content:
@@ -17,12 +17,12 @@ Feature: DBMLSpecParser collects one dbml_table Part per Table block
       }
       """
 
-  Rule: 後置（狀態）- 每張 DBML Table 應產出單一 dbml_table Part
+  Rule: 後置（狀態）- 每張 DBML Table 應產出單一 table Part
     Example: data.dbml 內兩張 Table → 兩個 part
       When DBMLSpecParser parses the last file
-      Then exactly 2 parts of kind "dbml_table" are returned
+      Then exactly 2 parts of kind "table" are returned
 
-  Rule: 後置（狀態）- dbml_table Part 的 table_name 與 target_part_path 應對應 DBML 原文
+  Rule: 後置（狀態）- table Part 的 table_name 與 target_part_path 應對應 DBML 原文
     Example: users / room_members table 各自具備正確 identity
       When DBMLSpecParser parses the last file
       Then the part named "users" has target_part_path "data/data.dbml#users"

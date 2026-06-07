@@ -104,7 +104,7 @@ def step_assert_response_property_target(context, name: str, expected: str):
 
 def _part_by_table_name(context, table_name: str):
     matches = [p for p in context.parts if getattr(p, "table_name", None) == table_name]
-    assert matches, f"no dbml_table part named {table_name!r}; got {[getattr(p, 'table_name', '?') for p in context.parts]}"
+    assert matches, f"no table part named {table_name!r}; got {[getattr(p, 'table_name', '?') for p in context.parts]}"
     return matches[0]
 
 
@@ -112,7 +112,7 @@ def _part_by_ref(context, ref_text: str):
     parts = [
         p
         for p in context.parts
-        if getattr(getattr(p, "kind", None), "value", None) == "dbml_ref"
+        if getattr(getattr(p, "kind", None), "value", None) == "ref"
         and (
             f"{getattr(p, 'from_table', '')}.{getattr(p, 'from_column', '')} "
             f"{getattr(p, 'operator', '')} "
@@ -121,8 +121,8 @@ def _part_by_ref(context, ref_text: str):
         == ref_text
     ]
     assert parts, (
-        f"no dbml_ref part {ref_text!r}; got "
-        f"{[p.target_part_path for p in context.parts if getattr(getattr(p, 'kind', None), 'value', None) == 'dbml_ref']}"
+        f"no ref part {ref_text!r}; got "
+        f"{[p.target_part_path for p in context.parts if getattr(getattr(p, 'kind', None), 'value', None) == 'ref']}"
     )
     return parts[0]
 

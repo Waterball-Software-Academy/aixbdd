@@ -7,10 +7,10 @@ Mapping owned by this preset:
       operation-invoke
       operation-response-success-and-failure
       operation-response-success-readmodel   (only if the response has body properties)
-  - DbmlTablePart →
+  - TablePart →
       state-builder
       state-verifier
-  - DbmlRefPart →
+  - RefPart →
       state-verifier
 
 Per spec.md / Policy 2 + Risk R5, this plugin is the SSOT for:
@@ -32,9 +32,9 @@ from dsl_cli.models import (
     ApiOperationPart,
     CandidateBinding,
     DatatableBinding,
-    DbmlRefPart,
-    DbmlTablePart,
     DSLInstructionTemplate,
+    RefPart,
+    TablePart,
 )
 
 
@@ -43,10 +43,10 @@ def generate_templates(parts, context):
     for part in parts:
         if isinstance(part, ApiOperationPart):
             templates.extend(_for_api_operation(part))
-        elif isinstance(part, DbmlTablePart):
-            templates.extend(_for_dbml_table(part))
-        elif isinstance(part, DbmlRefPart):
-            templates.extend(_for_dbml_ref(part))
+        elif isinstance(part, TablePart):
+            templates.extend(_for_table(part))
+        elif isinstance(part, RefPart):
+            templates.extend(_for_ref(part))
         # Unknown part kinds are silently skipped: a future preset that adds
         # new spec_parsers can layer in without disturbing existing ones.
     return templates
@@ -96,10 +96,10 @@ def _fallback_op_id(part):
     return f"{part.method}_{part.path_escaped}"
 
 
-# ---- DbmlTablePart fan-out ------------------------------------------------
+# ---- TablePart fan-out ----------------------------------------------------
 
 
-def _for_dbml_table(part):
+def _for_table(part):
     not_null_names = {c.name for c in part.not_null_columns}
     builder = DSLInstructionTemplate(
         handler="state-builder",
@@ -134,7 +134,7 @@ def _for_dbml_table(part):
     return [builder, verifier]
 
 
-def _for_dbml_ref(part):
+def _for_ref(part):
     relation_token = "to" if part.operator == ">" else "link"
     verifier = DSLInstructionTemplate(
         handler="state-verifier",
