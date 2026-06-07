@@ -25,9 +25,8 @@ _QO = r"[`\"\[]?"  # optional opening quote
 _QC = r"[`\"\]]?"  # optional closing quote
 _IDENT_QUOTES = "`[]\""
 
-# Optional schema/database/owner qualifier(s): `public.`, `[dbo].`, `db.schema.`.
-# Only the rightmost dotted segment is the table identifier; prefixes are
-# dropped so emitted names match the bare form used by DBML / unqualified DDL.
+# schema/db/owner prefix (`public.`, `[dbo].`, `db.schema.`) — strip to bare name,
+# matching DBML / unqualified DDL output so part_to_dsl.py needs no change.
 _SCHEMA_PREFIX = rf"(?:{_QO}\w+{_QC}\s*\.\s*)*"
 
 
@@ -297,27 +296,12 @@ def parse_columns(
 
 @dataclass(frozen=True)
 class DDLDialect:
-    """Per-dialect parsing profile.
-
-    The CREATE TABLE / constraint / column walk is identical across dialects;
-    only these knobs vary:
-      - detect_increment: maps (type_base_upper, attrs_upper) -> auto-increment?
-      - inline_refs:      whether column-level inline `REFERENCES` clauses are
-                          scanned (PG inline-FK style; MySQL / MSSQL declare
-                          foreign keys at table level only).
-    """
 
     detect_increment: Callable[[str, str], bool]
     inline_refs: bool = False
 
 
 def parse_ddl(path: Path, dialect: DDLDialect) -> list[Part]:
-    """Parse one DDL spec file into a flat `TablePart` / `RefPart` list.
-
-    Shared across every SQL dialect; per-dialect behaviour is supplied by
-    `dialect`. Refs are de-duplicated by `target_part_path`, table-level FKs
-    taking precedence over inline ones.
-    """
     text = path.read_text()
     spec_label = path.as_posix()
     parts: list[Part] = []
