@@ -9,8 +9,8 @@
     --step-text "<Gherkin 步驟文案>" \
     --handler <handler-a> \
     --handler <handler-b> \
-    --dsl ${CONTRACTS_DIR}/*.dsl.yml \
-    --dsl ${DATA_DIR}/*.dsl.yml \
+    --dsl '${CONTRACTS_DIR}/*.dsl.yml' \
+    --dsl '${DATA_DIR}/*.dsl.yml' \
     --shared-dsl ${BOUNDARY_SHARED_DSL} \
     --source-scope all
 ```
