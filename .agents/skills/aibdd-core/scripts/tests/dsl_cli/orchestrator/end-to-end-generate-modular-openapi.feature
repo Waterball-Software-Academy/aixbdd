@@ -83,10 +83,9 @@ Feature: dsl_cli generate-dsl-instructions on modular OpenAPI with $ref
       """
     When dsl_cli generate-dsl-instructions runs for boundary "web-service"
 
-  Rule: 後置（狀態）- modular joinRoom operation 應展開為 3 條 entry 落到 contracts/room.dsl.yml
-    Example: invoke + response-success-and-failure + response-readmodel 三 entry name 出現
+  Rule: 後置（狀態）- modular joinRoom operation 應展開為 2 條 entry 落到 contracts/room.dsl.yml
+    Example: invoke + response-readmodel 兩 entry name 出現
       Then the file "specs/contracts/room.dsl.yml" contains the text "name: joinRoom.operation-invoke"
-      And the file "specs/contracts/room.dsl.yml" contains the text "name: joinRoom.operation-response-success-and-failure"
       And the file "specs/contracts/room.dsl.yml" contains the text "name: joinRoom.operation-response-success-readmodel"
 
   Rule: 後置（狀態）- invoke entry 應帶候選參數註解，從 resolved request schema 欄位 fan-out

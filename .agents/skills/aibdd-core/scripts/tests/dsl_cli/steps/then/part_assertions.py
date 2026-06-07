@@ -37,6 +37,30 @@ def step_assert_part_operation_id(context, expected: str):
     assert _single_part(context).operation_id == expected
 
 
+@then('the part\'s summary is "{expected}"')
+def step_assert_part_summary(context, expected: str):
+    actual = _single_part(context).summary
+    assert actual == expected, (
+        f"summary mismatch:\n  expected: {expected!r}\n  actual:   {actual!r}"
+    )
+
+
+@then('the part\'s security_schemes is "{expected}"')
+def step_assert_part_security_schemes(context, expected: str):
+    actual = _single_part(context).security_schemes
+    assert actual == (expected,), (
+        f"security_schemes mismatch:\n  expected: {(expected,)!r}\n  actual:   {actual!r}"
+    )
+
+
+@then("the part's security_schemes is empty")
+def step_assert_part_security_schemes_empty(context):
+    actual = _single_part(context).security_schemes
+    assert actual == (), (
+        f"security_schemes expected empty, got {actual!r}"
+    )
+
+
 @then('the part\'s target_part_path is "{expected}"')
 def step_assert_target_part_path(context, expected: str):
     assert _single_part(context).target_part_path == expected, (

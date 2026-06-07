@@ -101,6 +101,7 @@ class OpenAPISpecParser(SpecParser):
                         path_escaped=path_escaped,
                         method=method.lower(),
                         operation_id=resolved_op.get("operationId", ""),
+                        summary=resolved_op.get("summary", ""),
                         request_inputs=tuple(
                             _collect_request_inputs(
                                 raw_op, resolved_op, op_path, spec_label
@@ -111,9 +112,24 @@ class OpenAPISpecParser(SpecParser):
                                 raw_op, resolved_op, op_path, spec_label
                             )
                         ),
+                        security_schemes=_collect_security(raw_op, raw_doc),
                     )
                 )
         return parts
+
+
+def _collect_security(raw_op: dict, raw_doc: dict) -> tuple[str, ...]:
+    if "security" in raw_op:
+        requirements = raw_op.get("security") or []
+    else:
+        requirements = raw_doc.get("security") or []
+    schemes: list[str] = []
+    for requirement in requirements:
+        if isinstance(requirement, dict):
+            for scheme_name in requirement:
+                if scheme_name not in schemes:
+                    schemes.append(scheme_name)
+    return tuple(schemes)
 
 
 def _collect_request_inputs(
