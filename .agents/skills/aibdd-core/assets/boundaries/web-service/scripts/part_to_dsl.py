@@ -67,6 +67,7 @@ def _for_api_operation(part):
             CandidateBinding(key=ri.name, target=ri.target_part_path)
             for ri in part.request_inputs
         ),
+        datatable_bindings=_uid_datatable_binding(part),
     )
     response_status = DSLInstructionTemplate(
         handler="operation-response-success-and-failure",
@@ -95,6 +96,20 @@ def _for_api_operation(part):
 
 def _fallback_op_id(part):
     return f"{part.method}_{part.path_escaped}"
+
+
+def _uid_datatable_binding(part):
+    if not part.security_schemes:
+        return {}
+    spec_anchor = part.target_part_path.split("#", 1)[0]
+    scheme = part.security_schemes[0]
+    return {
+        "UID": DatatableBinding(
+            target=f"{spec_anchor}#/components/securitySchemes/{scheme}",
+            required=False,
+            default_value="<FILL IN>",
+        )
+    }
 
 
 # ---- TablePart fan-out ----------------------------------------------------
