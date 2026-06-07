@@ -17,6 +17,7 @@ Preferred invocation:
 from __future__ import annotations
 
 import argparse
+import glob
 import sys
 from pathlib import Path
 
@@ -35,24 +36,36 @@ _DEFAULT_BOUNDARIES_ROOT = (
 )
 
 
+def _expand_paths(patterns: list[str]) -> list[Path]:
+    resolved: set[str] = set()
+    for pattern in patterns:
+        if glob.has_magic(pattern):
+            resolved.update(glob.glob(pattern))
+        elif Path(pattern).exists():
+            resolved.add(pattern)
+        else:
+            raise SystemExit(f"dsl_cli: spec file not found: {pattern}")
+    return [Path(p) for p in sorted(resolved)]
+
+
 def _build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="dsl_cli")
     subs = parser.add_subparsers(dest="command", required=True)
 
     gen = subs.add_parser("generate-dsl-instructions")
     gen.add_argument("--boundary", required=True)
-    gen.add_argument("--specs", nargs="+", type=Path, required=True)
-    gen.add_argument("--dsl", nargs="+", type=Path, required=True)
+    gen.add_argument("--specs", nargs="+", required=True)
+    gen.add_argument("--dsl", nargs="+", required=True)
     gen.add_argument("--boundaries-root", type=Path, default=_DEFAULT_BOUNDARIES_ROOT)
 
     ev = subs.add_parser("eval")
-    ev.add_argument("--dsl", nargs="+", type=Path, required=True)
+    ev.add_argument("--dsl", nargs="+", required=True)
     ev.add_argument("--shared-dsl", type=Path, default=None)
 
     q = subs.add_parser("query")
     q.add_argument("--handler", action="append", default=None)
     q.add_argument("--step-text", default=None)
-    q.add_argument("--dsl", action="append", type=Path, default=[])
+    q.add_argument("--dsl", action="append", default=[])
     q.add_argument("--shared-dsl", type=Path, default=None)
     q.add_argument(
         "--source-scope",
@@ -67,12 +80,15 @@ def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
     if args.command == "generate-dsl-instructions":
         report = run_generate_dsl_instructions(
-            args.boundary, args.specs, args.dsl, args.boundaries_root
+            args.boundary,
+            _expand_paths(args.specs),
+            _expand_paths(args.dsl),
+            args.boundaries_root,
         )
         print(render_generation_report(report))
         return 0
     if args.command == "eval":
-        report = run_eval(args.dsl, args.shared_dsl)
+        report = run_eval(_expand_paths(args.dsl), args.shared_dsl)
         print(render_eval_report(report))
         return 0 if report.status == "PASS" else 1
     if args.command == "query":
@@ -85,7 +101,7 @@ def main(argv: list[str] | None = None) -> int:
             return 1
         try:
             matches = run_query(
-                args.dsl,
+                _expand_paths(args.dsl),
                 handlers if handlers else None,
                 args.shared_dsl,
                 args.source_scope,
