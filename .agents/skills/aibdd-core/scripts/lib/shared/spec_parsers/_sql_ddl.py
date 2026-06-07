@@ -25,6 +25,11 @@ _QO = r"[`\"\[]?"  # optional opening quote
 _QC = r"[`\"\]]?"  # optional closing quote
 _IDENT_QUOTES = "`[]\""
 
+# Optional schema/database/owner qualifier(s): `public.`, `[dbo].`, `db.schema.`.
+# Only the rightmost dotted segment is the table identifier; prefixes are
+# dropped so emitted names match the bare form used by DBML / unqualified DDL.
+_SCHEMA_PREFIX = rf"(?:{_QO}\w+{_QC}\s*\.\s*)*"
+
 
 def _strip_ident(name: str) -> str:
     return name.strip().strip(_IDENT_QUOTES)
@@ -35,7 +40,7 @@ def _strip_ident(name: str) -> str:
 # ---------------------------------------------------------------------------
 
 _CREATE_TABLE_RE = re.compile(
-    rf"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?{_QO}(?P<name>\w+){_QC}\s*\(",
+    rf"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?{_SCHEMA_PREFIX}{_QO}(?P<name>\w+){_QC}\s*\(",
     re.IGNORECASE,
 )
 
@@ -119,12 +124,12 @@ def parse_pk_col_names(body: str) -> frozenset[str]:
 
 _FK_RE = re.compile(
     rf"(?:CONSTRAINT\s+{_QO}\w+{_QC}\s+)?FOREIGN\s+KEY\s*\(([^)]+)\)\s*"
-    rf"REFERENCES\s+{_QO}(\w+){_QC}\s*\(([^)]+)\)",
+    rf"REFERENCES\s+{_SCHEMA_PREFIX}{_QO}(\w+){_QC}\s*\(([^)]+)\)",
     re.IGNORECASE,
 )
 
 _INLINE_REF_RE = re.compile(
-    rf"REFERENCES\s+{_QO}(?P<to_table>\w+){_QC}\s*\({_QO}(?P<to_col>\w+){_QC}\)",
+    rf"REFERENCES\s+{_SCHEMA_PREFIX}{_QO}(?P<to_table>\w+){_QC}\s*\({_QO}(?P<to_col>\w+){_QC}\)",
     re.IGNORECASE,
 )
 
