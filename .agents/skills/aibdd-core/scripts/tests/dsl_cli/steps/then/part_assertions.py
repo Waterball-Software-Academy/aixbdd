@@ -295,6 +295,17 @@ def step_assert_column_has_increment(context, table: str, col: str, expected: st
     )
 
 
+@then('the column "{table}.{col}" has nullable {expected}')
+def step_assert_column_nullable(context, table: str, col: str, expected: str):
+    part = _part_by_table_name(context, table)
+    matches = [c for c in part.columns if c.name == col]
+    assert matches, f"{table}: no column named {col!r}"
+    expected_bool = expected.strip().lower() == "true"
+    assert matches[0].nullable == expected_bool, (
+        f"{table}.{col}.nullable: expected {expected_bool}, got {matches[0].nullable}"
+    )
+
+
 @then('the column "{table}.{col}" has has_default {expected}')
 def step_assert_column_has_default(context, table: str, col: str, expected: str):
     part = _part_by_table_name(context, table)

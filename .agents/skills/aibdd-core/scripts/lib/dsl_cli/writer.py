@@ -10,8 +10,9 @@ We bypass ruamel for output and emit YAML text directly. Rationale:
     templating is easier to reason about and to verify byte-for-byte.
 
 `route_template_to_file()` is a pure function — `Path(source).stem` is
-normalized by stripping any `.api` / `.openapi` suffix, then `.dsl.yml` is
-appended. DBML stems have no such suffix, so the regex is a no-op.
+normalized by stripping any format-suffix (`.api` / `.openapi` for OpenAPI;
+`.mysql` / `.pg` / `.mssql` for SQL DDL dialects), then `.dsl.yml` is
+appended. DBML stems carry no such suffix, so the regex is a no-op there.
 
 `append_templates()` accepts a list of templates targeting the same file. The
 caller (orchestrator) is responsible for batching templates that route to the
@@ -25,7 +26,7 @@ from pathlib import Path
 
 from dsl_cli.models import DSLInstructionTemplate
 
-_STEM_SUFFIX_RE = re.compile(r"\.(api|openapi)$")
+_STEM_SUFFIX_RE = re.compile(r"\.(api|openapi|mysql|pg|mssql)$")
 
 
 def route_template_to_file(template: DSLInstructionTemplate) -> Path:
@@ -96,4 +97,6 @@ def _datatable_bindings_dump(bindings) -> str:
         lines.append(f"{_INDENT}      target: {v.target}")
         if v.default_value is not None:
             lines.append(f'{_INDENT}      default_value: "{v.default_value}"')
+        elif not v.required:
+            lines.append(f'{_INDENT}      default_value: ""')
     return "\n".join(lines)

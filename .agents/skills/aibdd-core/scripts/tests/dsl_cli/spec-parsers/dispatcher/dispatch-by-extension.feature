@@ -42,6 +42,33 @@ Feature: dispatch_spec_parser routes a spec file to its concrete parser by suffi
       When dispatch_spec_parser is called on the file aliased "dbml"
       Then the dispatched parser is an instance of "DBMLSpecParser"
 
+  Rule: 後置（狀態）- *.mysql.sql 應路由到 MySQLSpecParser
+    Example: data/domain.mysql.sql → MySQLSpecParser
+      Given a temporary file at "data/domain.mysql.sql" with content:
+        """
+        CREATE TABLE users (id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id));
+        """
+      When dispatch_spec_parser is called on the last file
+      Then the dispatched parser is an instance of "MySQLSpecParser"
+
+  Rule: 後置（狀態）- *.pg.sql 應路由到 PostgresSpecParser
+    Example: data/domain.pg.sql → PostgresSpecParser
+      Given a temporary file at "data/domain.pg.sql" with content:
+        """
+        CREATE TABLE users (id SERIAL PRIMARY KEY);
+        """
+      When dispatch_spec_parser is called on the last file
+      Then the dispatched parser is an instance of "PostgresSpecParser"
+
+  Rule: 後置（狀態）- *.mssql.sql 應路由到 MSSQLSpecParser
+    Example: data/domain.mssql.sql → MSSQLSpecParser
+      Given a temporary file at "data/domain.mssql.sql" with content:
+        """
+        CREATE TABLE users (id INT IDENTITY(1,1) NOT NULL, PRIMARY KEY (id));
+        """
+      When dispatch_spec_parser is called on the last file
+      Then the dispatched parser is an instance of "MSSQLSpecParser"
+
   Rule: 後置（回應）- 未知副檔名應 raise ValueError
     Example: random.txt → ValueError
       Given a temporary file at "stray/random.txt" with content:

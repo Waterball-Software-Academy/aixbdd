@@ -19,3 +19,23 @@ Feature: route_template_to_file maps a part's source spec to its sibling `*.dsl.
     Example: data/core.dbml → data/core.dsl.yml
       When route_template_to_file routes a template with source_spec_path "data/core.dbml"
       Then the routed path is "data/core.dsl.yml"
+
+  Rule: 後置（狀態）- `*.mysql.sql` 應路由到同目錄、stem strip `.mysql` 後的 `.dsl.yml`
+    Example: data/domain.mysql.sql → data/domain.dsl.yml
+      When route_template_to_file routes a template with source_spec_path "data/domain.mysql.sql"
+      Then the routed path is "data/domain.dsl.yml"
+
+  Rule: 後置（狀態）- `*.pg.sql` 應路由到同目錄、stem strip `.pg` 後的 `.dsl.yml`
+    Example: data/domain.pg.sql → data/domain.dsl.yml
+      When route_template_to_file routes a template with source_spec_path "data/domain.pg.sql"
+      Then the routed path is "data/domain.dsl.yml"
+
+  Rule: 後置（狀態）- `*.mssql.sql` 應路由到同目錄、stem strip `.mssql` 後的 `.dsl.yml`
+    Example: data/domain.mssql.sql → data/domain.dsl.yml
+      When route_template_to_file routes a template with source_spec_path "data/domain.mssql.sql"
+      Then the routed path is "data/domain.dsl.yml"
+
+  Rule: 後置（狀態）- 多 SQL DDL 分檔場景應各自 stem strip dialect 後綴 → `.dsl.yml`
+    Example: data/orders.pg.sql → data/orders.dsl.yml
+      When route_template_to_file routes a template with source_spec_path "data/orders.pg.sql"
+      Then the routed path is "data/orders.dsl.yml"
