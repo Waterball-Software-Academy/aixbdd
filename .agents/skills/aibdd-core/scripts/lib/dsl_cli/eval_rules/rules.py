@@ -87,6 +87,17 @@ def rule_schema_completeness(entry: DSLEntry, entry_file: Path):
                 message=f"必要欄 {field} 為空",
             )
     for key, b in entry.datatable_bindings.items():
+        if not b.required and b.default_value is None:
+            yield Violation(
+                rule_id="schema-completeness",
+                entry_name=entry.name,
+                entry_file=entry_file,
+                message=(
+                    f"datatable_bindings[{key}] required:false "
+                    "但缺少 default_value"
+                ),
+                hint='補上 default_value: ""，讓 optional 欄位有明確空字串預設',
+            )
         if b.default_value is not None and b.default_value.strip() == "<FILL IN>":
             yield Violation(
                 rule_id="schema-completeness",
@@ -180,6 +191,34 @@ def rule_name_uniqueness(
                 seen[entry.name] = (path, entry.name)
 
 
+def rule_format_uniqueness(
+    entries_by_file: dict[Path, list[DSLEntry]],
+):
+    # Group every dsl_step by its raw format string across all dsl.yml; any
+    # format shared by 2+ entries is a duplicate. No normalization is applied.
+    # Skip placeholder / empty formats — those are schema-completeness's domain.
+    seen: dict[str, tuple[Path, str]] = {}
+    for path, entries in entries_by_file.items():
+        for entry in entries:
+            fmt = entry.format
+            if not fmt or fmt.strip() == "<FILL IN>":
+                continue
+            if fmt in seen:
+                prev_file, prev_name = seen[fmt]
+                yield Violation(
+                    rule_id="format-uniqueness",
+                    entry_name=entry.name,
+                    entry_file=path,
+                    message=(
+                        f"dsl_step format {fmt!r} 與 {prev_file} 中之 "
+                        f"{prev_name!r} 重複（跨全部 dsl.yml 範圍）"
+                    ),
+                    hint="改寫其中一條 format 句型使其唯一，或移除重複的 dsl_step",
+                )
+            else:
+                seen[fmt] = (path, entry.name)
+
+
 def rule_residual_candidate_comment_block(
     entries_by_file: dict[Path, list[DSLEntry]],
 ):
@@ -222,6 +261,7 @@ def evaluate(
             for rule in _PER_ENTRY_RULES:
                 violations.extend(rule(entry, path))
     violations.extend(rule_name_uniqueness(entries_by_file, set(shared_names)))
+    violations.extend(rule_format_uniqueness(entries_by_file))
     violations.extend(rule_residual_candidate_comment_block(entries_by_file))
     return EvalReport(
         status="PASS" if not violations else "FAIL",
