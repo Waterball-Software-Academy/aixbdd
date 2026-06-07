@@ -81,15 +81,3 @@ components:
 | `2026-01-01` | `string` (format: date) |
 | `2026-01-01T00:00:00Z` | `string` (format: date-time) |
 | 有限值域 | `string`（搭配 `enum`） |
-
-## 便條紙規則
-
-YAML 行尾 comment：`# CiC(<CATEGORY>): ...`
-
-DBML／其他 DSL 交叉引用時仍沿用各自 skill 定義。完整 CiC 類別見 `../../aibdd-form-activity/references/cic-format.md`（若該檔存在於工作樹）。
-
-| 代碼 | 何時標記 |
-|------|----------|
-| `GAP` | 無法從 .feature 推斷 HTTP Method 或 Path |
-| `ASM` | 推斷了 enum 值域但不確定完整性 |
-| `AMB` | 同操作可能多種 HTTP Method（PUT vs PATCH） |

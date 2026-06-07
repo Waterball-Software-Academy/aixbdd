@@ -34,7 +34,7 @@ metadata:
 
 ## PRINCIPLE: 澄清只委派 clarify-loop
 
-- 凡須向使用者做**結構化澄清**（locale 選擇、scope 模糊、上游真相缺洞、specifier 不支援等），各 sub-SOP 僅用 **一行 `DELEGATE /clarify-loop`**，並帶 **`delegated_intake`**（`profile=aibdd-plan`，形狀與展開規則見 sibling `clarify-loop/references/intake-expanders/aibdd-plan.md`）。
+- 凡須向使用者做**結構化澄清**（locale 選擇、scope 模糊、上游真相缺洞、specifier 不支援等），各 sub-SOP 僅用 **一行 `DELEGATE /clarify-loop`**。
 - **禁止**在 sub-SOP 內 inline classify／branch user reply；**禁止**聊天逐題代替。
 
 ## PRINCIPLE: STRICT SOP

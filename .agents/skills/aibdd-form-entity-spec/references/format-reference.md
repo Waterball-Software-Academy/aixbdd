@@ -41,16 +41,3 @@ Enum <enum_name> {
 Ref: <table_a>.<field> > <table_b>.<field>   // many-to-one
 Ref: <table_a>.<field> - <table_b>.<field>   // one-to-one
 ```
-
-## 便條紙格式
-
-DBML 行尾 comment：`// CiC(<CATEGORY>): ...`
-
-完整格式定義見 `../../aibdd-form-activity/references/cic-format.md`。
-
-| 代碼 | 何時標記 |
-|------|---------|
-| `GAP` | 無法從 .feature 確定欄位型別或長度 |
-| `ASM` | 推斷了 Enum 值域但不確定是否完整 |
-| `AMB` | 關聯方向不確定 |
-| `CON` | 同欄位跨 Feature 型別不一致 |
