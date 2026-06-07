@@ -5,7 +5,6 @@ Contract: `generate_templates(parts, context) -> list[DSLInstructionTemplate]`.
 Mapping owned by this preset:
   - ApiOperationPart →
       operation-invoke
-      operation-response-success-and-failure
       operation-response-success-readmodel   (only if the response has body properties)
   - TablePart →
       state-builder
@@ -69,14 +68,7 @@ def _for_api_operation(part):
         ),
         datatable_bindings=_uid_datatable_binding(part),
     )
-    response_status = DSLInstructionTemplate(
-        handler="operation-response-success-and-failure",
-        name=f"{op_id}.operation-response-success-and-failure",
-        target_part_path=f"{part.target_part_path}/responses/200",
-        source_spec_path=part.spec_file,
-        candidate_bindings=(),
-    )
-    out = [invoke, response_status]
+    out = [invoke]
     if part.response_properties:
         readmodel = DSLInstructionTemplate(
             handler="operation-response-success-readmodel",
