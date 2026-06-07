@@ -1,12 +1,12 @@
 """DBML (`*.dbml`) spec parser.
 
 Scope:
-  - `Table <name> { ... }` blocks → `DbmlTablePart`
-  - `Ref: a.b > c.d` and inline `[ref: > c.d]` → `DbmlRefPart`
+  - `Table <name> { ... }` blocks → `TablePart`
+  - `Ref: a.b > c.d` and inline `[ref: > c.d]` → `RefPart`
 
 Other DBML constructs (Enum, Project, indexes) are ignored.
 
-Each Table becomes a `DbmlTablePart`. Per column we extract:
+Each Table becomes a `TablePart`. Per column we extract:
   - name, type
   - is_pk        — has `pk` token in the option list
   - nullable     — false iff `[not null]` or `[pk ...]` appears (pk implies not null)
@@ -22,7 +22,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from shared.spec_parts import Column, DbmlRefPart, DbmlTablePart, Part, PartKind
+from shared.spec_parts import Column, RefPart, TablePart, Part, PartKind
 from shared.spec_parsers.base import SpecParser
 
 # Capture `Table <name> { <body> }`. DOTALL so `.` matches newlines inside body.
@@ -92,8 +92,8 @@ class DBMLSpecParser(SpecParser):
             columns = tuple(_parse_columns(body, spec_label, table_name))
             not_null = tuple(c for c in columns if not c.nullable)
             parts.append(
-                DbmlTablePart(
-                    kind=PartKind.dbml_table,
+                TablePart(
+                    kind=PartKind.table,
                     spec_file=path,
                     target_part_path=f"{spec_label}#{table_name}",
                     table_name=table_name,
@@ -186,8 +186,8 @@ def _build_ref_part(
     to_table: str,
     to_column: str,
 ):
-    return DbmlRefPart(
-        kind=PartKind.dbml_ref,
+    return RefPart(
+        kind=PartKind.ref,
         spec_file=spec_file,
         target_part_path=(
             f"{spec_label}#ref:{from_table}.{from_column}{operator}{to_table}.{to_column}"

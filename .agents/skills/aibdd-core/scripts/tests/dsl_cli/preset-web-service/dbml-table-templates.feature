@@ -1,4 +1,4 @@
-Feature: web-service plugin expands DbmlTablePart into state-builder + state-verifier templates
+Feature: web-service plugin expands TablePart into state-builder + state-verifier templates
 
   Background:
     Given a temporary file at "data/data.dbml" with content:
