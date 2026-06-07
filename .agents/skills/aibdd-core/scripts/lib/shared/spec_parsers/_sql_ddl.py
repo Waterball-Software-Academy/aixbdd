@@ -18,11 +18,24 @@ from typing import Callable
 from shared.spec_parts import Column, RefPart, PartKind, TablePart, Part
 
 # ---------------------------------------------------------------------------
+# Identifier quoting — MySQL `name`, MSSQL [name], ANSI/PG "name"
+# ---------------------------------------------------------------------------
+
+_QO = r"[`\"\[]?"  # optional opening quote
+_QC = r"[`\"\]]?"  # optional closing quote
+_IDENT_QUOTES = "`[]\""
+
+
+def _strip_ident(name: str) -> str:
+    return name.strip().strip(_IDENT_QUOTES)
+
+
+# ---------------------------------------------------------------------------
 # CREATE TABLE block extraction (paren-depth aware)
 # ---------------------------------------------------------------------------
 
 _CREATE_TABLE_RE = re.compile(
-    r"CREATE\s+TABLE\s+(?P<name>\w+)\s*\(",
+    rf"CREATE\s+TABLE\s+(?:IF\s+NOT\s+EXISTS\s+)?{_QO}(?P<name>\w+){_QC}\s*\(",
     re.IGNORECASE,
 )
 
@@ -96,7 +109,7 @@ def parse_pk_col_names(body: str) -> frozenset[str]:
         if not match:
             continue
         for col in match.group(1).split(","):
-            cols.add(col.strip().strip("`[]\""))
+            cols.add(_strip_ident(col))
     return frozenset(cols)
 
 
@@ -105,13 +118,13 @@ def parse_pk_col_names(body: str) -> frozenset[str]:
 # ---------------------------------------------------------------------------
 
 _FK_RE = re.compile(
-    r"(?:CONSTRAINT\s+\w+\s+)?FOREIGN\s+KEY\s*\(([^)]+)\)\s*"
-    r"REFERENCES\s+(\w+)\s*\(([^)]+)\)",
+    rf"(?:CONSTRAINT\s+{_QO}\w+{_QC}\s+)?FOREIGN\s+KEY\s*\(([^)]+)\)\s*"
+    rf"REFERENCES\s+{_QO}(\w+){_QC}\s*\(([^)]+)\)",
     re.IGNORECASE,
 )
 
 _INLINE_REF_RE = re.compile(
-    r"REFERENCES\s+(?P<to_table>\w+)\s*\((?P<to_col>\w+)\)",
+    rf"REFERENCES\s+{_QO}(?P<to_table>\w+){_QC}\s*\({_QO}(?P<to_col>\w+){_QC}\)",
     re.IGNORECASE,
 )
 
@@ -130,9 +143,9 @@ def parse_fk_ref_parts(
         match = _FK_RE.search(line)
         if not match:
             continue
-        from_col = match.group(1).split(",")[0].strip().strip("`[]\"")
+        from_col = _strip_ident(match.group(1).split(",")[0])
         to_table = match.group(2)
-        to_col = match.group(3).split(",")[0].strip().strip("`[]\"")
+        to_col = _strip_ident(match.group(3).split(",")[0])
         parts.append(
             _build_ref(spec_file, spec_label, table_name, from_col, to_table, to_col)
         )
@@ -150,7 +163,7 @@ def parse_inline_ref_parts(
     for line in body_lines(body):
         if is_constraint_line(line):
             continue
-        col_match = re.match(r"^(\w+)", line)
+        col_match = re.match(rf"^{_QO}(\w+){_QC}", line)
         ref_match = _INLINE_REF_RE.search(line)
         if not col_match or not ref_match:
             continue
@@ -190,7 +203,7 @@ def _build_ref(
 # ---------------------------------------------------------------------------
 
 _COL_LINE_RE = re.compile(
-    r"^(?P<name>\w+)\s+"
+    rf"^{_QO}(?P<name>\w+){_QC}\s+"
     r"(?P<type>[A-Za-z_][A-Za-z0-9_]*)(?:\([^)]*\))?\s*"
     r"(?P<attrs>.*?)\s*$",
     re.IGNORECASE,
