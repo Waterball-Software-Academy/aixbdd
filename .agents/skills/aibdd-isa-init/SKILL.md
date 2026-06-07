@@ -25,7 +25,7 @@ metadata:
    3. 若 `${CONTRACTS_DIR}` 或 `${DATA_DIR}` 不存在 → CREATE 目錄（僅建立目錄，不寫規格內容）。
    4. 任一失敗 → 提示先跑 `/aibdd-kickoff`，STOP。
 
-2. DELEGATE `/clarify-loop`——單題確認 SF 持久層要用的 SQL dialect（決定 `state_specifier.format` 與後續 `${DATA_DIR}` 下 DDL 副檔名）。
+2. DELEGATE `/clarify-loop`——單題確認專案持久層要用的 SQL dialect（決定 `state_specifier.format` 與後續 `${DATA_DIR}` 下 DDL 副檔名）。
 
    Payload（`questions` 一題；`options` 三選一）：
 
