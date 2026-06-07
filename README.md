@@ -122,6 +122,7 @@ Each stage feeds the next. Flows, rules, and examples specification writes the a
 | Skill | Your specialist | What it does |
 |---|---|---|
 | `/aibdd-kickoff` | **Project initializer** | Binds the project context, stack-aware config, boundary skeleton, and core AIBDD paths so the rest of the pipeline has a real starting point. |
+| `/aibdd-isa-init` | **ISA initializer** | Prepares the SF evaluation path by binding AIBDD arguments, switching boundary state specs to SQL DDL when needed, and creating the ISA contract and entity mapping skeletons. |
 | `/clarify-loop` | **Clarification router** | Collects missing information in a controlled, file-first way instead of letting agents improvise around ambiguity. |
 | `/aibdd-flows-specify` | **Root planner** | Turns raw ideas into boundary-aware sourcing truth, impact matrix, function-package charters, the UAT-flow activity diagrams (`.activity`), and the rule-less feature-file list bound to them. |
 | `/aibdd-rules-specify` | **Rule specifier** | Enumerates atomic acceptance rules into each feature skeleton, then fixes or clarifies findings. |
