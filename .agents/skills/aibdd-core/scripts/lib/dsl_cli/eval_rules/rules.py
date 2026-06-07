@@ -194,9 +194,6 @@ def rule_name_uniqueness(
 def rule_format_uniqueness(
     entries_by_file: dict[Path, list[DSLEntry]],
 ):
-    # Group every dsl_step by its raw format string across all dsl.yml; any
-    # format shared by 2+ entries is a duplicate. No normalization is applied.
-    # Skip placeholder / empty formats — those are schema-completeness's domain.
     seen: dict[str, tuple[Path, str]] = {}
     for path, entries in entries_by_file.items():
         for entry in entries:
