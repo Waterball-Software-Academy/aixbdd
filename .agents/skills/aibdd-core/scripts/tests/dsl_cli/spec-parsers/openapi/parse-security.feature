@@ -1,15 +1,5 @@
 Feature: OpenAPISpecParser extracts the effective security schemes per operation
 
-  # security_schemes 抽取規則（operation 覆寫 root）：
-  # - operation 自帶 security: 區塊        → 取該區塊的 scheme 名
-  # - operation security: []（顯式 opt-out） → 空（即使 root 有 security）
-  # - operation 無 security key            → 繼承 root-level security
-  # - 處處皆無                              → 空
-  #
-  # security_schemes 之後驅動 web-service preset 的 actor slot：
-  # part_to_dsl 對 secured operation 多吐一個 UID datatable_binding，
-  # dsl_to_isa 再把它路由成 (UID="$...") instruction 前綴。
-
   Rule: 後置（狀態）- operation 自帶 security 區塊時，security_schemes 取該區塊的 scheme 名
     Example: setPassword 由 playerTokenAuth 保護
       Given a temporary file at "contracts/games.api.yml" with content:

@@ -1,12 +1,5 @@
 Feature: web-service plugin emits a UID actor slot for secured operations
 
-  # secured operation（part.security_schemes 非空）→ invoke template 多一條 UID datatable_binding：
-  #   - required: false
-  #   - default_value: "<FILL IN>"  （待 SBE/planner 填入真實身分變數，如 $玩家A）
-  #   - target: 指向該 securityScheme 的 spec anchor（真 anchor、過 eval、語意＝身分源自此 scheme）
-  # 未受保護的 operation 不得有 UID datatable_binding。
-  # dsl_to_isa 之後把這個 UID 路由成 (UID="$...") instruction 前綴（見 dsl_to_isa 測試）。
-
   Background:
     Given a temporary file at "contracts/games.api.yml" with content:
       """
