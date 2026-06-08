@@ -1,6 +1,7 @@
 ---
 name: aibdd-isa-init
-description: > 初始化 ISA 相關規格：確認 SQL dialect、建立 `isa.yml`。
+description: > 
+   初始化 ISA 相關規格：確認 SQL dialect、建立 `isa.yml`。
 metadata:
   user-invocable: true
   source: project-level
