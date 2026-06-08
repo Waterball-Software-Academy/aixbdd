@@ -72,7 +72,7 @@ One generated step pattern should map to one `.py` file unless an existing share
 - Do not call application service internals from E2E steps.
 - Do not make a second HTTP call in Then handlers.
 - Do not assert response payload in `operation-invoke`.
-- Do not use repository access in `operation-response-success-readmodel`.
+- Do not use repository access in `operation-response-verify`.
 - Do not use HTTP access in `state-builder`, `state-verifier`, or `state-relationship-verifier`.
 - Do not sleep or read wall-clock time in `time-control`.
 - Do not make real external calls in `external-stub`.

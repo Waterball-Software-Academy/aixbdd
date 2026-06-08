@@ -37,6 +37,6 @@
 合法性收斂：
 
 1. `target_part_path` 只能用 Spec anchor (OpenAPI / DBML) 或 Code anchor 三種 — 它的語義是「該 DSL instruction 對應的規格部位或程式碼部位」，必須能在 OpenAPI / DBML 規格內或程式碼檔內定位。
-2. `bindings.target` 6 種皆合法；具體允許哪幾種依 handler 而異（譬如 `state-builder` 只接 Spec anchor，`operation-response-success-readmodel` 接 Spec anchor + `response:`），由 plugin `generate_templates` 在構造時保證。
+2. `bindings.target` 6 種皆合法；具體允許哪幾種依 handler 而異（譬如 `state-builder` 只接 Spec anchor，`operation-response-verify` 接 Spec anchor + `response:`），由 plugin `generate_templates` 在構造時保證。
 
 完整 7-handler 範例見 `research/aibdd-plan-dsl合成步驟超級 harness 計劃/spec.md` §1。

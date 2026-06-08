@@ -5,7 +5,7 @@ Contract: `generate_templates(parts, context) -> list[DSLInstructionTemplate]`.
 Mapping owned by this preset:
   - ApiOperationPart →
       operation-invoke
-      operation-response-success-readmodel   (only if the response has body properties)
+      operation-response-verify   (only if the response has body properties)
   - TablePart →
       state-builder
       state-verifier
@@ -18,7 +18,7 @@ Per spec.md / Policy 2 + Risk R5, this plugin is the SSOT for:
     <table_name>.<handler> for DBML)
   - the binding target URI scheme each handler emits:
       * operation-invoke / response-success-and-failure → OpenAPI spec anchor
-      * operation-response-success-readmodel            → `response:` JSONPath
+      * operation-response-verify            → `response:` JSONPath
       * state-builder / state-verifier / state-relationship-verifier
                                                         → DBML spec anchor
 
@@ -70,9 +70,9 @@ def _for_api_operation(part):
     )
     out = [invoke]
     if part.response_properties:
-        readmodel = DSLInstructionTemplate(
-            handler="operation-response-success-readmodel",
-            name=f"{op_id}.operation-response-success-readmodel",
+        verify = DSLInstructionTemplate(
+            handler="operation-response-verify",
+            name=f"{op_id}.operation-response-verify",
             target_part_path=(
                 f"{part.target_part_path}/responses/200/content/application~1json/schema"
             ),
@@ -82,7 +82,7 @@ def _for_api_operation(part):
                 for rp in part.response_properties
             ),
         )
-        out.append(readmodel)
+        out.append(verify)
     return out
 
 

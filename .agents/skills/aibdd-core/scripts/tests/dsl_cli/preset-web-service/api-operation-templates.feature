@@ -48,7 +48,7 @@ Feature: web-service plugin expands ApiOperationPart into invoke + readmodel tem
   Rule: 後置（狀態）- joinRoom operation 應展開為 invoke + response-readmodel 兩條 template
     Example: 兩個 handler 各一條，name 以 <operationId>.<handler> 自動生成
       Then a template with name "joinRoom.operation-invoke" exists with handler "operation-invoke"
-      And a template with name "joinRoom.operation-response-success-readmodel" exists with handler "operation-response-success-readmodel"
+      And a template with name "joinRoom.operation-response-verify" exists with handler "operation-response-verify"
 
   Rule: 後置（狀態）- invoke template 之候選參數應涵蓋全部 request_inputs（path + body）
     Example: roomNo + playerId + nickname 三條候選
@@ -60,5 +60,5 @@ Feature: web-service plugin expands ApiOperationPart into invoke + readmodel tem
 
   Rule: 後置（狀態）- readmodel template 之候選參數應走 `response:` JSONPath scheme
     Example: roomNo / playerCount 兩條候選分別為 response:$.roomNo / response:$.playerCount
-      Then template "joinRoom.operation-response-success-readmodel" candidate "roomNo" has target "response:$.roomNo"
-      And template "joinRoom.operation-response-success-readmodel" candidate "playerCount" has target "response:$.playerCount"
+      Then template "joinRoom.operation-response-verify" candidate "roomNo" has target "response:$.roomNo"
+      And template "joinRoom.operation-response-verify" candidate "playerCount" has target "response:$.playerCount"

@@ -132,7 +132,7 @@ The spec package slug is the directory name from `FEATURE_SPECS_DIR` (e.g., `01-
 - Do not call application service internals from E2E steps.
 - Do not make a second MockMvc call in Then handlers.
 - Do not assert response payload in `operation-invoke`.
-- Do not use repository access in `operation-response-success-readmodel`.
+- Do not use repository access in `operation-response-verify`.
 - Do not use MockMvc access in `state-builder`, `state-verifier`, or `state-relationship-verifier`.
 - Do not sleep or read wall-clock time in `time-control`.
 - Do not make real external calls in `external-stub`.

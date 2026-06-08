@@ -86,7 +86,7 @@ Feature: dsl_cli generate-dsl-instructions on modular OpenAPI with $ref
   Rule: 後置（狀態）- modular joinRoom operation 應展開為 2 條 entry 落到 contracts/room.dsl.yml
     Example: invoke + response-readmodel 兩 entry name 出現
       Then the file "specs/contracts/room.dsl.yml" contains the text "name: joinRoom.operation-invoke"
-      And the file "specs/contracts/room.dsl.yml" contains the text "name: joinRoom.operation-response-success-readmodel"
+      And the file "specs/contracts/room.dsl.yml" contains the text "name: joinRoom.operation-response-verify"
 
   Rule: 後置（狀態）- invoke entry 應帶候選參數註解，從 resolved request schema 欄位 fan-out
     Example: playerId、roomNo、nickname 三條候選註解出現
