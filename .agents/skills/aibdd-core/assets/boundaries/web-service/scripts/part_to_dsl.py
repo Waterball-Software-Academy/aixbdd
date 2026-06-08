@@ -11,7 +11,7 @@ Mapping owned by this preset:
       state-builder
       state-verifier
   - RefPart →
-      state-verifier
+      state-relationship-verifier
 
 Per spec.md / Policy 2 + Risk R5, this plugin is the SSOT for:
   - which handlers each part-kind expands to
@@ -20,7 +20,8 @@ Per spec.md / Policy 2 + Risk R5, this plugin is the SSOT for:
   - the binding target URI scheme each handler emits:
       * operation-invoke / response-success-and-failure → OpenAPI spec anchor
       * operation-response-success-readmodel            → `response:` JSONPath
-      * state-builder / state-verifier                  → DBML spec anchor
+      * state-builder / state-verifier / state-relationship-verifier
+                                                        → DBML spec anchor
 
 core's `eval_rules/` does NOT re-check handler→scheme mapping. We guarantee
 scheme legality constructively here.
@@ -137,10 +138,10 @@ def _for_table(part):
 def _for_ref(part):
     relation_token = "to" if part.operator == ">" else "link"
     verifier = DSLInstructionTemplate(
-        handler="state-verifier",
+        handler="state-relationship-verifier",
         name=(
             f"{part.from_table}_{part.from_column}_"
-            f"{relation_token}_{part.to_table}_{part.to_column}.state-verifier"
+            f"{relation_token}_{part.to_table}_{part.to_column}.state-relationship-verifier"
         ),
         target_part_path=part.target_part_path,
         source_spec_path=part.spec_file,

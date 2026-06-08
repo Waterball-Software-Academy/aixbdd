@@ -2,7 +2,11 @@
 
 ## Role
 
-`state-verifier` renders persisted backend state verification.
+`state-verifier` renders persisted backend state verification of a single
+entity's own column values.
+
+For relationship (foreign-key) verification between two entities, use
+[`state-relationship-verifier`](state-relationship-verifier.md) instead.
 
 It belongs to:
 

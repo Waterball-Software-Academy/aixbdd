@@ -79,8 +79,8 @@ Feature: dsl_cli generate-dsl-instructions on joinRoom (spec §1 worked example)
       And the file "specs/data/data.dsl.yml" contains the text "name: room_members.state-verifier"
 
   Rule: 後置（狀態）- DBML relationship 應額外展開一條 relationship-derived verifier
-    Example: room_members.player_id > users.id 會落成 state-verifier skeleton
-      Then the file "specs/data/data.dsl.yml" contains the text "name: room_members_player_id_to_users_id.state-verifier"
+    Example: room_members.player_id > users.id 會落成 state-relationship-verifier skeleton
+      Then the file "specs/data/data.dsl.yml" contains the text "name: room_members_player_id_to_users_id.state-relationship-verifier"
       And the file "specs/data/data.dsl.yml" contains the text "target_part_path: specs/data/data.dbml#ref:room_members.player_id>users.id"
       And the file "specs/data/data.dsl.yml" contains the text "#   room_members_player_id:"
       And the file "specs/data/data.dsl.yml" contains the text "#   users_id:"
