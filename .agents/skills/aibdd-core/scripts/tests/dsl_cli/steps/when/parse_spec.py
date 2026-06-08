@@ -13,7 +13,7 @@ from pathlib import Path
 
 from behave import when
 
-from dsl_cli.spec_parsers.openapi import OpenAPISpecParser
+from shared.spec_parsers.openapi import OpenAPISpecParser
 
 
 @contextmanager

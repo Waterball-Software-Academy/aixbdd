@@ -8,7 +8,7 @@ from pathlib import Path
 
 from behave import when
 
-from dsl_cli.spec_parsers.dbml import DBMLSpecParser
+from shared.spec_parsers.dbml import DBMLSpecParser
 
 
 @contextmanager

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from behave import when
 
-from dsl_cli.spec_parsers.dispatcher import dispatch_spec_parser
+from shared.spec_parsers.dispatcher import dispatch_spec_parser
 
 
 @when("dispatch_spec_parser is called on the last file")

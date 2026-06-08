@@ -12,9 +12,9 @@ from pathlib import Path
 
 from behave import when
 
-from dsl_cli.spec_parsers.ddl_mssql import MSSQLSpecParser
-from dsl_cli.spec_parsers.ddl_mysql import MySQLSpecParser
-from dsl_cli.spec_parsers.ddl_postgresql import PostgresSpecParser
+from shared.spec_parsers.ddl_mssql import MSSQLSpecParser
+from shared.spec_parsers.ddl_mysql import MySQLSpecParser
+from shared.spec_parsers.ddl_postgresql import PostgresSpecParser
 
 
 @contextmanager
