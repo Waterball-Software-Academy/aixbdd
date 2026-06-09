@@ -57,7 +57,7 @@ src/test/java/${BASE_PACKAGE}/
       state_builder/
       operation_invoke/
       operation_response_success_and_failure/
-      operation_response_success_readmodel/
+      operation_response_verify/
       state_verifier/
       state_relationship_verifier/
       time_control/
