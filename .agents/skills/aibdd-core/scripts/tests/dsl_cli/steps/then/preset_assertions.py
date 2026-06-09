@@ -25,21 +25,3 @@ def step_assert_two_distinct_modules(context):
     assert hist[0] is not hist[1], (
         "two loads returned the same module object — sys.modules cache leak?"
     )
-
-
-@then('the captured exception is of type "{type_name}"')
-def step_assert_exception_type(context, type_name: str):
-    exc = context.captured_exception
-    assert exc is not None, "no exception was captured"
-    assert type(exc).__name__ == type_name, (
-        f"expected exception type {type_name!r}, got {type(exc).__name__!r}: {exc}"
-    )
-
-
-@then('the captured exception message mentions "{needle}"')
-def step_assert_exception_message(context, needle: str):
-    exc = context.captured_exception
-    assert exc is not None, "no exception was captured"
-    assert needle in str(exc), (
-        f"exception message {str(exc)!r} does not mention {needle!r}"
-    )

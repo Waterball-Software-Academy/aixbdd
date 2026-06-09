@@ -26,13 +26,6 @@ def _chdir(target: Path):
         os.chdir(prev)
 
 
-@when("OpenAPISpecParser parses the last file")
-def step_parse_openapi(context):
-    rel = context.last_file_path.relative_to(context.tmp_root)
-    with _chdir(context.tmp_root):
-        context.parts = OpenAPISpecParser().parse(rel)
-
-
 @when("OpenAPISpecParser parses the last file and captures the exception")
 def step_parse_openapi_capture(context):
     rel = context.last_file_path.relative_to(context.tmp_root)

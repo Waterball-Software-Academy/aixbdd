@@ -7,13 +7,13 @@ import sys
 import tempfile
 from pathlib import Path
 
-_TESTS_DIR = Path(__file__).resolve().parent
-_SCRIPTS_DIR = _TESTS_DIR.parents[1]
-_LIB_DIR = _SCRIPTS_DIR / "lib"
-for path in (_LIB_DIR, _SCRIPTS_DIR):
-    path_str = str(path)
-    if path_str not in sys.path:
-        sys.path.insert(0, path_str)
+_tests_root = next(p for p in Path(__file__).resolve().parents if (p / "_support").is_dir())
+if str(_tests_root) not in sys.path:
+    sys.path.insert(0, str(_tests_root))
+
+from _support.paths import setup_sys_path  # noqa: E402
+
+setup_sys_path()
 
 
 def before_scenario(context, scenario):
