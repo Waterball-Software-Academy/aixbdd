@@ -11,7 +11,7 @@
 ### PATTERN_A_PRECONDITION_INPUT
 
 - `$actor`: Given 與 When 區皆出現人物名（如 `"Alice"`），不得為 `"user-XXX"` 技術 ID
-- `$aggregate`: Given 區出現業務序號（如 訂單 `"#001"`），不得為 `"order-XXX"` 技術 ID
+- `$aggregate`: Given 區出現業務序號（如 訂單 `"2406KX8Q7M2P9T"`），不得為 `"order-XXX"` 技術 ID
 - `$command`: When 區出現顧客視角動詞（按下、選擇），不得為 API 視角（執行、呼叫）
 - `$input`（缺漏）: When 區出現「沒選／沒填／但沒…」之業務化缺漏描述
 - 業務面失敗描述: Then 區出現「…沒有成功」等業務化失敗詞，不得為「操作失敗」
@@ -45,7 +45,7 @@
 ## Good
 
 - PATTERN_A：When 寫 `"Alice" 按下結帳，但沒選擇要結帳哪一筆訂單` → 覆蓋 `$actor` + `$command` + `$input` 缺漏，且全為業務語言。
-- PATTERN_C：Then 包含 `訂單 "#001" 變成 "已結帳"` + `系統發出 "結帳完成通知" 給 "Alice"` → 同時覆蓋變更後狀態與業務化事件。
+- PATTERN_C：Then 包含 `訂單 "2406KX8Q7M2P9T" 變成 "已結帳"` + `系統發出 "結帳完成通知" 給 "Alice"` → 同時覆蓋變更後狀態與業務化事件。
 
 ## Bad
 
