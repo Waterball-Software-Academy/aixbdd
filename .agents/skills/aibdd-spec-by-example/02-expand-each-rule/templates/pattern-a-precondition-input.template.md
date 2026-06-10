@@ -27,7 +27,7 @@ Rule: 前置（參數） - <業務面 must>
 ### `<$aggregate>`
 
 - 替換來源: `$five_elements.aggregate` + 業務化序號
-- 業務語言判準: 用業務序號（訂單 #001），禁止技術 ID（order-001）
+- 業務語言判準: 用業務序號（訂單 2406KX8Q7M2P9T），禁止技術 ID（order-001）
 
 ### `<$command>`
 
@@ -60,11 +60,11 @@ Rule: 前置（參數） - <業務面 must>
 Rule: 前置（參數） - 結帳必須先選擇要結帳的訂單
 
   Example: "Alice" 按下結帳但沒選訂單，結帳沒成功
-    Given "Alice" 有一筆處理中的訂單 "#001"，金額 "1000" 元
+    Given "Alice" 有一筆處理中的訂單 "2406KX8Q7M2P9T"，金額 1000 元
     When  "Alice" 按下結帳，但沒選擇要結帳哪一筆訂單
     Then  結帳沒有成功
     And 系統提示 "請選擇要結帳的訂單"
-    And 訂單 "#001" 仍是 "處理中"
+    And 訂單 "2406KX8Q7M2P9T" 仍是 "處理中"
 ```
 
 ## Bad
