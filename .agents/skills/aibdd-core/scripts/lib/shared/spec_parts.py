@@ -47,7 +47,7 @@ class ApiOperationPart(Part):
     summary: str = ""
     request_inputs: tuple[RequestInput, ...] = ()
     response_properties: tuple[ResponseProp, ...] = ()
-    security_schemes: tuple[str, ...] = ()
+    auth_required: bool = False
 
 
 @dataclass(frozen=True)

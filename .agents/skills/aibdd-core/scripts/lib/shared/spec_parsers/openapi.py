@@ -112,24 +112,18 @@ class OpenAPISpecParser(SpecParser):
                                 raw_op, resolved_op, op_path, spec_label
                             )
                         ),
-                        security_schemes=_collect_security(raw_op, raw_doc),
+                        auth_required=_collect_auth_required(raw_op, raw_doc),
                     )
                 )
         return parts
 
 
-def _collect_security(raw_op: dict, raw_doc: dict) -> tuple[str, ...]:
+def _collect_auth_required(raw_op: dict, raw_doc: dict) -> bool:
     if "security" in raw_op:
         requirements = raw_op.get("security") or []
     else:
         requirements = raw_doc.get("security") or []
-    schemes: list[str] = []
-    for requirement in requirements:
-        if isinstance(requirement, dict):
-            for scheme_name in requirement:
-                if scheme_name not in schemes:
-                    schemes.append(scheme_name)
-    return tuple(schemes)
+    return any(isinstance(requirement, dict) and requirement for requirement in requirements)
 
 
 def _collect_request_inputs(

@@ -18,6 +18,7 @@ Per spec.md / Policy 2 + Risk R5, this plugin is the SSOT for:
     <table_name>.<handler> for DBML)
   - the binding target URI scheme each handler emits:
       * operation-invoke / response-success-and-failure → OpenAPI spec anchor
+        (secured operations also get an `actor` param_binding → `literal:actor-key`)
       * operation-response-verify            → `response:` JSONPath
       * state-builder / state-verifier / state-relationship-verifier
                                                         → DBML spec anchor
@@ -33,6 +34,7 @@ from dsl_cli.models import (
     CandidateBinding,
     DatatableBinding,
     DSLInstructionTemplate,
+    ParamBinding,
     RefPart,
     TablePart,
 )
@@ -66,7 +68,7 @@ def _for_api_operation(part):
             CandidateBinding(key=ri.name, target=ri.target_part_path)
             for ri in part.request_inputs
         ),
-        datatable_bindings=_uid_datatable_binding(part),
+        param_bindings=_actor_param_binding(part),
     )
     out = [invoke]
     if part.response_properties:
@@ -90,18 +92,10 @@ def _fallback_op_id(part):
     return f"{part.method}_{part.path_escaped}"
 
 
-def _uid_datatable_binding(part):
-    if not part.security_schemes:
+def _actor_param_binding(part):
+    if not part.auth_required:
         return {}
-    spec_anchor = part.target_part_path.split("#", 1)[0]
-    scheme = part.security_schemes[0]
-    return {
-        "UID": DatatableBinding(
-            target=f"{spec_anchor}#/components/securitySchemes/{scheme}",
-            required=False,
-            default_value="<FILL IN>",
-        )
-    }
+    return {"actor": ParamBinding(target="literal:actor-key")}
 
 
 # ---- TablePart fan-out ----------------------------------------------------

@@ -45,19 +45,19 @@ def step_assert_part_summary(context, expected: str):
     )
 
 
-@then('the part\'s security_schemes is "{expected}"')
-def step_assert_part_security_schemes(context, expected: str):
-    actual = _single_part(context).security_schemes
-    assert actual == (expected,), (
-        f"security_schemes mismatch:\n  expected: {(expected,)!r}\n  actual:   {actual!r}"
+@then("the part requires auth")
+def step_assert_part_auth_required(context):
+    actual = _single_part(context).auth_required
+    assert actual is True, (
+        f"auth_required expected True, got {actual!r}"
     )
 
 
-@then("the part's security_schemes is empty")
-def step_assert_part_security_schemes_empty(context):
-    actual = _single_part(context).security_schemes
-    assert actual == (), (
-        f"security_schemes expected empty, got {actual!r}"
+@then("the part does not require auth")
+def step_assert_part_auth_not_required(context):
+    actual = _single_part(context).auth_required
+    assert actual is False, (
+        f"auth_required expected False, got {actual!r}"
     )
 
 

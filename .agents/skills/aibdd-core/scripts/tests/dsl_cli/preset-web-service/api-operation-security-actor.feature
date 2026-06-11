@@ -1,4 +1,4 @@
-Feature: web-service plugin emits a UID actor slot for secured operations
+Feature: web-service plugin emits an actor parameter slot for secured operations
 
   Background:
     Given a temporary file at "contracts/games.api.yml" with content:
@@ -45,12 +45,10 @@ Feature: web-service plugin emits a UID actor slot for secured operations
     When OpenAPISpecParser parses the last file
     And the web-service plugin generates templates from the parsed parts
 
-  Rule: 後置（狀態）- secured operation 的 invoke template 多一條 UID datatable_binding
-    Example: setPassword（playerTokenAuth 保護）→ UID required false、default <FILL IN>、target 指向 securityScheme anchor
-      Then template "setPassword.operation-invoke" datatable_binding "UID" has required false
-      And template "setPassword.operation-invoke" datatable_binding "UID" has default_value "<FILL IN>"
-      And template "setPassword.operation-invoke" datatable_binding "UID" has target "contracts/games.api.yml#/components/securitySchemes/playerTokenAuth"
+  Rule: 後置（狀態）- secured operation 的 invoke template 多一條 actor param_binding
+    Example: setPassword（playerTokenAuth 保護）→ actor param_binding、target 為 literal:actor-key
+      Then template "setPassword.operation-invoke" param_binding "actor" has target "literal:actor-key"
 
-  Rule: 後置（狀態）- 未受保護的 operation 不得有 UID datatable_binding
-    Example: healthCheck（無 security）→ invoke template 無 UID
-      Then template "healthCheck.operation-invoke" has no datatable_binding "UID"
+  Rule: 後置（狀態）- 未受保護的 operation 不得有 actor param_binding
+    Example: healthCheck（無 security）→ invoke template 無 actor
+      Then template "healthCheck.operation-invoke" has no param_binding "actor"
