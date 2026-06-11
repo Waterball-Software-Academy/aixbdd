@@ -35,7 +35,7 @@ _FILL_IN_SENTINEL = "<FILL IN>"
 
 _ACTOR_SLOT_KEYWORD = "UID"
 
-_SECURITY_SCHEME_MARKER = "/components/securitySchemes/"
+_ACTOR_LITERAL_TARGET = "literal:actor-key"
 
 _NAMED_GROUP_RE = re.compile(r"\(\?P<([A-Za-z_][A-Za-z0-9_]*)>[^)]*\)")
 
@@ -432,15 +432,16 @@ def _translate_api_call(step: dict, context: dict, instruction_name: str) -> tup
     isa_instructions = context["isa_instructions"]
     contracts_dir = context["contracts_dir"]
     target = step.get("target_part_path", "")
-    param_bindings: dict = step.get("param_bindings") or {}
+    param_bindings: dict = dict(step.get("param_bindings") or {})
     datatable_bindings: dict = dict(step.get("datatable_bindings") or {})
 
     lookup, file_part, fragment = _load_openapi_lookup(contracts_dir, target)
     operation = lookup.operations.get(_operation_target(file_part, fragment))
     summary = operation.summary if operation else ""
 
-    actor_key = _find_actor_binding(datatable_bindings)
-    actor_binding = datatable_bindings.pop(actor_key, None) if actor_key else None
+    actor_key = _find_actor_binding(param_bindings)
+    if actor_key is not None:
+        param_bindings.pop(actor_key, None)
     actor = _resolve_actor(actor_key, operation)
 
     instruction = _render_instruction(
@@ -487,15 +488,14 @@ def _translate_api_call(step: dict, context: dict, instruction_name: str) -> tup
             table[field_name] = DoubleQuotedScalarString("{{" + dsl_key + "}}")
 
     params = _build_params(datatable_bindings)
-    params = _inject_actor_param(params, actor_key, actor_binding)
 
     return params, [{"instruction": instruction, "table": table}]
 
 
-def _find_actor_binding(datatable_bindings: dict) -> str | None:
-    for dsl_key, binding in datatable_bindings.items():
+def _find_actor_binding(param_bindings: dict) -> str | None:
+    for dsl_key, binding in param_bindings.items():
         target = binding.get("target", "") if isinstance(binding, dict) else str(binding)
-        if _SECURITY_SCHEME_MARKER in target:
+        if target == _ACTOR_LITERAL_TARGET:
             return dsl_key
     return None
 
@@ -503,7 +503,7 @@ def _find_actor_binding(datatable_bindings: dict) -> str | None:
 def _resolve_actor(actor_key: str | None, operation) -> str:
     if actor_key is not None:
         return _ACTOR_SLOT_KEYWORD + '="{{' + actor_key + '}}"'
-    if operation and operation.security_schemes:
+    if operation and operation.auth_required:
         return _FILL_IN_SENTINEL
     return "No Actor"
 
@@ -656,18 +656,6 @@ def _build_params(datatable_bindings: dict):
     if has_default:
         return {dsl_key: default for dsl_key, default in entries}
     return [dsl_key for dsl_key, _ in entries]
-
-
-def _inject_actor_param(params, actor_key: str | None, actor_binding):
-    if actor_key is None:
-        return params
-    if isinstance(actor_binding, dict):
-        default = actor_binding.get("default_value", "")
-    else:
-        default = str(actor_binding)
-    merged = dict(params) if isinstance(params, dict) else {key: None for key in params}
-    merged[actor_key] = default
-    return merged
 
 
 HANDLER_TABLE: dict[str, tuple] = {
