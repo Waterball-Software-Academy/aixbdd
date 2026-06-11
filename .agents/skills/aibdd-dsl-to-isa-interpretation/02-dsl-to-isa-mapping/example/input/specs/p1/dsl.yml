@@ -1,0 +1,36 @@
+# Demo DSL input (inference SSOT). The translator augments each step IN PLACE
+# with `params:` + `isa_steps:` (the runtime/ISA view). All other fields are kept.
+dsl_steps:
+  # 1) time-control -> time_control: direct format substitution, no params.
+  - format: "現在時間為 {時間}"
+    name: time.freeze
+    handler: time-control
+    target_part_path: ""
+    param_bindings:
+      時間: { target: "@time" }
+    datatable_bindings: {}
+
+  # 2) state-builder -> entity_setup: every datatable_binding becomes a table
+  #    placeholder; default_value is carried into params (null = required).
+  - format: "已存在以下房間資料"
+    name: rooms.state-builder
+    handler: state-builder
+    target_part_path: data/domain.dbml#rooms
+    param_bindings: {}
+    datatable_bindings:
+      房號:
+        target: data/domain.dbml#rooms.room_code
+      狀態:
+        required: false
+        target: data/domain.dbml#rooms.status
+        default_value: "waiting"
+
+  # 3) state-verifier -> entity_validate: all-required params serialize as a
+  #    bare-key list.
+  - format: "驗證房間"
+    name: rooms.state-verifier
+    handler: state-verifier
+    target_part_path: data/domain.dbml#rooms
+    param_bindings: {}
+    datatable_bindings:
+      房號: { target: data/domain.dbml#rooms.room_code }

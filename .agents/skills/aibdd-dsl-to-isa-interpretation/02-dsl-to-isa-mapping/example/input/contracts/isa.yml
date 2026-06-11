@@ -1,0 +1,17 @@
+# Demo ISA instruction catalog. In a real project this is YOUR contracts/isa.yml.
+# `format` values are Python `re` patterns; the translator renders each handler
+# into one of these instructions by substituting its named groups.
+instructions:
+  - name: time_control
+    instruction_type: control
+    format: '現在時間為 "(?P<time>[^"]+)"'
+
+  - name: entity_setup
+    instruction_type: state
+    format: '準備一個(?P<entity>\S+), with table:'
+    data_format: table
+
+  - name: entity_validate
+    instruction_type: state
+    format: '應該存在一個(?P<entity>\S+), with table:'
+    data_format: table

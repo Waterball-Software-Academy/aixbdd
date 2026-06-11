@@ -1,0 +1,3 @@
+# Demo entity→table map (built by 01-table-to-entity in a real project).
+# state-builder / state-verifier look up the DB table name -> domain entity name.
+rooms: rooms
