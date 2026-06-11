@@ -21,8 +21,8 @@ from pathlib import Path
 from dsl_to_isa import web_service as translator
 
 # Re-exported so existing importers (test harness) keep working; the DSL flow-map
-# brace fix is shared infra and lives in aibdd-core shared/.
-from shared.dsl_yaml import (  # noqa: F401
+# brace fix is skill-resident in this package.
+from dsl_to_isa.dsl_yaml import (  # noqa: F401
     fix_flow_map_values,
     load_dsl_yaml,
     serialize_to_bytes,

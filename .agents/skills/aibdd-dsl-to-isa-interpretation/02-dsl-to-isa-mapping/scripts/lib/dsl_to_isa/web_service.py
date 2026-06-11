@@ -27,7 +27,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from ruamel.yaml.scalarstring import DoubleQuotedScalarString, SingleQuotedScalarString
-from shared.dsl_yaml import load_dsl_yaml
+from dsl_to_isa.dsl_yaml import load_dsl_yaml
 from shared.spec_parsers.openapi import OpenAPISpecParser
 
 

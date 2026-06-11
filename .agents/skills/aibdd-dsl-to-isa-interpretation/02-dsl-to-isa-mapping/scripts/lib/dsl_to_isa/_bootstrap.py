@@ -1,9 +1,9 @@
 """Reach into aibdd-core for the shared modules the translator reuses.
 
 The DSL→ISA translator lives in this skill, but it does not duplicate the
-shared infra it depends on — `shared.dsl_yaml` (round-trip YAML + brace fix)
-and `shared.spec_parsers.*` (the Spec Parser). Those stay in aibdd-core as the
-single SSOT. This bootstrap mirrors the aibdd-spec-by-example-analyze
+shared infra it depends on — `shared.spec_parsers.*` (the Spec Parser) stays in
+aibdd-core as the single SSOT. This bootstrap mirrors the
+aibdd-spec-by-example-analyze
 reach-into-core idiom: walk parents for `.claude/skills/aibdd-core`, then put
 that skill's `scripts/` + `scripts/lib` on `sys.path` so `import shared.*`
 resolves.

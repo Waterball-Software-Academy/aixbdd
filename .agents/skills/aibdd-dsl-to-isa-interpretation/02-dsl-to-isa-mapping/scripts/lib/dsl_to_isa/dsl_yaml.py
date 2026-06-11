@@ -3,9 +3,10 @@
 The DSL flow-map brace fix, round-trip load, and byte-stable serialization are
 the same for every boundary — every boundary's ``dsl.yml`` uses the
 ``{ target: path/{param} }`` shorthand and must round-trip byte-stably so the
-translator can detect idempotent rewrites. This lives in ``shared/`` so the
-boundary-agnostic orchestrator and each boundary adapter share one
-implementation rather than each re-deriving it.
+translator can detect idempotent rewrites. This is skill-resident in the
+``dsl_to_isa`` package so the boundary-agnostic orchestrator and each boundary
+adapter (e.g. ``web_service``) share one implementation rather than each
+re-deriving it.
 """
 
 from __future__ import annotations
