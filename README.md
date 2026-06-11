@@ -132,6 +132,7 @@ Each stage feeds the next. Flows, rules, and examples specification writes the a
 | `/aibdd-tasks` | **Task graph builder** | Generates structured `tasks.md` from the accepted plan package, preserving implementation topology and execution order. |
 | `/aibdd-implement` | **Execution driver** | Turns every checkbox into a live todo item and keeps task state synchronized with actual execution. |
 | `/aibdd-spec-by-example-analyze` | **Example & step mapper** | Turns feature rules into concrete Examples and maps every Scenario step to legal DSL, so the red gate can render runtime-visible steps with no guessing. |
+| `/aibdd-dsl-to-isa-interpretation` | **ISA mapper** | Builds the entity-to-table lookup from DBML or SQL DDL, then expands AIBDD `dsl.yml` files with SF dev framework-ready `params` and `isa_steps`. |
 | `/aibdd-red-execute` + `/aibdd-red-evaluate` | **Red gate** | Ensures your failing acceptance state is legal, visible, and grounded before code changes begin. |
 | `/aibdd-green-execute` + `/aibdd-green-evaluate` | **Green gate** | Drives product code to passing acceptance without letting fake green or hollow fixes slip through. |
 | `/aibdd-refactor-execute` + `/aibdd-refactor-evaluate` | **Refactor gate** | Improves internal structure while preserving strict acceptance and constitution conformance. |
