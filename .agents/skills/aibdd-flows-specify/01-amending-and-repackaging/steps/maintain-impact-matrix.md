@@ -31,32 +31,32 @@
 5. TRIGGER wrapper 子步驟
    1. `list`（SNAPSHOT `$ENTRIES_BEFORE`，收斂前執行一次）：
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} list
       ```
    2. `init`：僅當 `$matrix_missing = true`（上層步驟 1.1 補建情境）執行一次；matrix 已存在則略過。
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} init
       ```
    3. `upsert`：對 `$desired_entries` 每一筆各執行一次；`change_type` 依步驟 4 選定。
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} upsert \
         --path <path> --change-type <change_type> --impact-summary "<summary>"
       ```
    4. `delete`：對「現存 matrix 中、不在 `$desired_entries`」的每一 entry 各執行一次。
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} delete --path <path>
       ```
    5. `validate`：全部 `upsert`／`delete` 完成後執行一次；`ok` 為 false 則回到 `upsert` 修正。
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} validate
       ```
    6. `list`（SNAPSHOT `$ENTRIES_AFTER`，`validate` 通過後執行一次）：
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} list
       ```

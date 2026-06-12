@@ -50,7 +50,7 @@ metadata:
 
 1. BIND feature files——TRIGGER impact matrix query（只取本輪確定要改寫的 `.feature`：`update`／`add`），將 stdout JSON 之 `entries` 物化成 `${SCOPED_FEATURE_PATHS}`；後續所有 sub-SOP 一律沿用 `${SCOPED_FEATURE_PATHS}`。
    ```bash
-   python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+   python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
      --matrix ${IMPACT_MATRIX_YML} query \
      --suffix .feature \
      --change-type update \

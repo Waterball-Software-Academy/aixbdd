@@ -43,7 +43,7 @@ def repo_root_from_module() -> Path:
     for parent in here.parents:
         if (parent / ".claude" / "skills" / "aibdd-core").is_dir():
             return parent
-    return here.parents[4]
+    return here.parents[5]
 
 
 def schema_path() -> Path:

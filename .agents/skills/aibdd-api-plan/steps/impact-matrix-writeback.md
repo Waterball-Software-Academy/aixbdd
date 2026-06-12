@@ -4,12 +4,12 @@
     3. 仍待 sourcing 決策才能落地 → `conditional_update`
     `impact_summary` 用現在式一句話描述本 skill 對該契約檔的規格增量。
     ```bash
-    python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+    python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
     --matrix ${IMPACT_MATRIX_YML} upsert \
     --path <path> --change-type <change_type> --impact-summary "<summary>"
     ```
 2. TRIGGER `validate`；`ok` 為 false 時依 `questions` 修正後重跑 `upsert`／`validate`。
     ```bash
-    python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+    python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
     --matrix ${IMPACT_MATRIX_YML} validate
     ```

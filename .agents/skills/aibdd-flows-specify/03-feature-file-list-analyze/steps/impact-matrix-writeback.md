@@ -5,13 +5,13 @@
    - `change_type`：`add`（本輪新增之 rule-less feature 骨架）。
    - `impact_summary`：現在式一句話，描述該 feature 的業務意圖／本輪新增之規格責任（對齊其對應 Action）。
    ```bash
-   python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+   python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
      --matrix ${IMPACT_MATRIX_YML} upsert \
      --path <path> --change-type add --impact-summary "<summary>"
    ```
 2. TRIGGER `validate`；`ok` 為 false 時依 `questions` 修正後重跑 `upsert`／`validate`，**不得**改寫 YAML 本體繞過 validator。
    ```bash
-   python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+   python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
      --matrix ${IMPACT_MATRIX_YML} validate
    ```
 3. 完成後，matrix 中本輪所有新 `.feature` 之 `add` entry 之 `path` 與磁碟上實際落檔之 `.feature` **逐字一致**。

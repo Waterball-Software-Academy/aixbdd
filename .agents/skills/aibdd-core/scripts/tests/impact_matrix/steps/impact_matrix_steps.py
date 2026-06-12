@@ -19,7 +19,7 @@ from lib.impact_matrix import (
     validate_matrix,
 )
 
-_SCRIPTS_DIR = Path(__file__).resolve().parents[2]
+_SCRIPTS_DIR = Path(__file__).resolve().parents[3]
 _CLI = _SCRIPTS_DIR / "cli" / "manage_impact_matrix.py"
 
 

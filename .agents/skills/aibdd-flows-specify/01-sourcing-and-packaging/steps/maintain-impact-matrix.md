@@ -2,7 +2,7 @@
 
 1. 為什麼用 wrapper
    1. `${IMPACT_MATRIX_YML}` 是本輪「哪些 boundary 規格檔會被 impact、怎麼 impact」的機讀 SSOT；下游 `/aibdd-plan`、`/aibdd-spec-by-example-analyze` 用 `query` 讀 `entries`，不再 parse markdown。
-   2. 逐檔 explicit path、封閉 `change_type` enum、禁止 glob、禁止重複 path 等 invariant 由 `scripts/assets/impact-matrix.schema.yml` 與 validator 強制；手改 YAML 容易漏欄位或寫非法 enum，會讓下游 scope 綁定 silently 錯誤。
+   2. 逐檔 explicit path、封閉 `change_type` enum、禁止 glob、禁止重複 path 等 invariant 由 `.claude/skills/aibdd-core/scripts/assets/impact-matrix.schema.yml` 與 validator 強制；手改 YAML 容易漏欄位或寫非法 enum，會讓下游 scope 綁定 silently 錯誤。
    3. 因此 discovery 階段維護 impact entries 的唯一合法路徑是 `manage_impact_matrix.py` 的 `init`、`upsert`、`delete`、`validate`、`query`；本 substep 在 discovery 寫入階段用 `init`、`upsert`、`delete`（僅限步驟 3.5 之撤回情境）、`validate`。
 
 2. wrapper 使用規範
@@ -31,22 +31,22 @@
 5. TRIGGER wrapper 子步驟
    1. `init`：`${IMPACT_MATRIX_YML}` 尚不存在時執行一次；已存在則略過。
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} init
       ```
    2. `upsert`：對步驟 3 scope 內每一 impacted 檔各執行一次；`change_type` 依步驟 4 選定。
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} upsert \
         --path <path> --change-type <change_type> --impact-summary "<summary>"
       ```
    3. `delete`：對步驟 3.5 撤回情境之 entry 各執行一次。
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} delete --path <path>
       ```
    4. `validate`：全部 `upsert`／`delete` 完成後執行一次；`ok` 為 false 則回到 `upsert` 修正。
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} validate
       ```

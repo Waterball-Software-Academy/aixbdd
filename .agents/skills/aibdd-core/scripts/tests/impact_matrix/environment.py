@@ -9,9 +9,12 @@ import tempfile
 from pathlib import Path
 
 _TESTS_DIR = Path(__file__).resolve().parent
-_SCRIPTS_DIR = _TESTS_DIR.parent
-if str(_SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS_DIR))
+_SCRIPTS_DIR = _TESTS_DIR.parents[1]
+_LIB_DIR = _SCRIPTS_DIR / "lib"
+for path in (_LIB_DIR, _SCRIPTS_DIR):
+    path_str = str(path)
+    if path_str not in sys.path:
+        sys.path.insert(0, path_str)
 
 
 def before_scenario(context, scenario):
