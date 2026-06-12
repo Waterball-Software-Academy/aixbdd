@@ -534,7 +534,7 @@ def _translate_response_validate_status_only(step: dict, context: dict, instruct
     return [], [{"instruction": instruction, "table": {}}]
 
 
-def _translate_response_readmodel(step: dict, context: dict, instruction_name: str) -> tuple[list, list]:
+def _translate_response_validate(step: dict, context: dict, instruction_name: str) -> tuple[list, list]:
     """Translate operation-response-success-readmodel -> response_validate (body fields)."""
     isa_instructions = context["isa_instructions"]
     contracts_dir = context["contracts_dir"]
@@ -664,7 +664,7 @@ HANDLER_TABLE: dict[str, tuple] = {
     "state-relationship-verifier": (_translate_ref_verifier, "entity_validate"),
     "operation-invoke": (_translate_api_call, "api_call"),
     "operation-response-success-and-failure": (_translate_response_validate_status_only, "response_validate"),
-    "operation-response-success-readmodel": (_translate_response_readmodel, "response_validate"),
+    "operation-response-verify": (_translate_response_validate, "response_validate"),
     "time-control": (_translate_time_control, "time_control"),
     "external-stub": (_translate_passthrough, "custom"),
 }
