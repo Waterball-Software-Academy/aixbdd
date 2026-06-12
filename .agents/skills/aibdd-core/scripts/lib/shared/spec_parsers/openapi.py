@@ -62,11 +62,6 @@ def _definition_anchor(ref: str, base_spec_label: str) -> str:
 
 
 def _split_ref_full(ref: str, base_spec_label: str) -> tuple[str, str]:
-    """Like `_split_ref` but also accepts whole-file refs (no `#`).
-
-    Returns `(spec_label, pointer_body)` where `pointer_body` has NO leading `#`
-    (e.g. `/paths/~1x`), and is `""` for a whole-file ref.
-    """
     if ref.startswith("#"):
         return base_spec_label, ref[1:]
     base_dir = Path(base_spec_label).parent
@@ -91,15 +86,6 @@ def _navigate_pointer(doc: dict, pointer_body: str):
 def _resolve_raw_node(
     node, base_spec_label: str, raw_cache: dict
 ) -> tuple[object, str, str]:
-    """Follow a `{$ref}` chain (possibly cross-file) on a RAW node.
-
-    Returns `(raw_target, home_label, home_pointer_body)`:
-      - `raw_target`: the dereferenced raw node (preserves nested `$ref` markers).
-      - `home_label`: the spec file the target actually lives in.
-      - `home_pointer_body`: JSON Pointer within that file (no leading `#`; `""` for
-        a whole-file target).
-    A non-`$ref` node is returned unchanged with `(node, base_spec_label, "")`.
-    """
     seen: set[str] = set()
     home_label = base_spec_label
     home_pointer = ""
@@ -154,7 +140,6 @@ class OpenAPISpecParser(SpecParser):
             resolved_operations = (resolved_doc.get("paths") or {}).get(url_path) or {}
             path_escaped = _escape_json_pointer(url_path)
 
-            # path-item-level $ref (L3-a): resolve to the operation's home file
             pi_is_ref = isinstance(raw_path_item_node, dict) and "$ref" in raw_path_item_node
             raw_path_item, ref_pi_label, ref_pi_pointer = _resolve_raw_node(
                 raw_path_item_node, spec_label, raw_cache
@@ -173,7 +158,6 @@ class OpenAPISpecParser(SpecParser):
                     continue
                 resolved_op = (resolved_operations or {}).get(method) or {}
 
-                # operation-level $ref (L3-b): resolve to the operation's home file
                 op_is_ref = isinstance(raw_op_node, dict) and "$ref" in raw_op_node
                 raw_op, ref_op_label, ref_op_pointer = _resolve_raw_node(
                     raw_op_node, pi_label, raw_cache
@@ -272,7 +256,6 @@ def _collect_request_inputs(
     resolved_path_params: list,
     path_item_path: str,
 ):
-    # operation-level parameters first, to detect (name, in) overrides
     op_param_keys: set[tuple[str, str]] = set()
     op_params: list[tuple[dict, str]] = []
     raw_params = raw_op.get("parameters") or []
@@ -286,7 +269,6 @@ def _collect_request_inputs(
         op_param_keys.add((resolved_param["name"], resolved_param["in"]))
         op_params.append((resolved_param, target))
 
-    # path-item-level shared parameters, skipping those overridden by the operation
     for i, raw_param in enumerate(raw_path_params):
         resolved_param = (
             resolved_path_params[i] if i < len(resolved_path_params) else {}

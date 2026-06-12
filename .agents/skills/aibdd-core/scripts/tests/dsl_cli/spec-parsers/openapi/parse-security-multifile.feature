@@ -248,3 +248,99 @@ Feature: OpenAPISpecParser resolves auth scope across a heavily modular OpenAPI 
       Then exactly 2 operations are returned
       And the operation "createGame" requires auth
       And the operation "listPublicGames" does not require auth
+
+  Rule: 後置（狀態）- 四種來源的 operation 混用，發現完整且 auth scope 各自正確
+    Example: listGames / getState / setPassword / healthCheck 全混
+      Given a temporary file at "contracts/schemes.yml" with content:
+        """
+        openapi: 3.0.0
+        info:
+          title: Schemes
+          version: 1.0.0
+        components:
+          securitySchemes:
+            TokenAuth:
+              type: http
+              scheme: bearer
+              bearerFormat: JWT
+        """
+      And a temporary file at "contracts/routes.yml" with content:
+        """
+        openapi: 3.0.0
+        info:
+          title: Routes
+          version: 1.0.0
+        paths:
+          /games/{gameId}/state:
+            get:
+              operationId: getState
+              responses:
+                '200':
+                  description: OK
+        """
+      And a temporary file at "contracts/ops/set-password.yml" with content:
+        """
+        operationId: setPassword
+        security:
+          - TokenAuth: []
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [password]
+                properties:
+                  password:
+                    type: string
+        responses:
+          '200':
+            description: OK
+        """
+      And a temporary file at "contracts/ops/health.yml" with content:
+        """
+        operationId: healthCheck
+        security: []
+        responses:
+          '200':
+            description: OK
+        """
+      And a temporary file at "contracts/api.yml" with content:
+        """
+        openapi: 3.0.0
+        info:
+          title: API
+          version: 1.0.0
+        components:
+          securitySchemes:
+            TokenAuth:
+              $ref: 'schemes.yml#/components/securitySchemes/TokenAuth'
+        security:
+          - TokenAuth: []
+        paths:
+          /games/public:
+            get:
+              operationId: listGames
+              security: []
+              responses:
+                '200':
+                  description: OK
+          /games/{gameId}/state:
+            $ref: 'routes.yml#/paths/~1games~1{gameId}~1state'
+          /games/{gameId}/passwords:
+            post:
+              $ref: 'ops/set-password.yml'
+          /health:
+            get:
+              $ref: 'ops/health.yml'
+        """
+      When OpenAPISpecParser parses the last file
+      Then exactly 4 operations are returned
+      And the operation "listGames" does not require auth
+      And the operation "getState" requires auth
+      And the operation "setPassword" requires auth
+      And the operation "healthCheck" does not require auth
+      And the operation "getState"'s target_part_path is "contracts/routes.yml#/paths/~1games~1{gameId}~1state/get"
+      And the operation "setPassword"'s target_part_path is "contracts/ops/set-password.yml#"
+      And the operation "healthCheck"'s target_part_path is "contracts/ops/health.yml#"
+      And the operation "setPassword" request_input "password" has target_part_path "contracts/ops/set-password.yml#/requestBody/content/application~1json/schema/properties/password"
