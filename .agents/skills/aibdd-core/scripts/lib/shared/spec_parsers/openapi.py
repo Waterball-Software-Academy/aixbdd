@@ -61,6 +61,71 @@ def _definition_anchor(ref: str, base_spec_label: str) -> str:
     return f"{spec_label}{pointer}"
 
 
+def _split_ref_full(ref: str, base_spec_label: str) -> tuple[str, str]:
+    """Like `_split_ref` but also accepts whole-file refs (no `#`).
+
+    Returns `(spec_label, pointer_body)` where `pointer_body` has NO leading `#`
+    (e.g. `/paths/~1x`), and is `""` for a whole-file ref.
+    """
+    if ref.startswith("#"):
+        return base_spec_label, ref[1:]
+    base_dir = Path(base_spec_label).parent
+    if "#" in ref:
+        file_part, pointer = ref.split("#", 1)
+        return (base_dir / file_part).as_posix(), pointer
+    return (base_dir / ref).as_posix(), ""
+
+
+def _navigate_pointer(doc: dict, pointer_body: str):
+    node = doc
+    for token in pointer_body.split("/"):
+        if token == "":
+            continue
+        token = token.replace("~1", "/").replace("~0", "~")
+        if not isinstance(node, dict) or token not in node:
+            raise OpenAPIParseError(f"$ref pointer {pointer_body!r} not found")
+        node = node[token]
+    return node
+
+
+def _resolve_raw_node(
+    node, base_spec_label: str, raw_cache: dict
+) -> tuple[object, str, str]:
+    """Follow a `{$ref}` chain (possibly cross-file) on a RAW node.
+
+    Returns `(raw_target, home_label, home_pointer_body)`:
+      - `raw_target`: the dereferenced raw node (preserves nested `$ref` markers).
+      - `home_label`: the spec file the target actually lives in.
+      - `home_pointer_body`: JSON Pointer within that file (no leading `#`; `""` for
+        a whole-file target).
+    A non-`$ref` node is returned unchanged with `(node, base_spec_label, "")`.
+    """
+    seen: set[str] = set()
+    home_label = base_spec_label
+    home_pointer = ""
+    followed = False
+    while isinstance(node, dict) and "$ref" in node:
+        followed = True
+        new_label, pointer_body = _split_ref_full(node["$ref"], home_label)
+        key = f"{new_label}#{pointer_body}"
+        if key in seen:
+            raise OpenAPIParseError(f"circular $ref: {node['$ref']!r}")
+        seen.add(key)
+        doc = _load_raw(new_label, raw_cache)
+        node = _navigate_pointer(doc, pointer_body) if pointer_body else doc
+        home_label, home_pointer = new_label, pointer_body
+    if not followed:
+        return node, base_spec_label, ""
+    return node, home_label, home_pointer
+
+
+def _load_raw(spec_label: str, raw_cache: dict) -> dict:
+    if spec_label not in raw_cache:
+        with Path(spec_label).open() as fh:
+            raw_cache[spec_label] = _yaml_loader.load(fh) or {}
+    return raw_cache[spec_label]
+
+
 def _load_resolved_openapi(path: Path) -> tuple[dict, dict, str]:
     spec_label = path.as_posix()
     with path.open() as fh:
@@ -83,18 +148,42 @@ def _load_resolved_openapi(path: Path) -> tuple[dict, dict, str]:
 class OpenAPISpecParser(SpecParser):
     def parse(self, path: Path) -> list[ApiOperationPart]:
         raw_doc, resolved_doc, spec_label = _load_resolved_openapi(path)
+        raw_cache: dict[str, dict] = {spec_label: raw_doc}
         parts: list[ApiOperationPart] = []
-        for url_path, raw_operations in (raw_doc.get("paths") or {}).items():
+        for url_path, raw_path_item_node in (raw_doc.get("paths") or {}).items():
             resolved_operations = (resolved_doc.get("paths") or {}).get(url_path) or {}
             path_escaped = _escape_json_pointer(url_path)
-            path_item_path = f"{spec_label}#/paths/{path_escaped}"
-            raw_path_params = (raw_operations or {}).get("parameters") or []
+
+            # path-item-level $ref (L3-a): resolve to the operation's home file
+            pi_is_ref = isinstance(raw_path_item_node, dict) and "$ref" in raw_path_item_node
+            raw_path_item, ref_pi_label, ref_pi_pointer = _resolve_raw_node(
+                raw_path_item_node, spec_label, raw_cache
+            )
+            if pi_is_ref:
+                pi_label, pi_pointer = ref_pi_label, ref_pi_pointer
+            else:
+                pi_label, pi_pointer = spec_label, f"/paths/{path_escaped}"
+            path_item_path = f"{pi_label}#{pi_pointer}"
+
+            raw_path_params = (raw_path_item or {}).get("parameters") or []
             resolved_path_params = (resolved_operations or {}).get("parameters") or []
-            for method, raw_op in (raw_operations or {}).items():
+
+            for method, raw_op_node in (raw_path_item or {}).items():
                 if method.lower() not in _HTTP_METHODS:
                     continue
                 resolved_op = (resolved_operations or {}).get(method) or {}
-                op_path = f"{spec_label}#/paths/{path_escaped}/{method}"
+
+                # operation-level $ref (L3-b): resolve to the operation's home file
+                op_is_ref = isinstance(raw_op_node, dict) and "$ref" in raw_op_node
+                raw_op, ref_op_label, ref_op_pointer = _resolve_raw_node(
+                    raw_op_node, pi_label, raw_cache
+                )
+                if op_is_ref:
+                    op_label, op_pointer = ref_op_label, ref_op_pointer
+                else:
+                    op_label, op_pointer = pi_label, f"{pi_pointer}/{method}"
+                op_path = f"{op_label}#{op_pointer}"
+
                 parts.append(
                     ApiOperationPart(
                         kind=PartKind.api_operation,
@@ -103,14 +192,16 @@ class OpenAPISpecParser(SpecParser):
                         path=url_path,
                         path_escaped=path_escaped,
                         method=method.lower(),
-                        operation_id=resolved_op.get("operationId", ""),
-                        summary=resolved_op.get("summary", ""),
+                        operation_id=resolved_op.get("operationId")
+                        or raw_op.get("operationId", ""),
+                        summary=resolved_op.get("summary")
+                        or raw_op.get("summary", ""),
                         request_inputs=tuple(
                             _collect_request_inputs(
                                 raw_op,
                                 resolved_op,
                                 op_path,
-                                spec_label,
+                                op_label,
                                 raw_path_params,
                                 resolved_path_params,
                                 path_item_path,
@@ -118,7 +209,7 @@ class OpenAPISpecParser(SpecParser):
                         ),
                         response_properties=tuple(
                             _collect_response_properties(
-                                raw_op, resolved_op, op_path, spec_label
+                                raw_op, resolved_op, op_path, op_label
                             )
                         ),
                         auth_required=_collect_auth_required(raw_op, raw_doc),

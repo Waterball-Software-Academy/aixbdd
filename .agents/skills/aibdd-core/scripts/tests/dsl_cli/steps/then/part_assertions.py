@@ -83,6 +83,15 @@ def step_assert_operation_count(context, count: int):
     )
 
 
+@then('the operation "{operation_id}"\'s target_part_path is "{expected}"')
+def step_assert_operation_target_part_path(context, operation_id: str, expected: str):
+    actual = _operation(context, operation_id).target_part_path
+    assert actual == expected, (
+        f"operation {operation_id!r} target_part_path mismatch:\n"
+        f"  expected: {expected}\n  actual:   {actual}"
+    )
+
+
 @then('the operation "{operation_id}" requires auth')
 def step_assert_operation_auth_required(context, operation_id: str):
     actual = _operation(context, operation_id).auth_required
