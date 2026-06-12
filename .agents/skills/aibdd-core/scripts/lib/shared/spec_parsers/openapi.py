@@ -87,6 +87,9 @@ class OpenAPISpecParser(SpecParser):
         for url_path, raw_operations in (raw_doc.get("paths") or {}).items():
             resolved_operations = (resolved_doc.get("paths") or {}).get(url_path) or {}
             path_escaped = _escape_json_pointer(url_path)
+            path_item_path = f"{spec_label}#/paths/{path_escaped}"
+            raw_path_params = (raw_operations or {}).get("parameters") or []
+            resolved_path_params = (resolved_operations or {}).get("parameters") or []
             for method, raw_op in (raw_operations or {}).items():
                 if method.lower() not in _HTTP_METHODS:
                     continue
@@ -104,7 +107,13 @@ class OpenAPISpecParser(SpecParser):
                         summary=resolved_op.get("summary", ""),
                         request_inputs=tuple(
                             _collect_request_inputs(
-                                raw_op, resolved_op, op_path, spec_label
+                                raw_op,
+                                resolved_op,
+                                op_path,
+                                spec_label,
+                                raw_path_params,
+                                resolved_path_params,
+                                path_item_path,
                             )
                         ),
                         response_properties=tuple(
@@ -126,12 +135,55 @@ def _collect_auth_required(raw_op: dict, raw_doc: dict) -> bool:
     return any(isinstance(requirement, dict) and requirement for requirement in requirements)
 
 
+def _iter_schema_props(
+    raw_schema: dict | None,
+    resolved_schema: dict,
+    base: str,
+    spec_label: str,
+):
+    resolved_schema = resolved_schema or {}
+
+    if isinstance(raw_schema, dict) and "$ref" in raw_schema:
+        base = _definition_anchor(raw_schema["$ref"], spec_label)
+        raw_schema = None
+
+    resolved_branches = resolved_schema.get("allOf")
+    if resolved_branches:
+        raw_branches = (
+            raw_schema.get("allOf") if isinstance(raw_schema, dict) else None
+        )
+        for i, resolved_branch in enumerate(resolved_branches):
+            raw_branch = (
+                raw_branches[i]
+                if raw_branches and i < len(raw_branches)
+                else None
+            )
+            yield from _iter_schema_props(
+                raw_branch, resolved_branch, f"{base}/allOf/{i}", spec_label
+            )
+        return
+
+    required_props = set(resolved_schema.get("required") or [])
+    for prop_name in (resolved_schema.get("properties") or {}):
+        yield (
+            prop_name,
+            prop_name in required_props,
+            f"{base}/properties/{prop_name}",
+        )
+
+
 def _collect_request_inputs(
     raw_op: dict,
     resolved_op: dict,
     op_path: str,
     spec_label: str,
+    raw_path_params: list,
+    resolved_path_params: list,
+    path_item_path: str,
 ):
+    # operation-level parameters first, to detect (name, in) overrides
+    op_param_keys: set[tuple[str, str]] = set()
+    op_params: list[tuple[dict, str]] = []
     raw_params = raw_op.get("parameters") or []
     resolved_params = resolved_op.get("parameters") or []
     for i, raw_param in enumerate(raw_params):
@@ -140,6 +192,28 @@ def _collect_request_inputs(
             target = _definition_anchor(raw_param["$ref"], spec_label)
         else:
             target = f"{op_path}/parameters/{i}"
+        op_param_keys.add((resolved_param["name"], resolved_param["in"]))
+        op_params.append((resolved_param, target))
+
+    # path-item-level shared parameters, skipping those overridden by the operation
+    for i, raw_param in enumerate(raw_path_params):
+        resolved_param = (
+            resolved_path_params[i] if i < len(resolved_path_params) else {}
+        )
+        if (resolved_param["name"], resolved_param["in"]) in op_param_keys:
+            continue
+        if "$ref" in raw_param:
+            target = _definition_anchor(raw_param["$ref"], spec_label)
+        else:
+            target = f"{path_item_path}/parameters/{i}"
+        yield RequestInput(
+            name=resolved_param["name"],
+            source=resolved_param["in"],
+            required=bool(resolved_param.get("required", False)),
+            target_part_path=target,
+        )
+
+    for resolved_param, target in op_params:
         yield RequestInput(
             name=resolved_param["name"],
             source=resolved_param["in"],
@@ -154,19 +228,15 @@ def _collect_request_inputs(
         raw_schema = (raw_mt_doc or {}).get("schema") or {}
         resolved_schema = (resolved_mt_doc or {}).get("schema") or {}
         mt_escaped = _escape_json_pointer(mt)
-        if "$ref" in raw_schema:
-            schema_base = _definition_anchor(raw_schema["$ref"], spec_label)
-        else:
-            schema_base = (
-                f"{op_path}/requestBody/content/{mt_escaped}/schema"
-            )
-        required_props = set(resolved_schema.get("required") or [])
-        for prop_name in (resolved_schema.get("properties") or {}):
+        base = f"{op_path}/requestBody/content/{mt_escaped}/schema"
+        for prop_name, required, anchor in _iter_schema_props(
+            raw_schema, resolved_schema, base, spec_label
+        ):
             yield RequestInput(
                 name=prop_name,
                 source="body",
-                required=prop_name in required_props,
-                target_part_path=f"{schema_base}/properties/{prop_name}",
+                required=required,
+                target_part_path=anchor,
             )
 
 
@@ -187,15 +257,12 @@ def _collect_response_properties(
             raw_schema = (raw_mt_doc or {}).get("schema") or {}
             resolved_schema = (resolved_mt_doc or {}).get("schema") or {}
             mt_escaped = _escape_json_pointer(mt)
-            if "$ref" in raw_schema:
-                schema_base = _definition_anchor(raw_schema["$ref"], spec_label)
-            else:
-                schema_base = (
-                    f"{op_path}/responses/{status_code}/content/{mt_escaped}/schema"
-                )
-            for prop_name in (resolved_schema.get("properties") or {}):
+            base = f"{op_path}/responses/{status_code}/content/{mt_escaped}/schema"
+            for prop_name, _required, anchor in _iter_schema_props(
+                raw_schema, resolved_schema, base, spec_label
+            ):
                 yield ResponseProp(
                     name=prop_name,
                     json_path=f"$.{prop_name}",
-                    target_part_path=f"{schema_base}/properties/{prop_name}",
+                    target_part_path=anchor,
                 )

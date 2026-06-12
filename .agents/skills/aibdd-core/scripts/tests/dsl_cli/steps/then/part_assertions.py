@@ -12,6 +12,15 @@ def _single_part(context):
     return context.parts[0]
 
 
+def _operation(context, operation_id: str):
+    matches = [p for p in context.parts if getattr(p, "operation_id", None) == operation_id]
+    assert matches, (
+        f"no operation with operation_id {operation_id!r}; "
+        f"got {[getattr(p, 'operation_id', '?') for p in context.parts]}"
+    )
+    return matches[0]
+
+
 @then('exactly {count:d} part of kind "{kind}" is returned')
 @then('exactly {count:d} parts of kind "{kind}" are returned')
 def step_assert_part_count_and_kind(context, count: int, kind: str):
@@ -58,6 +67,67 @@ def step_assert_part_auth_not_required(context):
     actual = _single_part(context).auth_required
     assert actual is False, (
         f"auth_required expected False, got {actual!r}"
+    )
+
+
+# ---- by-operation-id assertions (multi-operation features) ----
+
+
+@then('exactly {count:d} operation is returned')
+@then('exactly {count:d} operations are returned')
+def step_assert_operation_count(context, count: int):
+    actual = len(context.parts)
+    assert actual == count, (
+        f"expected {count} operations; got {actual} "
+        f"({[getattr(p, 'operation_id', '?') for p in context.parts]})"
+    )
+
+
+@then('the operation "{operation_id}" requires auth')
+def step_assert_operation_auth_required(context, operation_id: str):
+    actual = _operation(context, operation_id).auth_required
+    assert actual is True, (
+        f"operation {operation_id!r} auth_required expected True, got {actual!r}"
+    )
+
+
+@then('the operation "{operation_id}" does not require auth')
+def step_assert_operation_auth_not_required(context, operation_id: str):
+    actual = _operation(context, operation_id).auth_required
+    assert actual is False, (
+        f"operation {operation_id!r} auth_required expected False, got {actual!r}"
+    )
+
+
+@then('the operation "{operation_id}" request_input "{name}" has target_part_path "{expected}"')
+def step_assert_operation_request_input_target(
+    context, operation_id: str, name: str, expected: str
+):
+    part = _operation(context, operation_id)
+    matches = [ri for ri in part.request_inputs if ri.name == name]
+    assert matches, (
+        f"operation {operation_id!r}: no request_input named {name!r}; "
+        f"got {[ri.name for ri in part.request_inputs]}"
+    )
+    assert matches[0].target_part_path == expected, (
+        f"operation {operation_id!r} request_input {name}.target_part_path mismatch:\n"
+        f"  expected: {expected}\n  actual:   {matches[0].target_part_path}"
+    )
+
+
+@then('the operation "{operation_id}" response_property "{name}" has target_part_path "{expected}"')
+def step_assert_operation_response_property_target(
+    context, operation_id: str, name: str, expected: str
+):
+    part = _operation(context, operation_id)
+    matches = [rp for rp in part.response_properties if rp.name == name]
+    assert matches, (
+        f"operation {operation_id!r}: no response_property named {name!r}; "
+        f"got {[rp.name for rp in part.response_properties]}"
+    )
+    assert matches[0].target_part_path == expected, (
+        f"operation {operation_id!r} response_property {name}.target_part_path mismatch:\n"
+        f"  expected: {expected}\n  actual:   {matches[0].target_part_path}"
     )
 
 
