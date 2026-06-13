@@ -1,10 +1,5 @@
 Feature: OpenAPISpecParser resolves operations behind an operation-level $ref (L3-b)
 
-  # 結構性拆檔：path 下某 method 的值是 $ref，指向別檔的單一 operation 物件（裸 operation 檔）。
-  # operation 的 operationId / parameters / requestBody / responses / security 都應被解析；
-  # anchor 落在 operation 真身所在檔（definition-site）。
-  # 值由 prance resolved 提供（正確 ref target 下），本檔鎖定解析 + scope + anchor。
-
   Rule: 後置（狀態）- operation $ref 拆出的 operation 自帶 security，完整解析
     Example: setPassword 在 ops/set-password.yml，自帶 BearerAuth
       Given a temporary file at "contracts/ops/set-password.yml" with content:

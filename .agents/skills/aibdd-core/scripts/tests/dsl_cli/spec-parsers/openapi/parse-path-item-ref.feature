@@ -1,10 +1,5 @@
 Feature: OpenAPISpecParser discovers operations behind a path-item $ref (L3-a)
 
-  # 結構性拆檔：entry 的某 path 整個 path-item 用 $ref 指向別檔。
-  # operation 仍應被發現、產出 part、繼承 entry root security，
-  # anchor 落在 operation 真身所在檔（definition-site），不是 entry。
-  # 值（opId / params / response）由 prance resolved 提供；本檔鎖定發現 + scope + anchor。
-
   Rule: 後置（狀態）- path-item $ref 拆出的 operation 被發現並繼承 root security
     Example: getState 在 routes.yml，沿用 entry root 的 BearerAuth
       Given a temporary file at "contracts/routes.yml" with content:
