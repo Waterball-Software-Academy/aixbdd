@@ -39,7 +39,7 @@
       ```
     - `Feature:` 標題表**業務意圖**，不得等同實作細節或內部技術步驟名稱（對齊 [`aibdd-flows-specify/02-activity-analyze/rules/apiwise-granularity.md`](aibdd-flows-specify/02-activity-analyze/rules/apiwise-granularity.md)）。
     - **冪等**：同一 Action 對應之 `.feature` 已存在時**不覆寫、不重建**（保留既有檔頭與任何下游已補的內容）；僅在缺檔時新建。
-    - 本 phase 的產出對齊目標是 Phase 01 收斂後的 `$ENTRIES_AFTER`（即現行 `${IMPACT_MATRIX_YML}`，遺失時可 `query` 還原）；若 `$ENTRY_TYPE == UPDATE`（需求變更），FOR EACH 範圍僅及 `$ENTRIES_BEFORE` 與 `$ENTRIES_AFTER` 有差異所涉及的 Action（新增者新建、既有者不動）。
+    - 本 phase 的產出對齊目標是 Phase 01 收斂後的 `$ENTRIES_AFTER`（即現行 `${IMPACT_MATRIX_YML}`，遺失時可 `query` 還原）；若 `$MODE == RECONCILE`（需求變更），FOR EACH 範圍僅及 `$ENTRIES_BEFORE` 與 `$ENTRIES_AFTER` 有差異所涉及的 Action（新增者新建、既有者不動）。
     - 待刪 `.feature`（NEW 路徑亦適用，`$ENTRIES_BEFORE` 視為空集合）：`$ENTRIES_AFTER` 中 `change_type=remove` 對應之 `.feature`、以及 `$ENTRIES_BEFORE` 有而 `$ENTRIES_AFTER` 無且檔已落地者，執行 **DELETE**——此為本步明文標注之 DELETE target；刪除清單於步驟 4 回報。若 `$ENTRIES_BEFORE` 因對話壓縮遺失而不可考：無法確證來源之 `.feature` **不刪**，交步驟 2 澄清。
     - 本步唯一允許的 DELETE 即上述 removed 對應之 `.feature`；ASSERT 各刪除目標已無任何 `.activity` Action 節點 `binds_feature` 指向（Phase 02 應已先移除或刪除對應節點），仍被綁定者不刪、改交步驟 2 澄清。
     - **一致性**：Phase 02 每個 `.activity` Action 節點之 `binds_feature` 都須對應到本步建立（或既存）之 `.feature`；若某 `binds_feature` 路徑非法或無法建立，記錄並交步驟 2。

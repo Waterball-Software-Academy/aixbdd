@@ -41,7 +41,7 @@ metadata:
 Tier 0 範例（語意範本；實務請用 TODOCREATE／TASKCREATE（或等效工具）建立對應任務，結構對齊即可）：
 
 ```markdown
-- [ ] (1) 展開並執行至完成：`aibdd-flows-specify/01-sourcing-and-packaging/SOP.md`（NEW）或 `aibdd-flows-specify/01-amending-and-repackaging/SOP.md`（UPDATE）。
+- [ ] (1) 展開並執行至完成：`aibdd-flows-specify/01-sourcing-and-packaging/SOP.md`（NEW）或 `aibdd-flows-specify/01-amending-and-repackaging/SOP.md`（RECONCILE）。
 - [ ] (2) 展開並執行至完成：`aibdd-flows-specify/02-activity-analyze/SOP.md`。
 - [ ] (3) 展開並執行至完成：`aibdd-flows-specify/03-feature-file-list-analyze/SOP.md`。
 ```
@@ -63,7 +63,7 @@ Tier 1 NEW 路徑範例：
 - [ ] (3) 展開並執行至完成：`aibdd-flows-specify/03-feature-file-list-analyze/SOP.md`。
 ```
 
-Tier 1 UPDATE 路徑範例：
+Tier 1 RECONCILE 路徑範例：
 
 ```markdown
 - [ ] (1) 展開並執行至完成：`aibdd-flows-specify/01-amending-and-repackaging/SOP.md`。
@@ -84,11 +84,11 @@ Tier 1 UPDATE 路徑範例：
 
 執行到哪裡讀到哪裡，嚴禁提早閱讀後續文件，這會讓起始體驗延遲很久，SOP 寫什麼就做什麼，沒有明文 [THINK/REASONING] 就絕對不准啟用 EXTENDED THINKING。
 
-0. EXECUTE the sub-sop aibdd-flows-specify/00-binding-and-routing/SOP.md 以解析 $ENTRY_TYPE（UPDATE 時含鎖定之 plan slug）；完成後不停步，依據 $ENTRY_TYPE 路由：NEW → 步驟 1a；UPDATE → 步驟 1b，以 TASKCREATE（或等效工具）建立 Tier 0 待辦。
+0. EXECUTE the sub-sop aibdd-flows-specify/00-binding-and-routing/SOP.md 以解析 $MODE（RECONCILE 時含鎖定之 plan slug）；完成後不停步，依據 $MODE 路由：NEW → 步驟 1a；RECONCILE → 步驟 1b，以 TASKCREATE（或等效工具）建立 Tier 0 待辦。
 
-1a. 當 $ENTRY_TYPE 為 NEW，EXECUTE the sub-sop aibdd-flows-specify/01-sourcing-and-packaging/SOP.md；完成後不停步，直接進入步驟 2。
+1a. 當 $MODE 為 NEW，EXECUTE the sub-sop aibdd-flows-specify/01-sourcing-and-packaging/SOP.md；完成後不停步，直接進入步驟 2。
 
-1b. 當 $ENTRY_TYPE 為 UPDATE EXECUTE the sub-sop aibdd-flows-specify/01-amending-and-repackaging/SOP.md；完成後不停步，直接進入步驟 2。
+1b. 當 $MODE 為 RECONCILE EXECUTE the sub-sop aibdd-flows-specify/01-amending-and-repackaging/SOP.md；完成後不停步，直接進入步驟 2。
 
 2. EXECUTE the sub-sop aibdd-flows-specify/02-activity-analyze/SOP.md；完成後不停步，直接進入步驟 3。
 
@@ -96,4 +96,4 @@ Tier 1 UPDATE 路徑範例：
 
 4. 和用戶說道（可使用不同詞彙但維持語意）：
    - NEW 路徑：「OK，/aibdd-flows-specify 已完成需求收斂、影響矩陣、function package 拆分、UAT flow 活動圖（.activity）與 feature file 清單（rule-less 骨架）。如沒問題，接著執行 /aibdd-rules-specify，為每個 .feature 列舉其驗收用的 atomic rules。」
-   - UPDATE 路徑：「OK，/aibdd-flows-specify 已把本輪需求變更套用到既有 plan package（更新 spec.md、影響矩陣前後對照、受影響的 UAT flow 活動圖與 feature file 清單）。如沒問題，接著執行 /aibdd-rules-specify，為受影響的 .feature 補列 atomic rules。」
+   - RECONCILE 路徑：「OK，/aibdd-flows-specify 已把本輪需求變更套用到既有 plan package（更新 spec.md、影響矩陣前後對照、受影響的 UAT flow 活動圖與 feature file 清單）。如沒問題，接著執行 /aibdd-rules-specify，為受影響的 .feature 補列 atomic rules。」

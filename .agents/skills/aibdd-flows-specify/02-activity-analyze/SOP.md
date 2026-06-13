@@ -33,7 +33,7 @@
 
 1. THINK: 拆解 `${PLAN_SPEC}` 中需求敘述的每一段話，進行段落流程建模分析。標註每一段話為 $P，所有話的集合為 all $P。
    - 本 phase 的產出對齊目標是 Phase 01 收斂後的 `$ENTRIES_AFTER`（即現行 `${IMPACT_MATRIX_YML}`，遺失時可 `query` 還原）。
-   - 若 `$ENTRY_TYPE == UPDATE`（需求變更）：all $P **限縮**為 `${PLAN_SPEC}` 本輪變更章節之段落，加上 `$ENTRIES_BEFORE` 與 `$ENTRIES_AFTER` 有差異之 entry（新增、改判、`remove`、`$ENTRIES_BEFORE` 有而 `$ENTRIES_AFTER` 無）所牽動的既有段落；兩快照一致之 entry 對應的既有 flow／`.activity` **不重建模、不重送**。
+   - 若 `$MODE == RECONCILE`（需求變更）：all $P **限縮**為 `${PLAN_SPEC}` 本輪變更章節之段落，加上 `$ENTRIES_BEFORE` 與 `$ENTRIES_AFTER` 有差異之 entry（新增、改判、`remove`、`$ENTRIES_BEFORE` 有而 `$ENTRIES_AFTER` 無）所牽動的既有段落；兩快照一致之 entry 對應的既有 flow／`.activity` **不重建模、不重送**。
    - 待刪與 revert 判定（NEW 路徑亦適用，`$ENTRIES_BEFORE` 視為空集合）：`$ENTRIES_AFTER` 中 `change_type=remove` 之 entry、以及 `$ENTRIES_BEFORE` 有而 `$ENTRIES_AFTER` 無且產出已落地者，其對應之 flow——仍存續者以 `mode="overwrite"` 重送該 `.activity` 移除過時節點；整條 flow 已不成立者記入 `$OBSOLETE_ACTIVITIES`，於步驟 6 執行 DELETE。若 `$ENTRIES_BEFORE` 因對話壓縮遺失而不可考：無法確證來源之產出**不刪**，交步驟 8 澄清。
 
 2. **FAITHFUL REASONING: 萃取 api-wise 業務 Action（本輪 Action 之 SSOT）**——FOR EACH $P，萃取此段落句子中的 RESTful-API-like 業務動作，請勿捕捉句子中不存在的元素，每個捕捉物都要明確指回 `${PLAN_SPEC}` 原文段落。

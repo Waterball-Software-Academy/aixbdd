@@ -13,10 +13,10 @@
 1. 上下文解析
 
   1.1 DECIDE plan package 指向。arguments.yml 的 CURRENT_PLAN_PACKAGE 永遠保持 <<NNN-plan-slug>> 借位形態，判據不在 yaml，而在對話上下文：
-  - 上下文已明確指向：對話歷史已指名具體 NNN-<slug>（例：稍早本 skill 曾經執行並解析過 plan package、使用者點名 ${PLAN_PACKAGES_DIR}/NNN-<slug>、或「繼續／重跑 NNN 那包」這類指涉） → ASSERT ${PLAN_PACKAGES_DIR}/NNN-<slug>/ 存在於 CWD；存在則 $ENTRY_TYPE 設定為 UPDATE：；不存在則改走下方釐清。
-  - 需求敘事明確指名要建立新的 plan package（例：「開新的 plan」「建立新 package」「這是一個新需求，開新包」這類明示字句）→ $ENTRY_TYPE 設定為 NEW，本步不建包，交由後續 phase 建立。僅限明示指名新建，從敘事內容推測「看起來像新功能」不算。
-  - 其餘情況：不得自行判定。列出 ${PLAN_PACKAGES_DIR}/*/ 全部候選向使用者釐清，直接詢問——是變更哪個既有包（→ UPDATE 並鎖定該 slug），還是開新包（→ NEW）；取得回覆前 STOP，候選僅一個、甚至為空，也必須釐清。
+  - 上下文已明確指向：對話歷史已指名具體 NNN-<slug>（例：稍早本 skill 曾經執行並解析過 plan package、使用者點名 ${PLAN_PACKAGES_DIR}/NNN-<slug>、或「繼續／重跑 NNN 那包」這類指涉） → ASSERT ${PLAN_PACKAGES_DIR}/NNN-<slug>/ 存在於 CWD；存在則 $MODE 設定為 RECONCILE；不存在則改走下方釐清。
+  - 需求敘事明確指名要建立新的 plan package（例：「開新的 plan」「建立新 package」「這是一個新需求，開新包」這類明示字句）→ $MODE 設定為 NEW，本步不建包，交由後續 phase 建立。僅限明示指名新建，從敘事內容推測「看起來像新功能」不算。
+  - 其餘情況：不得自行判定。列出 ${PLAN_PACKAGES_DIR}/*/ 全部候選向使用者釐清，直接詢問——是變更哪個既有包（→ RECONCILE 並鎖定該 slug），還是開新包（→ NEW）；取得回覆前 STOP，候選僅一個、甚至為空，也必須釐清。
 
   1.2 DECIDE 使用者是否已提供需求描述：
   - 無：直接向使用者提問本輪需求（不使用 /clarify-loop）；取得前 STOP。
-  - 有：路由結論即 $ENTRY_TYPE（NEW／UPDATE）。
+  - 有：路由結論即 $MODE（NEW／RECONCILE）。
