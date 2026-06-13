@@ -29,7 +29,7 @@
    EOF
    ```
 
-   0.1 READ `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 之 `## Function package charters` 與 `## Packaging decision`，DERIVE `$function_packages[]`（本輪涉及的 `packages/NN-<slug>` 與各自職責／納入／排除；各 package 的 `${FEATURE_SPECS_DIR}` = `packages/NN-<slug>/features/`、`${ACTIVITIES_DIR}` = `packages/NN-<slug>/activities/`）。同時鎖定各 package 的 `$package_naming_language`（feature／activity 檔名之業務意圖用語；缺則沿用 `${PROJECT_SPEC_LANGUAGE}`）。
+   0.1 READ `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 之 `## Function package charters` 與 `## Packaging decision`，DERIVE `$function_packages[]`（本輪涉及的 `packages/NN-<slug>` 與各自職責／納入／排除；各 package 的 `${FEATURE_SPECS_DIR}` = `packages/NN-<slug>/features/`、`${ACTIVITIES_DIR}` = `packages/NN-<slug>/activities/`）。feature／activity 檔名之業務意圖用語以 `${PROJECT_SPEC_LANGUAGE}` 書寫。
 
 1. THINK: 拆解 `${PLAN_SPEC}` 中需求敘述的每一段話，進行段落流程建模分析。標註每一段話為 $P，所有話的集合為 all $P。
    - 本 phase 的產出對齊目標是 Phase 01 收斂後的 `$ENTRIES_AFTER`（即現行 `${IMPACT_MATRIX_YML}`，遺失時可 `query` 還原）。
@@ -38,7 +38,7 @@
 
 2. **FAITHFUL REASONING: 萃取 api-wise 業務 Action（本輪 Action 之 SSOT）**——FOR EACH $P，萃取此段落句子中的 RESTful-API-like 業務動作，請勿捕捉句子中不存在的元素，每個捕捉物都要明確指回 `${PLAN_SPEC}` 原文段落。
     - `$Actions` = 嚴格遵照 [`aibdd-flows-specify/02-activity-analyze/rules/apiwise-granularity.md`](aibdd-flows-specify/02-activity-analyze/rules/apiwise-granularity.md) 的顆粒度定義來萃取：一個 Action ＝一次由 Actor（系統用戶）主動觸發、可獨立驗收業務結果的完整業務行動；流程編排／系統自動推進／內建處理**不**獨立成 Action。
-    - **綁定與檔名（本 phase 不落檔，僅決定契約路徑）**：每個**證據充足**的 Action 綁定到**一個** `$function_package`，並 DERIVE 其 `binds_feature` = `${FEATURE_SPECS_DIR}/<NN>-<action-slug>.feature`（該 package 的 `features/` 下；`<NN>` 為 package 內兩位數序號；`<action-slug>` 以 `$package_naming_language` 表業務意圖；**檔名須 Windows-safe**：不得含 `\ / : * ? " < > |` 及結尾空白／點號）。此 `binds_feature` 即 **Phase 03 落檔 `.feature` 的契約路徑**，本 phase **只記錄、不建立**。
+    - **綁定與檔名（本 phase 不落檔，僅決定契約路徑）**：每個**證據充足**的 Action 綁定到**一個** `$function_package`，並 DERIVE 其 `binds_feature` = `${FEATURE_SPECS_DIR}/<NN>-<action-slug>.feature`（該 package 的 `features/` 下；`<NN>` 為 package 內兩位數序號；`<action-slug>` 以 `${PROJECT_SPEC_LANGUAGE}` 表業務意圖；**檔名須 Windows-safe**：不得含 `\ / : * ? " < > |` 及結尾空白／點號）。此 `binds_feature` 即 **Phase 03 落檔 `.feature` 的契約路徑**，本 phase **只記錄、不建立**。
     - `$GAPS` = 記錄下列現象，留待步驟 8 澄清（落入者**不**在本 phase 綁節點、亦不予 `binds_feature`）：
         - 針對某 Action 不確定其顆粒度是否正確（例：疑似把系統自動推進誤收成 Action，或同一使用者意圖被拆成多個技術步驟）。
         - 某段需求暗示了業務動作，但證據不足以判定 Actor、觸發點或可驗收結果。
@@ -48,7 +48,7 @@
 
 4. **FAITHFUL REASONING: `$UAT_FLOWS` 清單**（一條 flow = **一張** Activity；從 actor 可理解的「進場→可驗收」完整旅程）
    - **READ** [`aibdd-flows-specify/02-activity-analyze/rules/activity-diagram-granularity.md`](aibdd-flows-specify/02-activity-analyze/rules/activity-diagram-granularity.md)
-   - 從 all `$P` 與 `$Actions` 提煉**幾條**獨立 flow、因而**幾張**活動圖 → `$UAT_FLOWS`（每條 flow **一筆**）。每筆必備鍵：`uat_flow_id`（本輪唯一）、`summary_one_line`（一句話 journey：進場→可驗收）、`activity_relpath`（相對 `${ACTIVITIES_DIR}` 之唯一相對路徑；**須**以 `.activity` 結尾、**不得**以 `/` 開頭；檔名以 `$package_naming_language` 表業務意圖且 **Windows-safe**）、`member_actions`（本 flow 涵蓋之 Action 子集 ⊆ `$Actions`，每個帶其 `binds_feature`）。**寬鬆度** `variation_role`（`happy_path`／`extreme_min`／`extreme_max`／`additional`）選填，未知則 `additional`。
+   - 從 all `$P` 與 `$Actions` 提煉**幾條**獨立 flow、因而**幾張**活動圖 → `$UAT_FLOWS`（每條 flow **一筆**）。每筆必備鍵：`uat_flow_id`（本輪唯一）、`summary_one_line`（一句話 journey：進場→可驗收）、`activity_relpath`（相對 `${ACTIVITIES_DIR}` 之唯一相對路徑；**須**以 `.activity` 結尾、**不得**以 `/` 開頭；檔名以 `${PROJECT_SPEC_LANGUAGE}` 表業務意圖且 **Windows-safe**）、`member_actions`（本 flow 涵蓋之 Action 子集 ⊆ `$Actions`，每個帶其 `binds_feature`）。**寬鬆度** `variation_role`（`happy_path`／`extreme_min`／`extreme_max`／`additional`）選填，未知則 `additional`。
    - **覆蓋約束**：每個**證據充足**的 Action **至少**歸屬一條 flow（純查詢／唯讀且無業務狀態遷移者，依 `activity-diagram-granularity.md` 得併入主流程之讀取段、不另立圖，但**仍保留其 `$Actions` 身分**供 Phase 03 落檔）。
 
 5. **FAITHFUL REASONING: 控制流建模** — **FOR EACH** `$UAT_FLOWS` 之一條 flow：**READ** [`aibdd-flows-specify/02-activity-analyze/reasoning/activity-control-flow.md`](aibdd-flows-specify/02-activity-analyze/reasoning/activity-control-flow.md)，依該檔**編號**逐項建模成完整有向圖。素材來自 **all `$P`、該筆 `summary_one_line`、以及其 `member_actions`**。產出該 flow 的 `activity_analysis.activity` 推理包：`name`／`id`／`initial`／`finals[]`／`actors[]`（`$Actors` 子集）／`nodes[]`（`Action｜Decision｜Fork｜Merge｜Join`；Action 節點帶 `display_id`、`@actor`、`description`、`binds_feature`＝步驟 2 決定之契約路徑）。建模未竟之處記入該 flow 的 `graph_gaps`。
