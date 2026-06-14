@@ -90,13 +90,6 @@
    8.4 全部 upsert 完成後，跑一次 validate；ok 為 false 時依 questions 修正，直到 validate 通過。
 
 
-9. 釐清 $GAPS，DELEGATE /clarify-loop：
-  
-  9.1 若 $GAPS 非空逐項 DELEGATE /clarify-loop：
-    - phase：aibdd-flows-specify/02-activity-analyze
-    - raw_items：各 GAP 一句話描述
-    - anchors：對應 ${PLAN_SPEC} 段落、候選 function package、activities_dir。
-  
-  9.2 澄清結論若改變 action 顆粒度／歸屬、flow 切分或 actor，回到對應步驟重新依序執行。
+9. 釐清 $GAPS：若 $GAPS 非空，逐項 DELEGATE /clarify-loop 釐清，每項附其對應 ${PLAN_SPEC} 段落、候選 function package 或 activiy dir 作 anchor；澄清結論若改變 action 顆粒度／歸屬、flow 切分或 actor，回對應步驟重新依序執行。
 
 10. 向使用者說道（語意不變、詞彙可改）：「OK，本輪需求的業務流程已建模完成，api-wise 業務 Action 已萃取並編織成下列可獨立驗收的 UAT flow，各對應一張 .activity（已通過語法驗證）：<逐一列出 activity 路徑與其一行 summary>。各 Action 與其對應 feature 的綁定路徑如下：<列出 $ACTION_FEATURES>。接著我會把每個 Action 落成對應的 rule-less .feature 骨架。」

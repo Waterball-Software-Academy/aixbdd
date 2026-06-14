@@ -55,13 +55,6 @@
 
   4.2 全部 upsert 完成後，跑一次 validate；ok 為 false 時依 questions 修正，直到 validate 通過。
 
-5. 釐清 $BLOCKED，DELEGATE /clarify-loop：
-
-  5.1 若 $BLOCKED 非空逐項 DELEGATE /clarify-loop：
-    - phase：aibdd-flows-specify/03-feature-file-list-analyze
-    - raw_items：各問題一句話描述
-    - anchors：對應 action／.activity／預期 feature 路徑。
-
-  5.2 澄清結論若改變檔名或綁定，回到對應步驟重新依序執行；若須調整 .activity 的 binds_feature，則重新執行 activity diagram 建模流程。
+5. 釐清 $BLOCKED：若 $BLOCKED 非空，逐項 DELEGATE /clarify-loop 釐清，每項附其對應 action、.activity 或預期 feature 路徑作 anchor；澄清結論若改變檔名或綁定，回對應步驟重新依序執行；若須調整 .activity 的 binds_feature，則重新執行 activity diagram 建模流程。
 
 6. 向使用者說道（語意不變、詞彙可改）：「OK，本輪需求已被拆成下列 feature file 清單（各為 rule-less 骨架，且與 .activity 的 action 節點一一對應），並已將新 feature 以 add 回寫影響矩陣：<逐一列出檔案路徑與對應業務意圖>。」
