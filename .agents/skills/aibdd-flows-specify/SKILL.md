@@ -14,7 +14,7 @@ metadata:
 
 ## PRINCIPLE: CWD 為產出錨點
 
-- 本 skill 與其 sub-SOPs 所有經授權產生或修改的 artifact，一律落在本次執行的 CWD 子路徑（相對路徑自 CWD 解析；本檔所列 ${SPECS_ROOT_DIR}、${CURRENT_PLAN_PACKAGE}、${PLAN_REPORTS_DIR}、${ACTIVITIES_DIR}、${TRUTH_*} 等皆以 CWD 為錨）。
+- 本 skill 與其 sub-SOPs 所有經授權產生或修改的 artifact，一律落在本次執行的 CWD 子路徑（相對路徑自 CWD 解析；本檔所列 `${SPECS_ROOT_DIR}`、`${CURRENT_PLAN_PACKAGE}`、`${PLAN_REPORTS_DIR}`、`${ACTIVITIES_DIR}`、`${TRUTH_*}` 等皆以 CWD 為錨）。
 - 嚴禁把應屬本流程的產物寫到 CWD 外的任意絕對路徑，或以方便為由落到未載明於當步 SOP 的其他根目錄。
 
 ## PRINCIPLE: Artifact Output Contract
@@ -24,18 +24,18 @@ metadata:
 
 ## PRINCIPLE: slug 命名規則
 
-凡落地 filesystem 的 slug（plan package 的 NNN-<slug>、function package 的 NN-<slug>、feature／activity 等規格檔名之 <NN>-<slug> 等）之 <slug> 主體，一律以專案規格語系（PROJECT_SPEC_LANGUAGE in arguments.yml）並遵守以下規則書寫。
+凡落地 filesystem 的 slug（plan package 的 NNN-<slug>、function package 的 NN-<slug>、feature／activity 等規格檔名之 <NN>-<slug> 等）之 <slug> 主體，一律以專案規格語系（PROJECT_SPEC_LANGUAGE in `arguments.yml`）並遵守以下規則書寫。
 
 - 技術名詞（API field、DSL token、operationId、domain acronym 如 CRM／SOP／API／OAuth）可保留英文原文；其餘 slug body 不得整段翻成英文。
 - 落地 filesystem 的 slug 與檔名須 Windows-safe，不得含 \ / : * ? " < > | 及結尾空白或點號。
 - 嚴禁以 romanization（漢語拼音／注音／粵拼）、kana、romaji 等 transliteration 充當「為避該語系字元」的 fallback。落到 filesystem 的 slug 必須讀得懂、可直接還原為該語系文字。
 - 語系為 zh-hant：
-   - Good：001-會員登入記錄登入時間、001-CRM學員旅程階段SOP、packages/01-會員登入
+   - Good：001-會員登入記錄登入時間、001-CRM學員旅程階段SOP、`packages/01-會員登入`
    - Bad（romanization）：001-yi-a2b-mo-wang-fang、001-hui-yuan-deng-ru
    - Bad（整段英譯，無此需求）：001-member-login-last-login-at
 - 語系為 zh-hans：規則同 zh-hant，但用簡體字形。
 - 語系為 en-us：slug 以英文撰寫，使用 kebab-case。
-   - Good：001-member-login-last-login-at、packages/01-member-login
+   - Good：001-member-login-last-login-at、`packages/01-member-login`
 - 語系為 ja-jp：以日文書寫，禁止以 romaji 取代漢字／假名。
 - 語系為 ko-kr：以韓文（Hangul）書寫，禁止以 romaja 取代。
 - 禁止無理由中英檔名混拼（半中半英的 slug，如 001-會員-login，除非含上述技術 token 例外）。
@@ -53,8 +53,8 @@ metadata:
 
 在本 skill 執行完成前，任何需要 conversation compact 的情境必須保留當前所有待辦與進度：目前卡在哪個 sub-SOP（phase），細項又到哪一個 sub-SOP step。底下為代辦兩層結構規則：外層只列 sub-SOP（phase）進入該 phase 再把該 sub-SOP 第一層編號步驟拆成子項，尚未開始的 phase 不必預先展開。
 
-- Tier 0：sub-SOP（phase），對應本檔 `# SOP` 變好項目最外層每一項；勾選這一層代表「該 phase 的細項已全部展開並且依該 phase SOP.md 跑完」。
-- Tier 1：phase 內細項，對應該 phase SOP.md 裡第一層編號步驟拆解出的動作（READ／WRITE 等），進入該 phase 時才補齊子項。編號建議：(phase 序)、(phase 序-step 序)（例：1、1-1）。
+- Tier 0：sub-SOP（phase），對應本檔 `# SOP` 變好項目最外層每一項；勾選這一層代表「該 phase 的細項已全部展開並且依該 phase `SOP.md` 跑完」。
+- Tier 1：phase 內細項，對應該 phase `SOP.md` 裡第一層編號步驟拆解出的動作（READ／WRITE 等），進入該 phase 時才補齊子項。編號建議：(phase 序)、(phase 序-step 序)（例：1、1-1）。
 - 必須工具化：Tier 0／Tier 1 對應的勾選項，要以執行環境提供的任務／待辦建立與更新能力維護（例：TODOCREATE、TASKCREATE 等 tool；或宿主 IDE／Agent 內與之等效的待辦 API），在跑 sub-SOP 1 時建立代辦清單並隨步驟推進更新狀態。禁止只靠對話列點、不經工具建立的「心裡待辦」——壓縮後無法還原，也無法核對漏步。
 
 Tier 0 範例（語意範本；實務請用 TODOCREATE／TASKCREATE（或等效工具）建立對應任務，結構對齊即可）：
@@ -103,16 +103,16 @@ Tier 1 RECONCILE 路徑範例：
 
 執行到哪裡讀到哪裡，嚴禁提早閱讀後續文件，這會讓起始體驗延遲很久，SOP 寫什麼就做什麼，沒有明文 THINK/REASONING 就絕對不准啟用 EXTENDED THINKING。
 
-0. EXECUTE the sub-sop aibdd-flows-specify/00-binding-and-routing/SOP.md 以解析 $MODE（RECONCILE 時含鎖定之 plan slug）；完成後不停步，依據 $MODE 路由：NEW → 步驟 1a；RECONCILE → 步驟 1b，以 TASKCREATE（或等效工具）建立 Tier 0 待辦。
+0. EXECUTE the sub-sop `aibdd-flows-specify/00-binding-and-routing/SOP.md` 以解析 `$MODE`（RECONCILE 時含鎖定之 plan slug）；完成後不停步，依據 `$MODE` 路由：NEW → 步驟 1a；RECONCILE → 步驟 1b，以 TASKCREATE（或等效工具）建立 Tier 0 待辦。
 
-1a. 當 $MODE 為 NEW，EXECUTE the sub-sop aibdd-flows-specify/01-sourcing-and-packaging/SOP.md；完成後不停步，直接進入步驟 2。
+1a. 當 `$MODE` 為 NEW，EXECUTE the sub-sop `aibdd-flows-specify/01-sourcing-and-packaging/SOP.md`；完成後不停步，直接進入步驟 2。
 
-1b. 當 $MODE 為 RECONCILE EXECUTE the sub-sop aibdd-flows-specify/01-amending-and-repackaging/SOP.md；完成後不停步，直接進入步驟 2。
+1b. 當 `$MODE` 為 RECONCILE EXECUTE the sub-sop `aibdd-flows-specify/01-amending-and-repackaging/SOP.md`；完成後不停步，直接進入步驟 2。
 
-2. EXECUTE the sub-sop aibdd-flows-specify/02-activity-analyze/SOP.md；完成後不停步，直接進入步驟 3。
+2. EXECUTE the sub-sop `aibdd-flows-specify/02-activity-analyze/SOP.md`；完成後不停步，直接進入步驟 3。
 
-3. EXECUTE the sub-sop aibdd-flows-specify/03-feature-file-list-analyze/SOP.md；完成後不停步，直接進入步驟 4。
+3. EXECUTE the sub-sop `aibdd-flows-specify/03-feature-file-list-analyze/SOP.md`；完成後不停步，直接進入步驟 4。
 
 4. 和用戶說道（可使用不同詞彙但維持語意）：
-   - NEW 路徑：「OK，/aibdd-flows-specify 已完成需求收斂、影響矩陣、function package 拆分、UAT flow 活動圖（.activity）與 feature file 清單（rule-less 骨架）。如沒問題，接著執行 /aibdd-rules-specify，為每個 .feature 列舉其驗收用的 atomic rules。」
-   - RECONCILE 路徑：「OK，/aibdd-flows-specify 已把本輪需求變更套用到既有 plan package（更新 spec.md、影響矩陣前後對照、受影響的 UAT flow 活動圖與 feature file 清單）。如沒問題，接著執行 /aibdd-rules-specify，為受影響的 .feature 補列 atomic rules。」
+   - NEW 路徑：「OK，/aibdd-flows-specify 已完成需求收斂、影響矩陣、function package 拆分、UAT flow 活動圖（`.activity`）與 feature file 清單（rule-less 骨架）。如沒問題，接著執行 /aibdd-rules-specify，為每個 `.feature` 列舉其驗收用的 atomic rules。」
+   - RECONCILE 路徑：「OK，/aibdd-flows-specify 已把本輪需求變更套用到既有 plan package（更新 `spec.md`、影響矩陣前後對照、受影響的 UAT flow 活動圖與 feature file 清單）。如沒問題，接著執行 /aibdd-rules-specify，為受影響的 `.feature` 補列 atomic rules。」
