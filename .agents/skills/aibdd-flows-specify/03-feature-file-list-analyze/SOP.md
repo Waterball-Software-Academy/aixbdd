@@ -1,49 +1,60 @@
-# 參數設定
-
-- **Action↔feature 綁定來源（本 phase 的落檔清單）** → 上游 Phase 02（`02-activity-analyze`）萃取之 `$Actions`（每個帶 `binds_feature` 契約路徑）；其已落檔之 `.activity`（Action 節點 `binds_feature`）為持久 SSOT
-- **Feature 規格／`.feature` 根目錄** → `${FEATURE_SPECS_DIR}`（= `${TRUTH_FUNCTION_PACKAGE}/features`，per function package 借位解析）
-- **影響矩陣（本 phase 回寫新 feature 的 `add` entry）** → `${IMPACT_MATRIX_YML}`；entry `path` 相對 `${TRUTH_BOUNDARY_ROOT}`
-
-請注意，所有路徑都是相對於 ${CWD} 所在路徑，請勿新增任何檔案是並非在 ${CWD} 之中，不可妥協。
-
----
-
 # SOP
 
-0. **RESOLVE arguments**——將本 SOP 引用的 `${VAR}` 透過 sibling resolver 綁定，並把 resolver stdout（每行一筆 `KEY=value`）原樣 EMIT 給用戶。Resolver 非 0 退出時，停止本 SOP 並把 stderr 透傳給用戶。
+0. 解析 arguments
 
-   ```bash
-   python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
-   ACTIVITIES_DIR=${ACTIVITIES_DIR}
-   CURRENT_PLAN_PACKAGE=${CURRENT_PLAN_PACKAGE}
-   FEATURE_SPECS_DIR=${FEATURE_SPECS_DIR}
-   IMPACT_MATRIX_YML=${IMPACT_MATRIX_YML}
-   PLAN_REPORTS_DIR=${PLAN_REPORTS_DIR}
-   PLAN_SPEC=${PLAN_SPEC}
-   PROJECT_SPEC_LANGUAGE=${PROJECT_SPEC_LANGUAGE}
-   TRUTH_BOUNDARY_PACKAGES_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}
-   TRUTH_BOUNDARY_ROOT=${TRUTH_BOUNDARY_ROOT}
-   TRUTH_FUNCTION_PACKAGE=${TRUTH_FUNCTION_PACKAGE}
-   EOF
-   ```
+  0.0 將本 SOP 引用的變數透過 resolver 綁定，並把 resolver stdout（每行一筆 KEY=value）原樣顯示給用戶。Resolver 非 0 退出時，STOP 並把 stderr 透傳給用戶。
 
-   0.1 DERIVE `$action_features` ＝ Phase 02 `$Actions` 的**完整**清單（每筆 = 一個 `binds_feature` 路徑 + 一行業務意圖標題）。**壓縮後還原**：若 in-context 清單已遺失，RECONSTRUCT ＝ 掃描 `${ACTIVITIES_DIR}/**` 各 `.activity` 之 Action 節點 `binds_feature`（取聯集），再對 `${PLAN_SPEC}` 依 [`../02-activity-analyze/rules/apiwise-granularity.md`](../02-activity-analyze/rules/apiwise-granularity.md) 補回**未綁進任何 flow 的純查詢 Action**（其在 Phase 02 仍具 `$Actions` 身分）。ASSERT `$action_features` 非空；為零 → STOP，向使用者回報：「尚未偵測到 Phase 02 的 Action／`.activity` 產物，請先讓 `/aibdd-flows-specify` 跑完 `02-activity-analyze` 再落 feature 骨架。」
+    ```bash
+    python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
+    ACTIVITIES_DIR=${ACTIVITIES_DIR}
+    CURRENT_PLAN_PACKAGE=${CURRENT_PLAN_PACKAGE}
+    FEATURE_SPECS_DIR=${FEATURE_SPECS_DIR}
+    IMPACT_MATRIX_YML=${IMPACT_MATRIX_YML}
+    PLAN_REPORTS_DIR=${PLAN_REPORTS_DIR}
+    PLAN_SPEC=${PLAN_SPEC}
+    PROJECT_SPEC_LANGUAGE=${PROJECT_SPEC_LANGUAGE}
+    TRUTH_BOUNDARY_PACKAGES_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}
+    TRUTH_BOUNDARY_ROOT=${TRUTH_BOUNDARY_ROOT}
+    TRUTH_FUNCTION_PACKAGE=${TRUTH_FUNCTION_PACKAGE}
+    EOF
+    ```
 
-1. **WRITE feature-file 骨架（rule-less）** — FOR EACH `$action_features`：在其 `binds_feature` 路徑 CREATE 一個 `.feature`（路徑 = `${FEATURE_SPECS_DIR}/<NN>-<action-slug>.feature`，與 Phase 02 `binds_feature` **完全一致**，以維持 `.activity` Action 節點 → `.feature` 的一一對應）。
-    - **內容只寫檔頭骨架**，逐行如下（**不得**寫入任何 `Rule:`、`Background`、`Scenario`、`Examples`、Step；那些留給 `/aibdd-rules-specify` 與後續 SBE 階段）：
+  0.1 取 `$ACTION_FEATURES`（本輪每個 action 之 binds_feature path）；若 `$ACTION_FEATURES` 不可考，READ `$ENTRIES_AFTER` 中 activity entries 對應之 `.activity`，將其 action 節點 binds_feature 取聯集，並依 `aibdd-flows-specify/02-activity-analyze/rules/apiwise-granularity.md` 對 `${PLAN_SPEC}` 補回未綁進任何 flow 的純查詢 action 重建。
+  
+  0.2 ASSERT `$ACTION_FEATURES` 非空；為空則 STOP，向使用者回報尚未偵測到任何 activity entry，請先完成 activity diagram 建模再建構 feature 骨架。
 
-      ```gherkin
-      # @ignore - 等執行 /aibdd-red-execute 時，會只將 target Feature file 標注的 @ignore 拿掉，透過此手段來控制範疇。
-      @ignore
-      Feature: <表該 Action 業務意圖的標題>
-      ```
-    - `Feature:` 標題表**業務意圖**，不得等同實作細節或內部技術步驟名稱（對齊 [`../02-activity-analyze/rules/apiwise-granularity.md`](../02-activity-analyze/rules/apiwise-granularity.md)）。
-    - **冪等**：同一 Action 對應之 `.feature` 已存在時**不覆寫、不重建**（保留既有檔頭與任何下游已補的內容）；僅在缺檔時新建。
-    - **一致性**：Phase 02 每個 `.activity` Action 節點之 `binds_feature` 都須對應到本步建立（或既存）之 `.feature`；若某 `binds_feature` 路徑非法或無法建立，記錄並交步驟 2。
-    - 本步**唯一允許**的 WRITE 是上述 `${FEATURE_SPECS_DIR}` 下之 `.feature` 骨架；**禁止**順手建立 `dsl.yml`、contracts／data、features 目錄以外的任何檔，**亦禁止**改寫 Phase 02 的 `.activity`。
+1. 決定本輪落檔範圍：
 
-2. 若有無法落檔的 `binds_feature`（步驟 1 記錄）：DELEGATE `/clarify-loop`，帶 `delegated_intake`（`phase`=`aibdd-flows-specify/03-feature-file-list-analyze`、`raw_items`=各問題一句話描述、`anchors`=對應 Action／`.activity`／預期 feature 路徑）。澄清結論若改變檔名或綁定，回步驟 1 修正落檔（如同步改了 `.activity` 的 `binds_feature`，請回 `02-activity-analyze` 重送該 flow）。
+  1.1 若 `$MODE` 為 RECONCILE，`$ACTION_FEATURES` 限縮為 `$ENTRIES_BEFORE` 與 `$ENTRIES_AFTER` 有差異所涉及之 action（新增者新建、既有者不動）。
 
-3. **WRITEBACK impact matrix（本輪新增之 `.feature` → `add`）** — EXECUTE [`steps/impact-matrix-writeback.md`](steps/impact-matrix-writeback.md)：把步驟 1 **本輪新建**之每個 `.feature` 以其 `binds_feature`（相對 `${TRUTH_BOUNDARY_ROOT}`）`upsert`（`change_type=add`）回寫 `${IMPACT_MATRIX_YML}`，再 `validate`。此為本輪 feature `add` entry 的**唯一**產生點；既有未改寫之 `.feature` 已由 sourcing 寫入對應 entry，**不**在本步重寫。
+  1.2 `$ENTRIES_AFTER` 中 change_type=remove 對應之 `.feature`、以及 `$ENTRIES_BEFORE` 有而 `$ENTRIES_AFTER` 無且 `.feature` 已落地者，記入 `$OBSOLETE_FEATURES` 待 DELETE。`$ENTRIES_BEFORE` 不可考時，無法確證來源之 `.feature` 不刪，記入 `$BLOCKED` 待澄清。
 
-4. 向使用者說道（語意不變、詞彙可改）：「OK，本輪需求已被拆成下列 feature file 清單（各為 rule-less 骨架，且與 `.activity` 的 Action 節點一一對應），並已將新 feature 以 `add` 回寫影響矩陣：<逐一列出檔案路徑與對應業務意圖>。接著 /aibdd-rules-specify 會為每個 `.feature` 列舉其驗收用的 atomic rules。」
+2. WRITE feature-file 骨架（rule-less）：
+
+  2.1 針對 `$ACTION_FEATURES` 每個 action 的 binds_feature path（`${FEATURE_SPECS_DIR}/<NN>-<action-slug>.feature`），在該 path CREATE `.feature`，維持 `.activity` action 節點與 `.feature` 一一對應；同一 action 對應之 `.feature` 已存在時不覆寫、不重建，僅在缺檔時新建。
+
+  2.2 `.feature` 內容只寫檔頭骨架，逐行如下（不得寫入任何 Rule:、Background、Scenario、Examples、Step）：
+
+    ```gherkin
+    # @ignore - 等執行 /aibdd-red-execute 時，會只將 target Feature file 標注的 @ignore 拿掉，透過此手段來控制範疇。
+    @ignore
+    Feature: <表該 action 業務意圖的標題>
+    ```
+
+  2.3 Feature: 標題填該 binds_feature 對應 action 之業務意圖，不得等同實作細節或內部技術步驟名稱。
+
+  2.4 一致性確認：每個 `.activity` action 節點之 binds_feature 都須對應到本步建立或既存之 `.feature`；某 binds_feature path 非法或無法建立則記入 `$BLOCKED`。
+
+3. DELETE `$OBSOLETE_FEATURES`：若 `$OBSOLETE_FEATURES` 非空，各刪除目標須先 ASSERT 已無任何 `.activity` action 節點 binds_feature 指向（仍被綁定者不刪、記入 `$BLOCKED` 待澄清），確認後 DELETE `${FEATURE_SPECS_DIR}` 下該些 `.feature`；刪除清單於結尾報告列出。
+
+4. WRITE `${IMPACT_MATRIX_YML}`，回寫本輪新增之 `.feature`，只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
+
+  4.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、change_type enum 語意與各使用情境應用 command。
+
+  4.1 針對本輪新建之每個 `.feature`，以其 binds_feature 相對 `${TRUTH_BOUNDARY_ROOT}` 路徑（即 `packages/<NN-slug>/features/<NN>-<action-slug>.feature`）以 change_type=add 跑一次 upsert command。
+
+  4.2 全部 upsert 完成後，跑一次 validate；ok 為 false 時依 questions 修正，直到 validate 通過。
+
+5. 釐清 `$BLOCKED`：若 `$BLOCKED` 非空，逐項 DELEGATE /clarify-loop 釐清，每項附其對應 action、`.activity` 或預期 feature 路徑作 anchor；澄清結論若改變檔名或綁定，回對應步驟重新依序執行；若須調整 `.activity` 的 binds_feature，則重新執行 activity diagram 建模流程。
+
+6. 向使用者說道（語意不變、詞彙可改）：「OK，本輪需求已被拆成下列 feature file 清單（各為 rule-less 骨架，且與 `.activity` 的 action 節點一一對應），並已將新 feature 以 add 回寫影響矩陣：<逐一列出檔案路徑與對應業務意圖>。」

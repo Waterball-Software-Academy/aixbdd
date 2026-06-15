@@ -19,7 +19,7 @@
 - **職責一句**：處理會員帳號登入成功／失敗流程，以及登入後狀態呈現所需的後端規格切片。
 - **納入**：登入表單驗證、登入成功建立 session、登入失敗錯誤訊息、登入成功後導向。
 - **排除**：註冊、忘記密碼、第三方登入、角色權限、通知推播。
-- **本輪變更型態**：`impact-only`
+- **本 plan 變更型態**：`impact-only`
 - **本輪規格增量**：登入成功後必須記錄 `last_login_at`（時間戳記），並反映到 data truth 與必要規格檔。
 
 ## Packaging decision
@@ -37,7 +37,7 @@
 
 ## Spec structure（示意樹）
 
-> 與 `01-sourcing-and-packaging/SOP.md` 步驟 6 對齊用：boundary truth 與 function package 同在 `specs/` 根下，plan package 落在 `specs/plans/NNN-<slug>/`；邏輯 boundary 見 `architecture/boundary.yml`。
+> 與 `aibdd-flows-specify/01-sourcing-and-packaging/SOP.md` 步驟 6 對齊用：boundary truth 與 function package 同在 `specs/` 根下，plan package 落在 `specs/plans/NNN-<slug>/`；邏輯 boundary 見 `architecture/boundary.yml`。
 
 ```text
 specs/

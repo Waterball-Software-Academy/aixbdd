@@ -1,58 +1,56 @@
 # SOP
 
-0. **RESOLVE arguments**——將本 SOP 引用的 `${VAR}` 透過 sibling resolver 綁定，並把 resolver stdout（每行一筆 `KEY=value`）原樣 EMIT 給用戶。Resolver 非 0 退出時，停止本 SOP 並把 stderr 透傳給用戶。
+0. 解析 arguments 與 spec root folder structure
+  
+  0.0 將本 SOP 引用的變數透過 resolver 綁定，並把 resolver stdout（每行一筆 KEY=value）原樣顯示給用戶。Resolver 非 0 退出時，STOP 並把 stderr 透傳給用戶。
 
-   ```bash
-   python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
-   CONTRACTS_DIR=${CONTRACTS_DIR}
-   CURRENT_PLAN_PACKAGE=${CURRENT_PLAN_PACKAGE}
-   DATA_DIR=${DATA_DIR}
-   FEATURE_SPECS_DIR=${FEATURE_SPECS_DIR}
-   IMPACT_MATRIX_YML=${IMPACT_MATRIX_YML}
-   PLAN_PACKAGES_DIR=${PLAN_PACKAGES_DIR}
-   PLAN_REPORTS_DIR=${PLAN_REPORTS_DIR}
-   PLAN_SPEC=${PLAN_SPEC}
-   PROJECT_SPEC_LANGUAGE=${PROJECT_SPEC_LANGUAGE}
-   TRUTH_BOUNDARY_PACKAGES_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}
-   TRUTH_BOUNDARY_ROOT=${TRUTH_BOUNDARY_ROOT}
-   TRUTH_FUNCTION_PACKAGE=${TRUTH_FUNCTION_PACKAGE}
-   EOF
-   ```
+    ```bash
+    python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
+    CONTRACTS_DIR=${CONTRACTS_DIR}
+    CURRENT_PLAN_PACKAGE=${CURRENT_PLAN_PACKAGE}
+    DATA_DIR=${DATA_DIR}
+    FEATURE_SPECS_DIR=${FEATURE_SPECS_DIR}
+    IMPACT_MATRIX_YML=${IMPACT_MATRIX_YML}
+    PLAN_PACKAGES_DIR=${PLAN_PACKAGES_DIR}
+    PLAN_REPORTS_DIR=${PLAN_REPORTS_DIR}
+    PLAN_SPEC=${PLAN_SPEC}
+    PROJECT_SPEC_LANGUAGE=${PROJECT_SPEC_LANGUAGE}
+    TRUTH_BOUNDARY_PACKAGES_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}
+    TRUTH_BOUNDARY_ROOT=${TRUTH_BOUNDARY_ROOT}
+    TRUTH_FUNCTION_PACKAGE=${TRUTH_FUNCTION_PACKAGE}
+    EOF
+    ```
 
-0.5 READ [`rules/specs-root-layout.md`](rules/specs-root-layout.md) 作為本 sub-SOP 內所有 `${PLAN_PACKAGES_DIR}` / `${TRUTH_BOUNDARY_ROOT}` / `${TRUTH_BOUNDARY_PACKAGES_DIR}` / `${CONTRACTS_DIR}` / `${DATA_DIR}` 目錄結構路徑的 SSOT。
+  0.1 READ `aibdd-flows-specify/rules/specs-root-layout.md` 作為本 sub-SOP 內所有 `${PLAN_PACKAGES_DIR}` / `${TRUTH_BOUNDARY_ROOT}` / `${TRUTH_BOUNDARY_PACKAGES_DIR}` / `${CONTRACTS_DIR}` / `${DATA_DIR}` 目錄結構路徑的 SSOT。
 
-0.6 DERIVE `$package_naming_language`：
+1. Derive plan package 並 CREATE Dir：若 `$PLAN_PACKAGE_SLUG` 已由 caller-context 提供，ASSERT `${PLAN_PACKAGES_DIR}/$PLAN_PACKAGE_SLUG/` 於 filesystem 存在並沿用；否則依據本輪需求敘事與 slug 命名規則 PRINCIPLE derive `$PLAN_PACKAGE_SLUG`（NNN-<slug>）、CREATE `${PLAN_PACKAGES_DIR}/$PLAN_PACKAGE_SLUG/` 於 filesystem。
 
-- SOURCE：`$package_naming_language` = ${PROJECT_SPEC_LANGUAGE}（zh-hant / zh-hans / en-us / ja-jp / ko-kr 等 BCP-47 值；同 `${FILENAME_AXES_TITLE_LANGUAGE_REF}` 所指 i18n reference）。
-- 後續所有 `$plan_package_slug`（`NNN-<slug>`）與 `$function_package_slug`（`NN-<slug>`）之 `<slug>` 主體**必須以該語系自然書寫**。
-- 技術名詞（API field、DSL token、operationId、domain acronym 如 CRM／SOP／API／OAuth）**可保留英文原文**；其餘 slug body 不得整段翻成英文。
-- **【嚴禁】以 romanization（漢語拼音／注音／粵拼）、kana、romaji 等 transliteration 充當「為避該語系字元」的 fallback**。落到 filesystem 的 slug 必須讀得懂、可直接還原為該語系文字。
-- IF `$package_naming_language` == `zh-hant`：
-  - ✅ Good：`001-會員登入記錄登入時間`、`001-CRM學員旅程階段SOP`、`packages/01-會員登入`
-  - ❌ Bad（romanization）：`001-yi-a2b-mo-wang-fang`、`001-hui-yuan-deng-ru`
-  - ❌ Bad（整段英譯，無此需求）：`001-member-login-last-login-at`
-- IF `$package_naming_language` == `zh-hans`：規則同 zh-hant，但用簡體字形。
-- IF `$package_naming_language` == `en-us`：slug 以英文撰寫，使用 kebab-case。
-  - ✅ Good：`001-member-login-last-login-at`、`packages/01-member-login`
-- IF `$package_naming_language` == `ja-jp`：以日文書寫，禁止以 romaji 取代漢字／假名。
-- IF `$package_naming_language` == `ko-kr`：以韓文（Hangul）書寫，禁止以 romaja 取代。
-- **禁止無理由中英檔名混拼**（半中半英的 slug，如 `001-會員-login`，除非含上述技術 token 例外）。
-- 若 `${PROJECT_SPEC_LANGUAGE}` 缺失或無法判斷，**不得**自行 fallback 為英文或 romanization，須 DELEGATE `/clarify-loop` 詢問用戶。
+2. SEARCH 並錨定 Scope（本步僅 READ／SEARCH／WRITE `${PLAN_SPEC}`；`${TRUTH_BOUNDARY_ROOT}` 下 truth 不寫入；`arguments.yml` 不寫入）
 
-1. ANCHOR + SEARCH（本步僅 READ／SEARCH／WRITE `${PLAN_SPEC}`；`${TRUTH_BOUNDARY_ROOT}` 下 truth 不寫入；`arguments.yml` 不寫入）
-   - 1.1 若當前 plan slug 尚未由 caller-context 提供：DERIVE `$plan_package_slug`（`NNN-<slug>`）→ CREATE `${PLAN_PACKAGES_DIR}/$plan_package_slug/` 於 filesystem → 將 `$plan_package_slug` 作為 return value 回傳上層 orchestrator，後續解析 `${CURRENT_PLAN_PACKAGE}` 借位時以此 slug override → 回到 1.2。`arguments.yml` 中 `CURRENT_PLAN_PACKAGE` 永遠保持 `<<NNN-plan-slug>>` 借位形態，本步**不**改寫 yaml。
-   - 1.2 將本輪整理後的需求敘事全文寫入 `${PLAN_SPEC}`；不得以單句摘要取代全文。
-   - 1.3 依 1.2 敘事在 `${TRUTH_BOUNDARY_ROOT}` 下 READ／SEARCH boundary truth（含 `${CONTRACTS_DIR}`、`${DATA_DIR}`、`${TRUTH_BOUNDARY_PACKAGES_DIR}` 等。
-   - 1.4 若掃描根下無可對照契約／資料：步驟 4 須明列「未找到」與補洞方式；不得以 repo 外私有路徑充當 truth，亦不得順手新建 contracts／data／shared／dsl／`.feature` 來補洞。
+   2.1 依 `aibdd-flows-specify/assets/templates/spec.template.md` 之填寫規則，將使用者本輪需求敘事寫入 `${PLAN_SPEC}`（初始批次）。
 
-2. CREATE DIR：若 1.1 已建立則 ASSERT `${PLAN_PACKAGES_DIR}/$plan_package_slug/` 存在並略過；否則在鎖定 `$package_naming_language` 後 DERIVE `$plan_package_slug`、CREATE `${PLAN_PACKAGES_DIR}/$plan_package_slug/` 於 filesystem，並將 `$plan_package_slug` 作為 return value 回傳上層 orchestrator。**不**改寫 `arguments.yml`（`CURRENT_PLAN_PACKAGE` 保持借位形態）。本步不在 `${TRUTH_BOUNDARY_PACKAGES_DIR}` 下新建 functional module 目錄，除非本輪明確要新開 function package。
+   2.2 依本輪需求敘事在 `${DATA_DIR}`、`${CONTRACTS_DIR}`、`${TRUTH_BOUNDARY_PACKAGES_DIR}` 下 READ／SEARCH 規格。本步只讀取並蒐集受影響的 scope 作為 `$IMPACT_ENTRIES`。
 
-3. EXECUTE `steps/maintain-impact-matrix.md`，收斂本輪 impact scope 至 `${IMPACT_MATRIX_YML}`。`${IMPACT_MATRIX_YML}` 只經該 substep 內 wrapper 子步驟變更。
+3. WRITE `${IMPACT_MATRIX_YML}`，收斂本輪 plan impact scope，只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
 
-4. WRITE `${PLAN_REPORTS_DIR}/discovery-sourcing.md`（章節以 `assets/templates/discovery-sourcing.template.md` 為準；語感對照 `assets/templates/discovery-sourcing.example.md`）；UPDATE `${PLAN_SPEC}`（保留 1.2 需求全文，追加指向該報告的 pointer 與可選執行摘要）。本步僅允許 WRITE `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 與 UPDATE `${PLAN_SPEC}`。
+   3.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、change_type enum 語意與各使用情境應用 command。
 
-5. THINK：在鎖定 `$package_naming_language` 下拆解 function package 數量（1..*）；bottom-up 規則見 `rules/function-package-granularity.md`。每個 `$function_package_slug`（`NN-<slug>`）須在報告 `## Function package charters` 有職責一句、納入、排除、本輪變更型態。本步只產出判斷，不寫檔。
+   3.1 matrix 尚不存在時，跑一次 init 建立空檔；已存在則略過。
 
-6. CREATE DIRS ONLY：於 `${TRUTH_BOUNDARY_PACKAGES_DIR}` 建立或沿用各 `${TRUTH_FUNCTION_PACKAGE}`，僅建 `${FEATURE_SPECS_DIR}` 骨架。禁止建立 `dsl.yml`、`.feature`、`${CONTRACTS_DIR}`／`${DATA_DIR}` 內容或其它規格檔。目錄示意見 example 內 Spec structure。
+   3.2 `$IMPACT_ENTRIES` 內本輪會讀取、對照或更新者，各檔選擇語意適配之 change_type 跑一次 upsert command。
 
-7. UPDATE `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 與 `${PLAN_SPEC}`（維持 1.2 需求全文與 pointer／摘要；句型對齊 example）。本步僅允許 UPDATE 上述兩檔。
+   3.3 `$IMPACT_ENTRIES` 內本輪需求明文淘汰的既存檔案，各檔以 change_type=remove 跑一次 upsert command 更新 impact matrix 紀錄；實際檔案刪除不在本步。
+
+   3.4 使用 list command 讀取 impact matrix，若存在不屬於本輪 plan impact 的 entries，各跑一次 delete command 修正 impact matrix 紀錄，不進行任何刪除檔案操作。
+
+   3.5 全部 upsert／delete 完成後，跑一次 validate；ok 為 false 時依 questions 修正，直到 validate 通過。
+
+   3.6 validate 通過後，跑一次 list command 讀取 impact matrix 狀態作為 `$ENTRIES_AFTER`，並原樣顯示給用戶；`$ENTRIES_BEFORE` 為空集合。
+
+4. WRITE `${PLAN_REPORTS_DIR}/discovery-sourcing.md`，格式以 `aibdd-flows-specify/assets/templates/discovery-sourcing.template.md` 為準，語感參照 `aibdd-flows-specify/assets/templates/discovery-sourcing.example.md`，但 Function package charters 章節先不紀錄任何 function packages；UPDATE `${PLAN_SPEC}`，參照 `aibdd-flows-specify/assets/templates/spec.template.md` 之 Discovery Sourcing Summary 段落加上指向 `discovery-sourcing.md` 的 pointer 與可選執行摘要。
+
+5. THINK 拆解 function package 數量（1..*）並決定各 package 職責；bottom-up 規則見 `aibdd-flows-specify/rules/function-package-granularity.md`，`$FUNCTION_PACKAGE_SLUG`（`NN-<slug>`）依據 slug 命名規則 PRINCIPLE 命名。本步只產出判斷，不寫檔。
+
+6. CREATE Dirs Only：於 `${TRUTH_BOUNDARY_PACKAGES_DIR}` 建立或沿用各 `${TRUTH_FUNCTION_PACKAGE}`，並僅建 `${FEATURE_SPECS_DIR}` 骨架。禁止建立 `dsl.yml`、`.feature`、`${CONTRACTS_DIR}`、`${DATA_DIR}` 內容或其它規格檔。
+
+7. UPDATE `${PLAN_REPORTS_DIR}/discovery-sourcing.md` Function package charters 章節，依據 `aibdd-flows-specify/assets/templates/discovery-sourcing.template.md` 格式紀錄每個 `$FUNCTION_PACKAGE_SLUG` 職責；UPDATE `${PLAN_SPEC}` Discovery Sourcing Summary 執行摘要。

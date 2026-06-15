@@ -21,6 +21,7 @@ $defs:
       - update
       - add
       - conditional_update
+      - remove
   entry:
     type: object
     required:

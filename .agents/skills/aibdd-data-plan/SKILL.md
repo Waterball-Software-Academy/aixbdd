@@ -53,6 +53,10 @@ metadata:
 
 0. 在 CWD 底下 grep 搜尋 `**/arguments.yml` 檔案，做 parameters binding for all following steps，這些參數後續每一步都會用到。此檔案一定存在，如不存在請直接停止執行，向使用者回報：「我在 ${CWD} 底下找不到 **/arguments.yml 檔案，你是否已經執行過 /aibdd-kickoff 了？」
 
+  0.1 解析 plan package 作為 $PLAN_PACKAGE_SLUG。arguments.yml 的 CURRENT_PLAN_PACKAGE 永遠保持 <<NNN-plan-slug>> 借位形態，並且 CURRENT_PLAN_PACKAGE 借位時一律以 $PLAN_PACKAGE_SLUG 為準，plan package 解析順位為：
+    - 對話歷史已指名具體 NNN-<slug>（例：稍早曾經解析過 plan package、使用者點名 ${PLAN_PACKAGES_DIR}/NNN-<slug>、或「繼續／重跑 NNN 那包」這類指涉），並且 ASSERT ${PLAN_PACKAGES_DIR}/NNN-<slug>/ 存在於 CWD；路徑不存在則改走下方釐清。
+    - 其餘情況不得自行判定，列出 ${PLAN_PACKAGES_DIR}/*/ 全部候選向使用者釐清，直接詢問是延續哪個既有 plan packages；取得回覆前 STOP，候選僅一個、甚至為空，也必須釐清；若使用者指名新建或是不存在的 plan packages，則 STOP 並提示使用者本 skill 必須基於既有 plan package 執行。
+
 1. RESOLVE arguments——將本 SOP 引用的 `${VAR}`（**僅本 skill 用到者**）透過 sibling resolver 綁定，並把 resolver stdout（每行一筆 `KEY=value`）原樣 EMIT 給用戶。Resolver 非 0 退出時，停止本 SOP 並把 stderr 透傳給用戶。`${CWD}` 為 shell working directory，不入 manifest。
 
    ```bash
@@ -97,7 +101,7 @@ metadata:
 6. TRIGGER impact matrix query，BIND `$PLAN_MUTABLE_IMPACT_ENTRIES`
    1. 讀取本輪 mutable workset（含 `conditional_update`）：
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} query \
         --change-type update \
         --change-type add \

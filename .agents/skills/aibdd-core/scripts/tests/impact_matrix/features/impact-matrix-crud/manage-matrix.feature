@@ -40,6 +40,19 @@ Feature: manage discovery impact matrix
         ]
         """
 
+    Example: upsert records a remove impact for an existing spec file
+      When impact matrix upsert is run with path "packages/01-member-login/features/03-legacy-login.feature" change_type "remove" impact_summary "retire legacy login scenario per current requirement"
+      Then impact matrix entries should equal:
+        """
+        [
+          {
+            "path": "packages/01-member-login/features/03-legacy-login.feature",
+            "change_type": "remove",
+            "impact_summary": "retire legacy login scenario per current requirement"
+          }
+        ]
+        """
+
   Rule: delete removes one entry by path
     Example: delete removes existing entry
       When impact matrix upsert is run with path "data/member.dbml" change_type "update" impact_summary "add last_login_at column"
@@ -65,7 +78,7 @@ Feature: manage discovery impact matrix
         """
         - where: reports/impact-matrix.yml:entries[0]
           type: change_type
-          text: change_type 'UPDATE' is invalid; must be one of: read_only_compare, update, add, conditional_update
+          text: change_type 'UPDATE' is invalid; must be one of: read_only_compare, update, add, conditional_update, remove
         """
 
     Example: duplicate path is rejected
@@ -119,7 +132,7 @@ Feature: manage discovery impact matrix
         """
         - where: reports/impact-matrix.yml:entries[0]
           type: change_type
-          text: change_type 'maybe_update' is invalid; must be one of: read_only_compare, update, add, conditional_update
+          text: change_type 'maybe_update' is invalid; must be one of: read_only_compare, update, add, conditional_update, remove
         """
 
   Rule: CLI emits the same JSON report contract as lib operations

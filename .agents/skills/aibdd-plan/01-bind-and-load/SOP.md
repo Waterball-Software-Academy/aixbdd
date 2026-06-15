@@ -51,7 +51,7 @@
 5. TRIGGER impact matrix query，BIND `$PLAN_MUTABLE_IMPACT_ENTRIES`
    1. 讀取本輪 plan mutable workset（含 `conditional_update`）：
       ```bash
-      python3 .claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts/cli/manage_impact_matrix.py \
+      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
         --matrix ${IMPACT_MATRIX_YML} query \
         --change-type update \
         --change-type add \

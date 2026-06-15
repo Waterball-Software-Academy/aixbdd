@@ -8,8 +8,11 @@ import sys
 from pathlib import Path
 
 _SCRIPTS_DIR = Path(__file__).resolve().parents[1]
-if str(_SCRIPTS_DIR) not in sys.path:
-    sys.path.insert(0, str(_SCRIPTS_DIR))
+_LIB_DIR = _SCRIPTS_DIR / "lib"
+for _path in (_LIB_DIR, _SCRIPTS_DIR):
+    _path_str = str(_path)
+    if _path_str not in sys.path:
+        sys.path.insert(0, _path_str)
 
 from lib.impact_matrix import (  # noqa: E402
     build_report,
@@ -19,19 +22,9 @@ from lib.impact_matrix import (  # noqa: E402
     init_matrix,
     list_entries,
     load_matrix,
-    repo_root_from_module,
     upsert_entry,
     validate_matrix,
 )
-
-_REPO_ROOT = repo_root_from_module()
-_AIBDD_CORE_SCRIPTS = _REPO_ROOT / ".claude/skills/aibdd-core/scripts"
-_AIBDD_CORE_LIB = _AIBDD_CORE_SCRIPTS / "lib"
-for _path in (_AIBDD_CORE_LIB, _AIBDD_CORE_SCRIPTS):
-    _path_str = str(_path)
-    if _path_str not in sys.path:
-        sys.path.insert(0, _path_str)
-
 from shared.project_args import resolve_key  # noqa: E402
 
 
@@ -160,7 +153,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--change-type",
         action="append",
         default=None,
-        choices=["read_only_compare", "update", "add", "conditional_update"],
+        choices=["read_only_compare", "update", "add", "conditional_update", "remove"],
         help="Match one or more change_type values (OR semantics)",
     )
     query.add_argument(
@@ -174,7 +167,7 @@ def build_parser() -> argparse.ArgumentParser:
     upsert.add_argument(
         "--change-type",
         required=True,
-        choices=["read_only_compare", "update", "add", "conditional_update"],
+        choices=["read_only_compare", "update", "add", "conditional_update", "remove"],
     )
     upsert.add_argument("--impact-summary", required=True)
 

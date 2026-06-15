@@ -7,7 +7,7 @@
 >
 > 用語（寫進 discovery report 時請遵守）：
 > - **`function package`**：boundary 底下 `packages/NN-<slug>/` 這一層模組單位（內含 `features/`、`dsl.yml` 等）。
-> - **slug 語系**：所有 `<plan-package-slug>` 與 `<function-package-slug>` 之 `<slug>` 主體**必須**以 `${PROJECT_SPEC_LANGUAGE}` 自然語撰寫（zh-hant 寫繁中、en-us 寫英文 kebab-case…）。技術 token（API field／DSL token／domain acronym）可保留英文。**嚴禁** romanization（漢語拼音／kana／romaji／romaja）或無理由整段英譯作為 fallback；詳細 IF/THEN guards 見 `01-sourcing-and-packaging/SOP.md` 步驟 0.6。
+> - **slug 語系**：所有 `<plan-package-slug>` 與 `<function-package-slug>` 之 `<slug>` 主體**必須**以 `${PROJECT_SPEC_LANGUAGE}` 自然語撰寫（zh-hant 寫繁中、en-us 寫英文 kebab-case…）。技術 token（API field／DSL token／domain acronym）可保留英文。**嚴禁** romanization（漢語拼音／kana／romaji／romaja）或無理由整段英譯作為 fallback。
 
 ## Impact scope
 
@@ -19,13 +19,17 @@
 
 > 這一節回答：**每個涉及的 function package 的定義與職責邊界是什麼？**
 > `Packaging decision` 裡列到的每一個 function package，**都必須**在這裡有一張對應小卡。
+> **本 plan 變更型態**語意基準＝本 plan 相對 plan 開始前 baseline 的**淨關係**，跨批次**不回退**：
+> `new-package`＝該 package 由本 plan 新開（不論初始或變更批次；後續批次再增修仍維持 `new-package`）；
+> `impact-only`＝plan 前既存、本 plan 僅增修／對照其規格；
+> `mixed`＝plan 前既存、本 plan 對其同時有新增規格責任與既有規格增修。
 
 ### `<packages/<function-package-slug>>`
 
 - **職責一句**：<用一句話定義這個 function package 對外行為主軸>
 - **納入**：<列出這個 package 負責承載的規格切片>
 - **排除**：<列出刻意不承載的相鄰能力，避免邊界漂移>
-- **本輪變更型態**：`impact-only`／`new-package`／`mixed`
+- **本 plan 變更型態**：`impact-only`／`new-package`／`mixed`
 - **本輪規格增量**：<這輪要補哪些規格增量；一句話，不要寫實作步驟>
 
 ### `<packages/<第二個-function-package-slug>>`（若本輪涉及多包，複製此小卡）
@@ -33,7 +37,7 @@
 - **職責一句**：<...>
 - **納入**：<...>
 - **排除**：<...>
-- **本輪變更型態**：<...>
+- **本 plan 變更型態**：<...>
 - **本輪規格增量**：<...>
 
 ## Packaging decision

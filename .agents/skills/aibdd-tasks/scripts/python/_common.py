@@ -54,16 +54,6 @@ def ensure_shared_lib_on_path(workspace_root: Path) -> None:
             sys.path.insert(0, path_str)
 
 
-def ensure_flows_specify_impact_matrix_on_path(workspace_root: Path) -> None:
-    repo_root = workspace_root
-    flows_specify_scripts = repo_root / ".claude/skills/aibdd-flows-specify/01-sourcing-and-packaging/scripts"
-    if not flows_specify_scripts.is_dir():
-        raise SystemExit(f"flows-specify impact-matrix scripts not found: {flows_specify_scripts}")
-    scripts_str = str(flows_specify_scripts)
-    if scripts_str not in sys.path:
-        sys.path.insert(0, scripts_str)
-
-
 def resolve_key(key: str, *, cwd: Path, args_path: Path) -> str | None:
     ensure_shared_lib_on_path(repo_root_from_args_path(args_path))
     from shared.project_args import resolve_key as core_resolve_key
@@ -192,7 +182,7 @@ def query_impacted_feature_paths(matrix_path: Path, *, repo_root: Path) -> list[
     if not matrix_path.is_file():
         raise SystemExit(f"impact matrix not found: {matrix_path}")
 
-    ensure_flows_specify_impact_matrix_on_path(repo_root)
+    ensure_shared_lib_on_path(repo_root)
     from lib.impact_matrix import filter_entries, load_matrix
 
     data = load_matrix(matrix_path)
