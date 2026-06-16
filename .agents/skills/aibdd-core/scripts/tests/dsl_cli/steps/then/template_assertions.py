@@ -41,6 +41,28 @@ def step_assert_candidate_target(context, name: str, key: str, expected: str):
     )
 
 
+@then('template "{name}" param_binding "{key}" has target "{expected}"')
+def step_assert_param_binding_target(context, name: str, key: str, expected: str):
+    t = _by_name(context, name)
+    assert key in t.param_bindings, (
+        f"template {name} has no param_binding {key!r}; got {list(t.param_bindings)}"
+    )
+    actual = t.param_bindings[key].target
+    assert actual == expected, (
+        f"template {name}.param_bindings[{key}].target mismatch:\n"
+        f"  expected: {expected}\n  actual:   {actual}"
+    )
+
+
+@then('template "{name}" has no param_binding "{key}"')
+def step_assert_no_param_binding(context, name: str, key: str):
+    t = _by_name(context, name)
+    assert key not in t.param_bindings, (
+        f"template {name} should NOT have param_binding {key!r}, but it does; "
+        f"got {list(t.param_bindings)}"
+    )
+
+
 @then('template "{name}" has target_part_path "{expected}"')
 def step_assert_template_target_part_path(context, name: str, expected: str):
     t = _by_name(context, name)
@@ -80,4 +102,17 @@ def step_assert_datatable_default_value(context, name: str, key: str, expected: 
     actual = t.datatable_bindings[key].default_value
     assert actual == expected, (
         f"template {name}.datatable_bindings[{key}].default_value: expected {expected!r}, got {actual!r}"
+    )
+
+
+@then('template "{name}" datatable_binding "{key}" has target "{expected}"')
+def step_assert_datatable_target(context, name: str, key: str, expected: str):
+    t = _by_name(context, name)
+    assert key in t.datatable_bindings, (
+        f"template {name} has no datatable_binding {key!r}; got {list(t.datatable_bindings)}"
+    )
+    actual = t.datatable_bindings[key].target
+    assert actual == expected, (
+        f"template {name}.datatable_bindings[{key}].target mismatch:\n"
+        f"  expected: {expected}\n  actual:   {actual}"
     )

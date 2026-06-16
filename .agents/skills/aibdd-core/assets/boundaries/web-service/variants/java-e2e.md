@@ -57,7 +57,7 @@ src/test/java/${BASE_PACKAGE}/
       state_builder/
       operation_invoke/
       operation_response_success_and_failure/
-      operation_response_success_readmodel/
+      operation_response_verify/
       state_verifier/
       state_relationship_verifier/
       time_control/
@@ -132,7 +132,7 @@ The spec package slug is the directory name from `FEATURE_SPECS_DIR` (e.g., `01-
 - Do not call application service internals from E2E steps.
 - Do not make a second MockMvc call in Then handlers.
 - Do not assert response payload in `operation-invoke`.
-- Do not use repository access in `operation-response-success-readmodel`.
+- Do not use repository access in `operation-response-verify`.
 - Do not use MockMvc access in `state-builder`, `state-verifier`, or `state-relationship-verifier`.
 - Do not sleep or read wall-clock time in `time-control`.
 - Do not make real external calls in `external-stub`.

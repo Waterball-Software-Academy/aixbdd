@@ -7,7 +7,7 @@ Feature: eval rule `target-uri-scheme-validity` enforces 5 valid target URI sche
         dsl_steps:
           - format: 房號 "{房號}" 與人數 "{人數}"
             name: ok.entry
-            handler: operation-response-success-readmodel
+            handler: operation-response-verify
             target_part_path: contracts/room.api.yml#/paths/~1rooms/post
             param_bindings:
               房號:

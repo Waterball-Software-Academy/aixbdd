@@ -1,12 +1,12 @@
-# Handler: operation-response-success-readmodel
+# Handler: operation-response-verify
 
 ## Role
 
-`operation-response-success-readmodel` renders response payload verification from the previously captured backend response.
+`operation-response-verify` renders response payload verification from the previously captured backend response.
 
 It belongs to:
 
-- `part`: `operation-response-success-readmodel`
+- `part`: `operation-response-verify`
 - `keywords`: `Then`
 
 ## Trigger Contract

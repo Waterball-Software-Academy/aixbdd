@@ -44,8 +44,10 @@ class ApiOperationPart(Part):
     path_escaped: str
     method: Literal["get", "post", "put", "patch", "delete", "options", "head"]
     operation_id: str
+    summary: str = ""
     request_inputs: tuple[RequestInput, ...] = ()
     response_properties: tuple[ResponseProp, ...] = ()
+    auth_required: bool = False
 
 
 @dataclass(frozen=True)
