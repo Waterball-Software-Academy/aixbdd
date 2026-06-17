@@ -1,4 +1,12 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.11"
+# dependencies = [
+#   "prance",
+#   "pyyaml",
+#   "ruamel.yaml",
+# ]
+# ///
 """Build `entity_to_table_mapping.yml` from DBML / SQL DDL schema files.
 
 Identity mapping only: every `<table_name>` maps to itself. See SKILL.md.

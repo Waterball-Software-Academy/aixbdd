@@ -22,7 +22,7 @@ def _run(args: list[str], *, drop_data_dir_env: bool = False):
     if drop_data_dir_env:
         env.pop("DATA_DIR", None)
     return subprocess.run(
-        ["python3", str(_CLI), *args],
+        ["uv", "run", str(_CLI), *args],
         text=True,
         capture_output=True,
         env=env,
@@ -95,7 +95,7 @@ def step_run_with_env_var(context):
     env = dict(os.environ)
     env["DATA_DIR"] = str(context.data_dir)
     context.last_result = subprocess.run(
-        ["python3", str(_CLI)],
+        ["uv", "run", str(_CLI)],
         text=True,
         capture_output=True,
         env=env,
