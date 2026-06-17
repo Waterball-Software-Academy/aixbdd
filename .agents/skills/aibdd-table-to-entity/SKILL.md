@@ -26,5 +26,5 @@ entity to table mapping（`<isa-entity>` = `<table_name>`），不讀 Table Note
 2. EXECUTE `build_mapping.py` — 直接執行 sibling script 產出 `${DATA_DIR}/entity_to_table_mapping.yml`；stdout/stderr 原樣 EMIT 給用戶，非 0 退出即 STOP。
 
    ```bash
-   python3 .claude/skills/aibdd-table-to-entity/scripts/build_mapping.py "${DATA_DIR}"
+   uv run .claude/skills/aibdd-table-to-entity/scripts/build_mapping.py "${DATA_DIR}"
    ```

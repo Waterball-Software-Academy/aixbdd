@@ -81,3 +81,22 @@ def step_stderr_contains(context, fragment: str):
     assert fragment in context.last_result.stderr, (
         f"stderr missing {fragment!r}\nstderr: {context.last_result.stderr}"
     )
+
+
+@then('CLI stdout should contain "{fragment}"')
+def step_stdout_contains(context, fragment: str):
+    assert fragment in context.last_result.stdout, (
+        f"stdout missing {fragment!r}\nstdout: {context.last_result.stdout}"
+    )
+
+
+@when("build_mapping CLI is run with DATA_DIR env var pointing to the data directory")
+def step_run_with_env_var(context):
+    env = dict(os.environ)
+    env["DATA_DIR"] = str(context.data_dir)
+    context.last_result = subprocess.run(
+        ["python3", str(_CLI)],
+        text=True,
+        capture_output=True,
+        env=env,
+    )
