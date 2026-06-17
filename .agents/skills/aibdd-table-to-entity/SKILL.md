@@ -1,6 +1,6 @@
 ---
 name: aibdd-table-to-entity
-description: Build the entity-to-table mapping (`entity_to_table_mapping.yml`) from a boundary's physical schema specs (DBML / SQL DDL) — identity mapping, the single lookup table consumed by DSL-to-ISA translation and SF dev framework entity_setup / entity_validate / entity_non_existence_validate.
+description: Build the entity-to-table mapping (`entity_to_table_mapping.yml`) from a boundary's physical schema specs (DBML / SQL DDL) — identity mapping.
 metadata:
   user-invocable: true
   source: project-level
@@ -8,9 +8,9 @@ metadata:
 
 # 目的
 
-從 physical schema 規格（DBML 或 SQL DDL）抽出 table 名，產出 `${DATA_DIR}/entity_to_table_mapping.yml` — 後續 DSL-to-ISA 對齊（`/aibdd-dsl-to-isa-interpretation`）與 SF dev framework `entity_setup` / `entity_validate` / `entity_non_existence_validate` 皆以本檔為唯一查表。
+從 schema 規格（DBML 或 SQL DDL）抽出 table 名，產出 `${DATA_DIR}/entity_to_table_mapping.yml`，作為 spectrum 框架使用的檔案。
 
-緣由：runtime 需要 entity ↔ table 反查表；本 phase 一律 identity mapping（`<isa-entity>` = `<table_name>`），不讀 Table Note／DDL 表級註解。
+entity to table mapping（`<isa-entity>` = `<table_name>`），不讀 Table Note／DDL 表級註解。
 
 # SOP
 
