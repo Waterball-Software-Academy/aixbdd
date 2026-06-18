@@ -29,11 +29,14 @@ _TABLE_START_RE = re.compile(
     r"Table\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{"
 )
 
+_IDENT_RE = r'(?:[A-Za-z_][A-Za-z0-9_]*|"[^"\n]+")'
+_TYPE_RE = r'(?:"[^"\n]+"|[A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?)'
+
 # A column line: `<name> <type> [<options>]?`. Options chunk may contain backticks
 # (for `default: \`now()\``) so we match it as anything-but-newline.
 _COLUMN_RE = re.compile(
-    r"^\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s+"
-    r"(?P<type>[A-Za-z_][A-Za-z0-9_]*)"
+    rf"^\s*(?P<name>{_IDENT_RE})\s+"
+    rf"(?P<type>{_TYPE_RE})"
     r"(?:\s*\[(?P<options>[^\n\]]*)\])?\s*$"
 )
 
@@ -80,7 +83,7 @@ def _extract_default_value(tokens: list[str]) -> str | None:
 
 class DBMLSpecParser(SpecParser):
     def parse(self, path: Path) -> list[Part]:
-        text = path.read_text()
+        text = _strip_block_comments(path.read_text())
         spec_label = path.as_posix()
         parts: list[Part] = []
         seen_ref_targets: set[str] = set()
@@ -110,6 +113,31 @@ class DBMLSpecParser(SpecParser):
         return parts
 
 
+def _strip_block_comments(text: str) -> str:
+    out: list[str] = []
+    i = 0
+    quote: str | None = None
+    while i < len(text):
+        char = text[i]
+        if quote:
+            out.append(char)
+            if char == quote and (i == 0 or text[i - 1] != "\\"):
+                quote = None
+            i += 1
+            continue
+        if text.startswith("/*", i):
+            end = text.find("*/", i + 2)
+            if end == -1:
+                break
+            i = end + 2
+            continue
+        if char in ("'", '"', "`"):
+            quote = char
+        out.append(char)
+        i += 1
+    return "".join(out)
+
+
 def _iter_table_blocks(text: str):
     for match in _TABLE_START_RE.finditer(text):
         body_start = match.end()
@@ -135,8 +163,8 @@ def _parse_columns(body: str, spec_label: str, table_name: str):
         m = _COLUMN_RE.match(line)
         if not m:
             continue
-        col_name = m.group("name")
-        col_type = m.group("type")
+        col_name = _unquote(m.group("name"))
+        col_type = _unquote(m.group("type"))
         is_pk, has_not_null, has_default, default_value, has_increment = _parse_options(m.group("options"))
         nullable = not (has_not_null or is_pk)
         yield Column(
@@ -149,6 +177,12 @@ def _parse_columns(body: str, spec_label: str, table_name: str):
             has_increment=has_increment,
             target_part_path=f"{spec_label}#{table_name}.{col_name}",
         )
+
+
+def _unquote(value: str) -> str:
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    return value
 
 
 def _parse_top_level_refs(text: str, spec_file: Path, spec_label: str):
@@ -182,7 +216,7 @@ def _parse_inline_refs(body: str, spec_file: Path, spec_label: str, table_name: 
             spec_file=spec_file,
             spec_label=spec_label,
             from_table=table_name,
-            from_column=match.group("name"),
+            from_column=_unquote(match.group("name")),
             operator=ref_match.group("operator"),
             to_table=ref_match.group("to_table"),
             to_column=ref_match.group("to_column"),
