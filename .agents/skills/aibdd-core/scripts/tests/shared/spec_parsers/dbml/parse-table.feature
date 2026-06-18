@@ -38,3 +38,23 @@ Feature: DBMLSpecParser collects one table Part per Table block
         | email      | varchar   | true     | false | false       |
         | bio        | text      | true     | false | false       |
         | created_at | timestamp | true     | false | true        |
+
+  Rule: 後置（狀態）- table 內含 indexes 區塊時仍應產出 table Part
+    Example: users table has an indexes block
+      Given a temporary file at "data/indexed.dbml" with content:
+        """
+        Table users {
+          id int [pk]
+          email varchar [not null]
+
+          indexes {
+            email [unique]
+          }
+        }
+        """
+      When DBMLSpecParser parses the last file
+      Then exactly 1 part of kind "table" is returned
+      And the part named "users" has columns:
+        | name  | type    | nullable | is_pk | has_default |
+        | id    | int     | false    | true  | false       |
+        | email | varchar | false    | false | false       |

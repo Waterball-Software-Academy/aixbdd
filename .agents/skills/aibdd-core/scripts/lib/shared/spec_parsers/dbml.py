@@ -25,10 +25,8 @@ from pathlib import Path
 from shared.spec_parts import Column, RefPart, TablePart, Part, PartKind
 from shared.spec_parsers.base import SpecParser
 
-# Capture `Table <name> { <body> }`. DOTALL so `.` matches newlines inside body.
-_TABLE_RE = re.compile(
-    r"Table\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{(?P<body>[^{}]*)\}",
-    re.DOTALL,
+_TABLE_START_RE = re.compile(
+    r"Table\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{"
 )
 
 # A column line: `<name> <type> [<options>]?`. Options chunk may contain backticks
@@ -86,9 +84,7 @@ class DBMLSpecParser(SpecParser):
         spec_label = path.as_posix()
         parts: list[Part] = []
         seen_ref_targets: set[str] = set()
-        for table_match in _TABLE_RE.finditer(text):
-            table_name = table_match.group("name")
-            body = table_match.group("body")
+        for table_name, body in _iter_table_blocks(text):
             columns = tuple(_parse_columns(body, spec_label, table_name))
             not_null = tuple(c for c in columns if not c.nullable)
             parts.append(
@@ -112,6 +108,23 @@ class DBMLSpecParser(SpecParser):
             seen_ref_targets.add(ref_part.target_part_path)
             parts.append(ref_part)
         return parts
+
+
+def _iter_table_blocks(text: str):
+    for match in _TABLE_START_RE.finditer(text):
+        body_start = match.end()
+        depth = 1
+        body_end = body_start
+        while body_end < len(text) and depth:
+            char = text[body_end]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+            body_end += 1
+        if depth:
+            continue
+        yield match.group("name"), text[body_start : body_end - 1]
 
 
 def _parse_columns(body: str, spec_label: str, table_name: str):
