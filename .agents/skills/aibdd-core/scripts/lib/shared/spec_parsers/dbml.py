@@ -25,17 +25,18 @@ from pathlib import Path
 from shared.spec_parts import Column, RefPart, TablePart, Part, PartKind
 from shared.spec_parsers.base import SpecParser
 
-# Capture `Table <name> { <body> }`. DOTALL so `.` matches newlines inside body.
-_TABLE_RE = re.compile(
-    r"Table\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{(?P<body>[^{}]*)\}",
-    re.DOTALL,
+_TABLE_START_RE = re.compile(
+    r"Table\s+(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s*\{"
 )
+
+_IDENT_RE = r'(?:[A-Za-z_][A-Za-z0-9_]*|"[^"\n]+")'
+_TYPE_RE = r'(?:"[^"\n]+"|[A-Za-z_][A-Za-z0-9_]*(?:\([^)\n]*\))?)'
 
 # A column line: `<name> <type> [<options>]?`. Options chunk may contain backticks
 # (for `default: \`now()\``) so we match it as anything-but-newline.
 _COLUMN_RE = re.compile(
-    r"^\s*(?P<name>[A-Za-z_][A-Za-z0-9_]*)\s+"
-    r"(?P<type>[A-Za-z_][A-Za-z0-9_]*)"
+    rf"^\s*(?P<name>{_IDENT_RE})\s+"
+    rf"(?P<type>{_TYPE_RE})"
     r"(?:\s*\[(?P<options>[^\n\]]*)\])?\s*$"
 )
 
@@ -86,9 +87,7 @@ class DBMLSpecParser(SpecParser):
         spec_label = path.as_posix()
         parts: list[Part] = []
         seen_ref_targets: set[str] = set()
-        for table_match in _TABLE_RE.finditer(text):
-            table_name = table_match.group("name")
-            body = table_match.group("body")
+        for table_name, body in _iter_table_blocks(text):
             columns = tuple(_parse_columns(body, spec_label, table_name))
             not_null = tuple(c for c in columns if not c.nullable)
             parts.append(
@@ -114,6 +113,23 @@ class DBMLSpecParser(SpecParser):
         return parts
 
 
+def _iter_table_blocks(text: str):
+    for match in _TABLE_START_RE.finditer(text):
+        body_start = match.end()
+        depth = 1
+        body_end = body_start
+        while body_end < len(text) and depth:
+            char = text[body_end]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+            body_end += 1
+        if depth:
+            continue
+        yield match.group("name"), text[body_start : body_end - 1]
+
+
 def _parse_columns(body: str, spec_label: str, table_name: str):
     for raw_line in body.splitlines():
         line = raw_line.strip()
@@ -122,8 +138,8 @@ def _parse_columns(body: str, spec_label: str, table_name: str):
         m = _COLUMN_RE.match(line)
         if not m:
             continue
-        col_name = m.group("name")
-        col_type = m.group("type")
+        col_name = _unquote(m.group("name"))
+        col_type = _unquote(m.group("type"))
         is_pk, has_not_null, has_default, default_value, has_increment = _parse_options(m.group("options"))
         nullable = not (has_not_null or is_pk)
         yield Column(
@@ -136,6 +152,12 @@ def _parse_columns(body: str, spec_label: str, table_name: str):
             has_increment=has_increment,
             target_part_path=f"{spec_label}#{table_name}.{col_name}",
         )
+
+
+def _unquote(value: str) -> str:
+    if len(value) >= 2 and value.startswith('"') and value.endswith('"'):
+        return value[1:-1]
+    return value
 
 
 def _parse_top_level_refs(text: str, spec_file: Path, spec_label: str):
@@ -169,7 +191,7 @@ def _parse_inline_refs(body: str, spec_file: Path, spec_label: str, table_name: 
             spec_file=spec_file,
             spec_label=spec_label,
             from_table=table_name,
-            from_column=match.group("name"),
+            from_column=_unquote(match.group("name")),
             operator=ref_match.group("operator"),
             to_table=ref_match.group("to_table"),
             to_column=ref_match.group("to_column"),
