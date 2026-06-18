@@ -1,9 +1,30 @@
-"""Impact matrix core: load, validate, CRUD, and entry query."""
+"""Impact matrix v2: model, mutation, query, validation, and JSON report.
+
+An impact connects raw requirement quotes to the spec files they drive.
+Schema:
+
+    version: 2
+    impacts:
+      - id: <uuid>                      # global identity, auto-generated on create
+        owner: <one of OWNERS>          # the plan phase that maintains these specs
+        quotes: [<str>, ...]            # raw requirement sentences
+        rationale: <str>                # why the quotes drive these specs
+        status: pending | resolved      # resolved iff every spec is consistent
+        specs:
+          - path: <relative file path>  # unique within the impact (may repeat across impacts)
+            status: inconsistent | consistent
+
+Mutating operations validate the whole resulting matrix and raise MatrixError
+(carrying violations) instead of writing an invalid file. There is no standalone
+validate verb; the invariants live here and are enforced on every write.
+"""
 
 from __future__ import annotations
 
 import json
+import os
 import re
+import uuid
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -13,29 +34,67 @@ try:
 except ImportError as exc:  # pragma: no cover
     raise SystemExit(f"PyYAML is required: {exc}") from exc
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
-CHANGE_TYPES: tuple[str, ...] = (
-    "read_only_compare",
-    "update",
-    "add",
-    "conditional_update",
-    "remove",
+OWNERS: tuple[str, ...] = (
+    "aibdd-flows-specify",
+    "aibdd-rules-specify",
+    "aibdd-spec-by-example",
+    "aibdd-plan",
+    "aibdd-api-plan",
+    "aibdd-data-plan",
 )
+OWNER_SET = frozenset(OWNERS)
 
-CHANGE_TYPE_SET = frozenset(CHANGE_TYPES)
-
-GLOB_MARKERS = ("*", "?", "[", "]")
+IMPACT_STATUSES: tuple[str, ...] = ("pending", "resolved")
+SPEC_STATUSES: tuple[str, ...] = ("inconsistent", "consistent")
 
 
 @dataclass(frozen=True)
-class MatrixQuestion:
-    where: str
+class MatrixViolation:
+    location: str
     type: str
-    text: str
+    message: str
 
     def as_dict(self) -> dict[str, str]:
-        return {"where": self.where, "type": self.type, "text": self.text}
+        return {
+            "location": self.location,
+            "type": self.type,
+            "message": self.message,
+        }
+
+
+class MatrixError(Exception):
+    """Raised by mutating ops when the resulting matrix would be invalid."""
+
+    def __init__(self, violations: list[MatrixViolation]):
+        self.violations = violations
+        super().__init__("; ".join(v.message for v in violations))
+
+
+# --- deterministic id seam (tests inject IMPACT_MATRIX_TEST_IDS) ------------
+
+_test_id_index = 0
+
+
+def reset_test_ids() -> None:
+    global _test_id_index
+    _test_id_index = 0
+
+
+def _generate_id() -> str:
+    global _test_id_index
+    seq = os.environ.get("IMPACT_MATRIX_TEST_IDS")
+    if seq:
+        ids = [s.strip() for s in seq.split(",") if s.strip()]
+        if _test_id_index < len(ids):
+            value = ids[_test_id_index]
+            _test_id_index += 1
+            return value
+    return str(uuid.uuid4())
+
+
+# --- plumbing ---------------------------------------------------------------
 
 
 def repo_root_from_module() -> Path:
@@ -46,12 +105,8 @@ def repo_root_from_module() -> Path:
     return here.parents[5]
 
 
-def schema_path() -> Path:
-    return Path(__file__).resolve().parents[1] / "assets" / "impact-matrix.schema.yml"
-
-
 def empty_matrix() -> dict[str, Any]:
-    return {"version": SCHEMA_VERSION, "entries": []}
+    return {"version": SCHEMA_VERSION, "impacts": []}
 
 
 def _normalize_path(path: str) -> str:
@@ -59,10 +114,6 @@ def _normalize_path(path: str) -> str:
     while cleaned.startswith("./"):
         cleaned = cleaned[2:]
     return cleaned
-
-
-def _looks_like_glob(path: str) -> bool:
-    return any(marker in path for marker in GLOB_MARKERS)
 
 
 def _load_yaml(path: Path) -> dict[str, Any]:
@@ -82,278 +133,304 @@ def _dump_yaml(path: Path, data: dict[str, Any]) -> None:
     )
 
 
-def _entry_index(entries: list[dict[str, Any]], path: str) -> int | None:
-    normalized = _normalize_path(path)
-    for idx, entry in enumerate(entries):
-        if _normalize_path(str(entry.get("path", ""))) == normalized:
-            return idx
+def load_matrix(path: Path) -> dict[str, Any]:
+    return _load_yaml(path)
+
+
+def list_impacts(data: dict[str, Any]) -> list[dict[str, Any]]:
+    impacts = data.get("impacts", [])
+    return impacts if isinstance(impacts, list) else []
+
+
+# --- internal helpers -------------------------------------------------------
+
+
+def _find_impact(impacts: list[dict[str, Any]], impact_id: str) -> tuple[int, dict] | None:
+    for idx, imp in enumerate(impacts):
+        if imp.get("id") == impact_id:
+            return idx, imp
     return None
+
+
+def _not_found(location: str, message: str) -> MatrixError:
+    return MatrixError([MatrixViolation(location, "NOT_FOUND", message)])
+
+
+def _commit(path: Path, data: dict[str, Any]) -> dict[str, Any]:
+    violations = validate_matrix(data)
+    if violations:
+        raise MatrixError(violations)
+    _dump_yaml(path, data)
+    return data
+
+
+# --- public operations ------------------------------------------------------
+
+
+def init_matrix(path: Path) -> dict[str, Any]:
+    if path.exists():
+        raise MatrixError(
+            [
+                MatrixViolation(
+                    "args.matrix",
+                    "ALREADY_EXISTS",
+                    "impact matrix already exists; init refuses to overwrite",
+                )
+            ]
+        )
+    data = empty_matrix()
+    _dump_yaml(path, data)
+    return data
+
+
+def write_impact(
+    path: Path,
+    *,
+    owner: str,
+    quotes: list[str],
+    rationale: str,
+    spec_paths: list[str],
+    impact_id: str | None = None,
+) -> tuple[dict[str, Any], dict[str, Any]]:
+    data = _load_yaml(path) if path.is_file() else empty_matrix()
+    impacts = data.setdefault("impacts", [])
+    impact = {
+        "id": impact_id or _generate_id(),
+        "owner": owner,
+        "quotes": list(quotes),
+        "rationale": rationale,
+        "status": "pending",
+        "specs": [{"path": p, "status": "inconsistent"} for p in spec_paths],
+    }
+    found = _find_impact(impacts, impact["id"]) if impact_id else None
+    if found is not None:
+        impacts[found[0]] = impact
+    else:
+        impacts.append(impact)
+    _commit(path, data)
+    return data, impact
+
+
+def add_spec(
+    path: Path,
+    *,
+    impact_id: str,
+    spec_path: str,
+    status: str,
+) -> dict[str, Any]:
+    data = _load_yaml(path)
+    found = _find_impact(data.get("impacts", []), impact_id)
+    if found is None:
+        raise _not_found("args.id", f"impact `{impact_id}` not found")
+    _, impact = found
+    impact.setdefault("specs", []).append({"path": spec_path, "status": status})
+    if status == "inconsistent":
+        impact["status"] = "pending"
+    return _commit(path, data)
+
+
+def transit_status(
+    path: Path,
+    *,
+    impact_id: str,
+    status: str,
+    spec_path: str | None = None,
+) -> dict[str, Any]:
+    if spec_path is not None:
+        if status not in SPEC_STATUSES:
+            allowed = ", ".join(SPEC_STATUSES)
+            raise MatrixError([MatrixViolation(
+                "args.status", "INVALID_VALUE",
+                f"status '{status}' is invalid for a spec; must be one of: {allowed}",
+            )])
+    elif status not in IMPACT_STATUSES:
+        allowed = ", ".join(IMPACT_STATUSES)
+        raise MatrixError([MatrixViolation(
+            "args.status", "INVALID_VALUE",
+            f"status '{status}' is invalid for an impact; must be one of: {allowed}",
+        )])
+
+    data = _load_yaml(path)
+    found = _find_impact(data.get("impacts", []), impact_id)
+    if found is None:
+        raise _not_found("args.id", f"impact `{impact_id}` not found")
+    _, impact = found
+
+    if spec_path is None:
+        impact["status"] = status
+    else:
+        spec = next((s for s in impact.get("specs", []) if s.get("path") == spec_path), None)
+        if spec is None:
+            raise _not_found(
+                "args.spec",
+                f"spec `{spec_path}` not found in impact `{impact_id}`",
+            )
+        spec["status"] = status
+        # introducing inconsistency auto-degrades the impact; consistency never auto-resolves.
+        if status == "inconsistent":
+            impact["status"] = "pending"
+    return _commit(path, data)
+
+
+def remove_impact(
+    path: Path,
+    *,
+    impact_id: str,
+    spec_path: str | None = None,
+) -> dict[str, Any]:
+    data = _load_yaml(path)
+    impacts = data.get("impacts", [])
+    found = _find_impact(impacts, impact_id)
+    if found is None:
+        return _commit(path, data)
+    idx, impact = found
+    if spec_path is None:
+        del impacts[idx]
+    else:
+        impact["specs"] = [s for s in impact.get("specs", []) if s.get("path") != spec_path]
+    return _commit(path, data)
+
+
+def read_impacts(
+    data: dict[str, Any],
+    *,
+    impact_id: str | None = None,
+    owners: list[str] | None = None,
+    impact_status: str | None = None,
+    spec_status: str | None = None,
+    spec_path: str | None = None,
+) -> list[dict[str, Any]]:
+    pattern = re.compile(spec_path) if spec_path is not None else None
+    spec_filtering = spec_status is not None or pattern is not None
+    result: list[dict[str, Any]] = []
+    for impact in list_impacts(data):
+        if impact_id is not None and impact.get("id") != impact_id:
+            continue
+        if owners is not None and impact.get("owner") not in owners:
+            continue
+        if impact_status is not None and impact.get("status") != impact_status:
+            continue
+        if not spec_filtering:
+            result.append(impact)
+            continue
+        specs = [
+            s
+            for s in impact.get("specs", [])
+            if (spec_status is None or s.get("status") == spec_status)
+            and (pattern is None or pattern.search(str(s.get("path", ""))))
+        ]
+        if not specs:
+            continue
+        result.append({**impact, "specs": specs})
+    return result
 
 
 def validate_matrix(
     data: dict[str, Any],
     *,
     matrix_path: str = "impact-matrix.yml",
-) -> tuple[list[MatrixQuestion], list[str]]:
-    questions: list[MatrixQuestion] = []
-    warnings: list[str] = []
+) -> list[MatrixViolation]:
+    violations: list[MatrixViolation] = []
 
-    version = data.get("version")
-    if version != SCHEMA_VERSION:
-        questions.append(
-            MatrixQuestion(
-                where=matrix_path,
-                type="version",
-                text=f"version must be {SCHEMA_VERSION}, got {version!r}",
-            )
-        )
+    if data.get("version") != SCHEMA_VERSION:
+        violations.append(MatrixViolation(
+            "version", "INVALID_VALUE", f"version must be {SCHEMA_VERSION}",
+        ))
 
-    entries = data.get("entries")
-    if not isinstance(entries, list):
-        questions.append(
-            MatrixQuestion(
-                where=matrix_path,
-                type="entries",
-                text="entries must be a list",
-            )
-        )
-        return questions, warnings
+    impacts = data.get("impacts", [])
+    seen_ids: set[str] = set()
+    for i, impact in enumerate(impacts):
+        loc = f"impacts[{i}]"
+        iid = impact.get("id")
+        if not isinstance(iid, str) or not iid.strip():
+            violations.append(MatrixViolation(f"{loc}.id", "MISSING", "id is required"))
+        elif iid in seen_ids:
+            violations.append(MatrixViolation(
+                f"{loc}.id", "DUPLICATE", f"duplicate impact id `{iid}`",
+            ))
+        else:
+            seen_ids.add(iid)
 
-    seen_paths: set[str] = set()
-    for idx, entry in enumerate(entries):
-        entry_where = f"{matrix_path}:entries[{idx}]"
-        if not isinstance(entry, dict):
-            questions.append(
-                MatrixQuestion(
-                    where=entry_where,
-                    type="entry",
-                    text="entry must be a mapping",
-                )
-            )
-            continue
+        if impact.get("owner") not in OWNER_SET:
+            allowed = ", ".join(OWNERS)
+            violations.append(MatrixViolation(
+                f"{loc}.owner", "INVALID_VALUE",
+                f"owner '{impact.get('owner')}' is invalid; must be one of: {allowed}",
+            ))
 
-        path = entry.get("path")
-        change_type = entry.get("change_type")
-        impact_summary = entry.get("impact_summary")
+        quotes = impact.get("quotes")
+        if (
+            not isinstance(quotes, list)
+            or not quotes
+            or not all(isinstance(q, str) and q.strip() for q in quotes)
+        ):
+            violations.append(MatrixViolation(
+                f"{loc}.quotes", "MISSING",
+                "quotes must be a non-empty list of non-empty strings",
+            ))
 
-        if not isinstance(path, str) or not path.strip():
-            questions.append(
-                MatrixQuestion(
-                    where=entry_where,
-                    type="path",
-                    text="path is required and must be a non-empty string",
-                )
-            )
-            continue
+        rationale = impact.get("rationale")
+        if not isinstance(rationale, str) or not rationale.strip():
+            violations.append(MatrixViolation(
+                f"{loc}.rationale", "MISSING", "rationale must be a non-empty string",
+            ))
 
-        normalized_path = _normalize_path(path)
-        if _looks_like_glob(normalized_path):
-            questions.append(
-                MatrixQuestion(
-                    where=entry_where,
-                    type="path",
-                    text=(
-                        f"path `{normalized_path}` contains glob markers; "
-                        "impact-matrix.yml v1 requires explicit per-file paths"
-                    ),
-                )
-            )
+        status = impact.get("status")
+        if status not in IMPACT_STATUSES:
+            allowed = ", ".join(IMPACT_STATUSES)
+            violations.append(MatrixViolation(
+                f"{loc}.status", "INVALID_VALUE",
+                f"status '{status}' is invalid for an impact; must be one of: {allowed}",
+            ))
 
-        if normalized_path in seen_paths:
-            questions.append(
-                MatrixQuestion(
-                    where=entry_where,
-                    type="path",
-                    text=f"duplicate path `{normalized_path}`",
-                )
-            )
-        seen_paths.add(normalized_path)
+        seen_paths: set[str] = set()
+        specs = impact.get("specs", [])
+        for j, spec in enumerate(specs):
+            sloc = f"{loc}.specs[{j}]"
+            spath = spec.get("path")
+            if not isinstance(spath, str) or not spath.strip():
+                violations.append(MatrixViolation(f"{sloc}.path", "MISSING", "spec path is required"))
+            elif spath in seen_paths:
+                violations.append(MatrixViolation(
+                    f"{sloc}.path", "DUPLICATE",
+                    f"duplicate spec path `{spath}` within impact",
+                ))
+            else:
+                seen_paths.add(spath)
+            if spec.get("status") not in SPEC_STATUSES:
+                allowed = ", ".join(SPEC_STATUSES)
+                violations.append(MatrixViolation(
+                    f"{sloc}.status", "INVALID_VALUE",
+                    f"status '{spec.get('status')}' is invalid for a spec; must be one of: {allowed}",
+                ))
 
-        if change_type not in CHANGE_TYPE_SET:
-            allowed = ", ".join(CHANGE_TYPES)
-            questions.append(
-                MatrixQuestion(
-                    where=entry_where,
-                    type="change_type",
-                    text=(
-                        f"change_type {change_type!r} is invalid; "
-                        f"must be one of: {allowed}"
-                    ),
-                )
-            )
+        if status == "resolved":
+            for spec in specs:
+                if spec.get("status") == "inconsistent":
+                    violations.append(MatrixViolation(
+                        f"{loc}.status", "INCONSISTENT",
+                        f"impact `{iid}` is resolved but spec `{spec.get('path')}` is inconsistent",
+                    ))
+                    break
 
-        if not isinstance(impact_summary, str) or not impact_summary.strip():
-            questions.append(
-                MatrixQuestion(
-                    where=entry_where,
-                    type="impact_summary",
-                    text="impact_summary is required and must be a non-empty string",
-                )
-            )
-
-        extra_keys = set(entry.keys()) - {"path", "change_type", "impact_summary"}
-        if extra_keys:
-            questions.append(
-                MatrixQuestion(
-                    where=entry_where,
-                    type="entry",
-                    text=f"unexpected fields: {sorted(extra_keys)}",
-                )
-            )
-
-    return questions, warnings
+    return violations
 
 
-def load_matrix(path: Path) -> dict[str, Any]:
-    return _load_yaml(path)
-
-
-def init_matrix(path: Path) -> dict[str, Any]:
-    data = empty_matrix()
-    _dump_yaml(path, data)
-    return data
-
-
-def list_entries(data: dict[str, Any]) -> list[dict[str, str]]:
-    entries = data.get("entries", [])
-    result: list[dict[str, str]] = []
-    if not isinstance(entries, list):
-        return result
-    for entry in entries:
-        if not isinstance(entry, dict):
-            continue
-        result.append(
-            {
-                "path": _normalize_path(str(entry.get("path", ""))),
-                "change_type": str(entry.get("change_type", "")),
-                "impact_summary": str(entry.get("impact_summary", "")),
-            }
-        )
-    return result
-
-
-def upsert_entry(
-    path: Path,
-    *,
-    entry_path: str,
-    change_type: str,
-    impact_summary: str,
-) -> tuple[dict[str, Any], bool]:
-    if change_type not in CHANGE_TYPE_SET:
-        allowed = ", ".join(CHANGE_TYPES)
-        raise ValueError(f"change_type must be one of: {allowed}")
-
-    normalized_path = _normalize_path(entry_path)
-    if _looks_like_glob(normalized_path):
-        raise ValueError("path must be an explicit file path without glob markers")
-
-    data = _load_yaml(path) if path.is_file() else empty_matrix()
-    entries = data.setdefault("entries", [])
-    if not isinstance(entries, list):
-        entries = []
-        data["entries"] = entries
-
-    payload = {
-        "path": normalized_path,
-        "change_type": change_type,
-        "impact_summary": impact_summary.strip(),
-    }
-
-    idx = _entry_index(entries, normalized_path)
-    created = idx is None
-    if idx is None:
-        entries.append(payload)
-    else:
-        entries[idx] = payload
-
-    questions, _ = validate_matrix(data, matrix_path=str(path))
-    if questions:
-        messages = "; ".join(q.text for q in questions)
-        raise ValueError(messages)
-
-    _dump_yaml(path, data)
-    return data, created
-
-
-def delete_entry(path: Path, *, entry_path: str) -> tuple[dict[str, Any], bool]:
-    data = _load_yaml(path)
-    entries = data.get("entries", [])
-    if not isinstance(entries, list):
-        raise ValueError("entries must be a list")
-
-    normalized_path = _normalize_path(entry_path)
-    idx = _entry_index(entries, normalized_path)
-    if idx is None:
-        return data, False
-
-    del entries[idx]
-    _dump_yaml(path, data)
-    return data, True
-
-
-def filter_entries(
-    data: dict[str, Any],
-    *,
-    suffix: str | None = None,
-    change_types: list[str] | None = None,
-    path_prefix: str | None = None,
-) -> list[dict[str, str]]:
-    if change_types is not None:
-        invalid = [value for value in change_types if value not in CHANGE_TYPE_SET]
-        if invalid:
-            allowed = ", ".join(CHANGE_TYPES)
-            raise ValueError(
-                f"change_type filter contains invalid values: {invalid!r}; "
-                f"must be one of: {allowed}"
-            )
-
-    normalized_prefix = _normalize_path(path_prefix) if path_prefix else None
-    filtered: list[dict[str, str]] = []
-    for entry in list_entries(data):
-        if suffix is not None and not entry["path"].endswith(suffix):
-            continue
-        if change_types is not None and entry["change_type"] not in change_types:
-            continue
-        if normalized_prefix is not None and not entry["path"].startswith(normalized_prefix):
-            continue
-        filtered.append(entry)
-    return filtered
+# --- report -----------------------------------------------------------------
 
 
 def build_report(
     *,
     ok: bool,
-    summary: str,
-    entries_changed: int = 0,
-    warnings: list[str] | None = None,
-    questions: list[MatrixQuestion] | None = None,
-    matrix_yaml: str | None = None,
-    entries: list[dict[str, str]] | None = None,
+    violations: list[MatrixViolation] | None = None,
+    impacts: list[dict[str, Any]] | None = None,
 ) -> dict[str, Any]:
-    report: dict[str, Any] = {
+    return {
         "ok": ok,
-        "summary": summary,
-        "entries_changed": entries_changed,
-        "warnings": warnings or [],
-        "questions": [q.as_dict() for q in (questions or [])],
-        "entries": entries or [],
-        "report": {
-            "summary": summary,
-        },
+        "violations": [v.as_dict() for v in (violations or [])],
+        "impacts": impacts or [],
     }
-    if matrix_yaml is not None:
-        report["matrix_yaml"] = matrix_yaml
-    return report
 
 
 def emit_report_json(report: dict[str, Any]) -> str:
     return json.dumps(report, ensure_ascii=False, indent=2)
-
-
-def format_questions_yaml(questions: list[MatrixQuestion]) -> str:
-    lines: list[str] = []
-    for q in questions:
-        lines.append(f"- where: {q.where}")
-        lines.append(f"  type: {q.type}")
-        lines.append(f"  text: {q.text}")
-    return "\n".join(lines)

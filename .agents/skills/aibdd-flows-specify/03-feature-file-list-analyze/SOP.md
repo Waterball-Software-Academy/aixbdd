@@ -27,7 +27,7 @@
 
   1.1 若 `$MODE` 為 RECONCILE，`$ACTION_FEATURES` 限縮為 `$ENTRIES_BEFORE` 與 `$ENTRIES_AFTER` 有差異所涉及之 action（新增者新建、既有者不動）。
 
-  1.2 `$ENTRIES_AFTER` 中 change_type=remove 對應之 `.feature`、以及 `$ENTRIES_BEFORE` 有而 `$ENTRIES_AFTER` 無且 `.feature` 已落地者，記入 `$OBSOLETE_FEATURES` 待 DELETE。`$ENTRIES_BEFORE` 不可考時，無法確證來源之 `.feature` 不刪，記入 `$BLOCKED` 待澄清。
+  1.2 本輪需求已不再涵蓋（無任何 `.activity` action 節點 binds_feature 指向、或需求明文淘汰）且 `.feature` 已落地之既存 spec，記入 `$OBSOLETE_FEATURES` 待 DELETE。無法確證來源者記入 `$BLOCKED` 待澄清。
 
 2. WRITE feature-file 骨架（rule-less）：
 
@@ -45,15 +45,15 @@
 
   2.4 一致性確認：每個 `.activity` action 節點之 binds_feature 都須對應到本步建立或既存之 `.feature`；某 binds_feature path 非法或無法建立則記入 `$BLOCKED`。
 
-3. DELETE `$OBSOLETE_FEATURES`：若 `$OBSOLETE_FEATURES` 非空，各刪除目標須先 ASSERT 已無任何 `.activity` action 節點 binds_feature 指向（仍被綁定者不刪、記入 `$BLOCKED` 待澄清），確認後 DELETE `${FEATURE_SPECS_DIR}` 下該些 `.feature`；刪除清單於結尾報告列出。
+3. DELETE `$OBSOLETE_FEATURES`：若 `$OBSOLETE_FEATURES` 非空，各刪除目標須先 ASSERT 已無任何 `.activity` action 節點 binds_feature 指向（仍被綁定者不刪、記入 `$BLOCKED` 待澄清），確認後 DELETE `${FEATURE_SPECS_DIR}` 下該些 `.feature`，實際刪除者記為 `$DELETED_FEATURES`；刪除清單於結尾報告列出。
 
-4. WRITE `${IMPACT_MATRIX_YML}`，回寫本輪新增之 `.feature`，只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
+4. WRITE `${IMPACT_MATRIX_YML}`，回寫本輪新建之 `.feature`。為每個本輪建立的 `.feature` spec，以 `(owner, spec)` 為鍵冪等 write 一個 impact，owner 一律 `aibdd-flows-specify`，`quotes` 指回 `${PLAN_SPEC}` 原文、`rationale` 寫該 `.feature` 的規格增量。只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
 
-  4.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、change_type enum 語意與各使用情境應用 command。
+  4.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、資料模型、status 語意與冪等 write 各情境應用 command；詳細 flag 用法以該 reference 為準。
 
-  4.1 針對本輪新建之每個 `.feature`，以其 binds_feature 相對 `${TRUTH_BOUNDARY_ROOT}` 路徑（即 `packages/<NN-slug>/features/<NN>-<action-slug>.feature`）以 change_type=add 跑一次 upsert command。
+  4.1 針對本輪新建之每個 `.feature`，取其 binds_feature 相對 `${TRUTH_BOUNDARY_ROOT}` 路徑（即 `packages/<NN-slug>/features/<NN>-<action-slug>.feature`）為 spec，owner=`aibdd-flows-specify`、`--quote` 帶其所本之 `${PLAN_SPEC}` 原文句（≥1）、`--rationale` 寫規格增量、spec status 以 `inconsistent` 落地；以 `read` 依 owner+spec-path 定位後 found 則 `write --id` 取代、否則 `write` 新建（CLI 用法見已載入的 manual）。
 
-  4.2 全部 upsert 完成後，跑一次 validate；ok 為 false 時依 questions 修正，直到 validate 通過。
+  4.2 對 `$DELETED_FEATURES` 之每個 `.feature`，以 `read` 取回其 impact id 後 `remove --id`（matrix `remove` 對應實際刪檔）。
 
 5. 釐清 `$BLOCKED`：若 `$BLOCKED` 非空，逐項 DELEGATE /clarify-loop 釐清，每項附其對應 action、`.activity` 或預期 feature 路徑作 anchor；澄清結論若改變檔名或綁定，回對應步驟重新依序執行；若須調整 `.activity` 的 binds_feature，則重新執行 activity diagram 建模流程。
 

@@ -48,22 +48,13 @@
    4. DERIVE `$PLAN_SCOPE = { plan_package_slug, function_package_slugs[], charter_cards[] }`；`charter_cards[]` 每項含 function package path、納入、排除、本輪變更型態、本輪規格增量。
    5. 若 `Packaging decision` 與 `Function package charters` 不一致、或無法解析任一 function package slug，STOP 並回報 discovery sourcing 不完整。
 
-5. TRIGGER impact matrix query，BIND `$PLAN_MUTABLE_IMPACT_ENTRIES`
-   1. 讀取本輪 plan mutable workset（含 `conditional_update`）：
-      ```bash
-      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
-        --matrix ${IMPACT_MATRIX_YML} query \
-        --change-type update \
-        --change-type add \
-        --change-type conditional_update
-      ```
-   2. PARSE stdout JSON 之 `entries` 為 `$PLAN_MUTABLE_IMPACT_ENTRIES`。
-   3. FILTER：只保留 path 落在 `$PLAN_SCOPE.function_package_slugs[]` 所屬 `${TRUTH_BOUNDARY_PACKAGES_DIR}/<slug>/**`、或 `${CONTRACTS_DIR}/**`、或 `${DATA_DIR}/**` 的 entry；其餘 entry 不納入本輪 plan 推導 scope。
-   4. 若 matrix 缺失或 `ok` 為 false，STOP 並回報 impact matrix 不完整。
+5. TRIGGER impact matrix read，BIND `$PLAN_MUTABLE_IMPACT_SPECS`
+   1. 以 `read --spec-status inconsistent` 讀本輪 plan mutable workset（仍 `inconsistent` 的 spec 才算待做），攤平 `impacts[].specs[].path` 為 `$PLAN_MUTABLE_IMPACT_SPECS`。CLI 用法詳見 `aibdd-core::impact-matrix/cli-usage.md`。
+   2. FILTER：只保留 path 落在 `$PLAN_SCOPE.function_package_slugs[]` 所屬 `${TRUTH_BOUNDARY_PACKAGES_DIR}/<slug>/**`、或 `${CONTRACTS_DIR}/**`、或 `${DATA_DIR}/**` 的 spec；其餘不納入本輪 plan 推導 scope。
 
 6. READ-ONLY 載入既有真相骨架（不寫入）
    - READ `${TRUTH_BOUNDARY_ROOT}/boundary-map.yml`、`${CONTRACTS_DIR}/**`、`${DATA_DIR}/**`、`${BOUNDARY_SHARED_DSL}`、`${BOUNDARY_PACKAGE_DSL}`、`${TEST_STRATEGY_FILE}`（缺則視為空骨架）。
    - READ code skeleton index（排除 ignored directories 與非主 worktree）。
    - 只 READ，不得 CREATE 任何空檔或目錄骨架。
 
-7. DERIVE `$PLAN_INPUTS = { plan_spec, discovery_report, plan_scope, plan_mutable_impact_entries, activity_truth, feature_truth, boundary_profile, existing_truth_bundle, code_skeleton }`，供後續 sub-SOP 引用；不落地。
+7. DERIVE `$PLAN_INPUTS = { plan_spec, discovery_report, plan_scope, plan_mutable_impact_specs, activity_truth, feature_truth, boundary_profile, existing_truth_bundle, code_skeleton }`，供後續 sub-SOP 引用；不落地。

@@ -23,7 +23,7 @@ metadata:
 ## PRINCIPLE: 不重畫 Discovery 真相
 
 - Discovery 已 accepted 的 `${ACTIVITIES_DIR}/**`、rule-only `${FEATURE_SPECS_DIR}/**`、actor 目錄、`${IMPACT_MATRIX_YML}`、`${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${PLAN_SPEC}` 之需求全文 **為唯讀輸入**；本 skill **不得**改寫任何 activity／feature 內容、不得改 atomic rule 文字、不得新增 Scenario／Background／Examples。
-- `${IMPACT_MATRIX_YML}` 僅能經 `manage_impact_matrix.py` 的 `upsert`／`validate` 追加本 phase 派生出的 contracts／data impact；不得手改 YAML 本體。
+- `${IMPACT_MATRIX_YML}` 僅能經 `impact_matrix_cli.py` 的 `write`／`add-spec`／`transit-status`／`remove` 維護本 phase 派生出的 contracts／data impact；不得手改 YAML 本體。
 - 若發現上游真相不足以推導技術計畫，必須**回頭委派** `/clarify-loop`（profile=`aibdd-plan`），由 Discovery owner 修正後再續跑；**禁止**就地補洞、**禁止**寫弱 placeholder DSL 讓下游 bypass。
 
 ## PRINCIPLE: 真相格式委派 specifier skills

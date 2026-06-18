@@ -17,13 +17,13 @@ metadata:
 
 ## PRINCIPLE: Artifact output contract（硬限制）
 
-- 本 SOP **唯一允許產生或修改**的 artifact，**只能**來自下述 SOP 中透過 DELEGATE（specifier 寫 `${CONTRACTS_DIR}`）與 impact matrix `upsert`／`validate` 明確標注的產出物。
+- 本 SOP **唯一允許產生或修改**的 artifact，**只能**來自下述 SOP 中透過 DELEGATE（specifier 寫 `${CONTRACTS_DIR}`）與 impact matrix `write`／`add-spec`／`transit-status`／`remove` 明確標注的產出物。
 - 【嚴禁】除上述 target 外，**其他任何 READ / SEARCH / THINK / DERIVE 所觀察到的路徑，都只可作為分析依據，不得被順手建立、寫入、更新或補骨架。**
 
 ## PRINCIPLE: 不重畫 Discovery 真相
 
 - Discovery 已 accepted 的 rule-only `${FEATURE_SPECS_DIR}/**`、`${ACTIVITIES_DIR}/**`、`${IMPACT_MATRIX_YML}`、`${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${PLAN_SPEC}` 之需求全文 **為唯讀輸入**；本 skill **不得**改寫任何 feature／activity 內容、不得改 atomic rule 文字、不得新增 Scenario／Background／Examples。
-- `${IMPACT_MATRIX_YML}` 僅能經 `manage_impact_matrix.py` 的 `upsert`／`validate` 追加本 skill 派生出的 contracts impact；不得手改 YAML 本體。
+- `${IMPACT_MATRIX_YML}` 僅能經 `impact_matrix_cli.py` 的 `write`／`add-spec`／`transit-status`／`remove` 維護本 skill 派生出的 contracts impact；不得手改 YAML 本體。
 - 若發現上游真相不足以推導 operation contract，必須**回頭委派** `/clarify-loop`，由 Discovery owner 修正後再續跑；**禁止**就地補洞。
 
 ## PRINCIPLE: 真相格式委派 specifier skill
@@ -98,18 +98,10 @@ metadata:
    4. DERIVE `$PLAN_SCOPE = { plan_package_slug, function_package_slugs[], charter_cards[] }`。
    5. 若 `Packaging decision` 與 `Function package charters` 不一致、或無法解析任一 function package slug，STOP 並回報 discovery sourcing 不完整。
 
-6. TRIGGER impact matrix query，BIND `$PLAN_MUTABLE_IMPACT_ENTRIES`
-   1. 讀取本輪 mutable workset（含 `conditional_update`）：
-      ```bash
-      python3 .claude/skills/aibdd-core/scripts/cli/manage_impact_matrix.py \
-        --matrix ${IMPACT_MATRIX_YML} query \
-        --change-type update \
-        --change-type add \
-        --change-type conditional_update
-      ```
-   2. PARSE stdout JSON 之 `entries` 為 `$PLAN_MUTABLE_IMPACT_ENTRIES`。
-   3. FILTER：只保留 path 落在 `$PLAN_SCOPE.function_package_slugs[]` 所屬 `${TRUTH_BOUNDARY_PACKAGES_DIR}/<slug>/**`、或 `${CONTRACTS_DIR}/**` 的 entry；其餘 entry 不納入本 skill 推導 scope。
-   4. 若 matrix 缺失或 `ok` 為 false，STOP 並回報 impact matrix 不完整。
+6. TRIGGER impact matrix read，BIND `$PLAN_MUTABLE_IMPACT_SPECS`
+   1. 以 `read --spec-status inconsistent` 讀本輪 mutable workset（仍 `inconsistent` 的 spec 才算待做），攤平 `impacts[].specs[].path` 為 `$PLAN_MUTABLE_IMPACT_SPECS`。CLI 用法詳見 `aibdd-core::impact-matrix/cli-usage.md`。
+   2. FILTER：只保留 path 落在 `$PLAN_SCOPE.function_package_slugs[]` 所屬 `${TRUTH_BOUNDARY_PACKAGES_DIR}/<slug>/**`、或 `${CONTRACTS_DIR}/**` 的 spec；其餘不納入本 skill 推導 scope。
+   3. 若 matrix 缺失或 `violations` 非空，STOP 並回報 impact matrix 不完整。
 
 7. READ-ONLY 載入既有 contract 真相骨架（不寫入）
    - READ `${TRUTH_BOUNDARY_ROOT}/boundary-map.yml`、`${CONTRACTS_DIR}/**`（缺則視為空骨架）。

@@ -6,7 +6,7 @@ Produce the ordered feature list that becomes the middle phases of `tasks.md`.
 
 ## Primary Input
 
-Start from matrix-derived membership: `${IMPACT_MATRIX_YML}` query for `.feature` entries with `change_type` in `{add, update}`.
+Start from matrix-derived membership: every `.feature` spec present in `${IMPACT_MATRIX_YML}`, obtained via `read --spec-path '\.feature$'` and collecting the returned `impacts[].specs[].path`.
 
 ## Ordering Method
 

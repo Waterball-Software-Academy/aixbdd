@@ -1,8 +1,8 @@
-"""Behave hooks for impact-matrix BDD suite."""
+"""Behave hooks for the impact-matrix v2 BDD suite."""
 
 from __future__ import annotations
 
-import json
+import os
 import shutil
 import sys
 import tempfile
@@ -16,16 +16,22 @@ for path in (_LIB_DIR, _SCRIPTS_DIR):
     if path_str not in sys.path:
         sys.path.insert(0, path_str)
 
+from lib.impact_matrix import reset_test_ids  # noqa: E402
+
 
 def before_scenario(context, scenario):
     context.tmp_root = Path(tempfile.mkdtemp(prefix="impact_matrix_test_"))
     context.matrix_path = context.tmp_root / "reports" / "impact-matrix.yml"
     context.last_result = None
     context.last_json = None
-    context.last_questions = []
+    context.last_read = None
+    context.last_violations = []
+    os.environ.pop("IMPACT_MATRIX_TEST_IDS", None)
+    reset_test_ids()
 
 
 def after_scenario(context, scenario):
+    os.environ.pop("IMPACT_MATRIX_TEST_IDS", None)
     tmp_root = getattr(context, "tmp_root", None)
     if tmp_root and tmp_root.exists():
         shutil.rmtree(tmp_root, ignore_errors=True)

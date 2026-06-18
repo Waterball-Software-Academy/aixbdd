@@ -46,9 +46,9 @@
       2. 如何修正：回到步驟 `2` 或 `4` 重新推導 slice_list 與 state target paths，再重跑 specifier。
       3. 例：feature truth 是「取消訂單」，operation contract 卻只導出查詢訂單狀態。
    4. writeback 與實際導出結果不一致
-      1. 要看什麼：impact matrix `upsert` 的 `path`、`change_type` 或 `impact_summary` 與本 phase 實際導出的 contract/data target 不一致。
-      2. 如何修正：回到步驟 `6` 重新整理 writeback input 後重跑 `upsert` 與 `validate`。
-      3. 例：實際新增的是 `contracts/refunds.yml`，writeback 卻標成 `data/refunds.dbml`。
+      1. 要看什麼：impact `write` 的 spec `path`、`owner`、`quotes` 或 `rationale` 與本 phase 實際導出的 contract/data target 不一致；或 `read_only_compare` 檔被誤寫成 impact、`remove` 檔未被 `remove --id`。
+      2. 如何修正：回到步驟 `6` 重新整理 writeback input 後重跑對應的冪等 `write`／`remove`（每個 mutating verb 會 inline 驗整份 matrix，依回傳 `violations` 收斂）。
+      3. 例：實際新增的是 `contracts/refunds.yml`，writeback 卻把 spec 寫成 `data/refunds.dbml`。
    5. 同一設計問題被重複拆成多個 target
       1. 要看什麼：本可由單一 operation slice 或單一 state schema 表達的設計，被過度拆散成多個重複 target。
       2. 如何修正：回到步驟 `2` 或 `4` 做去重與重組，只保留最直接承接需求真相的那組 target。

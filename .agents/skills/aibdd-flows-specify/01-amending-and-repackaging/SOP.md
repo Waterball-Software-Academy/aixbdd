@@ -37,27 +37,25 @@
 
 2. UPDATE `${PLAN_SPEC}` 依據 `aibdd-flows-specify/assets/templates/spec.template.md` 之填寫規則 ，將本輪變更敘事追加為新批次。
 
-3. UPDATE `${IMPACT_MATRIX_YML}`，維護本輪 plan impact scope，只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
+3. UPDATE `${IMPACT_MATRIX_YML}`，維護本輪 plan impact scope。matrix 以 impact 為單位：為每個本輪要建立／改動的 spec，以 `(owner, spec)` 為鍵冪等 write 一個 impact，owner 一律 `aibdd-flows-specify`，`quotes` 指回 `${PLAN_SPEC}` 原文、`rationale` 寫該 spec 的規格增量；只被讀取對照以界定範圍的 boundary 規格不寫入 matrix。只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
 
-   3.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、change_type enum 語意與各使用情境應用 command。
+   3.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、資料模型、status 語意與冪等 write 各情境應用 command；詳細 flag 用法以該 reference 為準。
 
-   3.1 若 `$IMPACT_MATRIX_MISSING` = true，跑一次 init command；false 則略過。
+   3.1 若 `$IMPACT_MATRIX_MISSING` = true，跑一次 `init` 建立空檔；false 則略過。
 
-   3.2 使用 list command snapshot impact matrix 作為 `$ENTRIES_BEFORE`，並原樣顯示給用戶。
+   3.2 以 `read`（無 filter）snapshot impact matrix 作為 `$ENTRIES_BEFORE`，並原樣顯示給用戶。
 
    3.3 依據 `$ENTRIES_BEFORE` 和 `${PLAN_REPORTS_DIR}/discovery-sourcing.md`，REASONING 本輪 plan 建立前 `${DATA_DIR}`、`${CONTRACTS_DIR}`、`${TRUTH_BOUNDARY_PACKAGES_DIR}` 的 baseline 規格狀態；允許 READ／SEARCH `${DATA_DIR}`、`${CONTRACTS_DIR}`、`${TRUTH_BOUNDARY_PACKAGES_DIR}` 以確認規格。
 
    3.4 依據 `${PLAN_SPEC}` 內全批次需求敘事重新 REASONING 本輪 plan 在 `${DATA_DIR}`、`${CONTRACTS_DIR}`、`${TRUTH_BOUNDARY_PACKAGES_DIR}` 的 baseline 規格狀態下所影響之 scope 作為 `$IMPACT_ENTRIES`。
 
-   3.5 `$IMPACT_ENTRIES` 內本輪會讀取、對照或更新者，各檔選擇語意適配之 change_type 跑一次 upsert command。
+   3.5 `$IMPACT_ENTRIES` 內本輪本 phase 實際建立／改動的 spec（此 phase 僅產出 skeleton `.feature` 與 `.activity` scope），各 spec owner=`aibdd-flows-specify`、`--quote` 帶其所本之 `${PLAN_SPEC}` 原文句（≥1）、`--rationale` 寫規格增量；以 `read` 依 owner+spec-path 定位後 found 則 `write --id` 取代、否則 `write` 新建（CLI 用法見已載入的 manual）。只被讀取對照之 boundary 規格（contracts／data）不寫入。
 
-   3.6 `$IMPACT_ENTRIES` 內本輪需求明文淘汰的既存檔案，各檔以 change_type=remove 跑一次 upsert command 更新 impact matrix 紀錄；實際檔案刪除不在本步。
+   3.6 `$IMPACT_ENTRIES` 內本輪需求明文淘汰、但本步未刪檔的既存 spec，以 `read` 取回 id 後 `transit-status --status inconsistent` 標記為待處理；`remove` 留待真正刪除該檔的步驟與刪檔同時執行，本步不 `remove`。
 
-   3.7 使用 list command 讀取 impact matrix，不在 `$IMPACT_ENTRIES` 的 entries 各跑一次 delete command 修正紀錄；禁止針對此些 entries 使用 change_type=remove 跑 upsert command）；實際檔案刪除不在本步。
+   3.7 本輪未觸及之既存 impact 保留不動。
 
-   3.8 全部 upsert／delete 完成後，跑一次 validate；ok 為 false 時依 questions 修正，直到 validate 通過。
-
-   3.9 validate 通過後，跑一次 list command 讀取狀態作為 `$ENTRIES_AFTER`，並原樣顯示給用戶。
+   3.8 全部 write／remove 完成後，以 `read`（無 filter）取回狀態作為 `$ENTRIES_AFTER` 並原樣顯示給用戶。
 
 4. UPDATE `${PLAN_REPORTS_DIR}/discovery-sourcing.md`： `aibdd-flows-specify/assets/templates/discovery-sourcing.template.md` 格式就地更新既有章節使其反映全批次淨需求後的當前真相，但先不更新 Function package charters 章節；禁止新增章節（例：每批次的變更紀錄章節）、不保留過期敘述，章節結構與語感對齊 `aibdd-flows-specify/assets/templates/discovery-sourcing.template.md／discovery-sourcing.example.md`；UPDATE `${PLAN_SPEC}`，參照 `aibdd-flows-specify/assets/templates/spec.template.md` 之 Discovery Sourcing Summary 段落確認指向 `discovery-sourcing.md` 的 pointer 存在並更新可選執行摘要。
 

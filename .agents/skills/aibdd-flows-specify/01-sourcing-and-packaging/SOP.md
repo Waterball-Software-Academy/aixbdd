@@ -31,21 +31,19 @@
 
    2.2 依本輪需求敘事在 `${DATA_DIR}`、`${CONTRACTS_DIR}`、`${TRUTH_BOUNDARY_PACKAGES_DIR}` 下 READ／SEARCH 規格。本步只讀取並蒐集受影響的 scope 作為 `$IMPACT_ENTRIES`。
 
-3. WRITE `${IMPACT_MATRIX_YML}`，收斂本輪 plan impact scope，只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
+3. WRITE `${IMPACT_MATRIX_YML}`，收斂本輪 plan impact scope。matrix 以 impact 為單位：為每個本輪要建立／改動的 spec，以 `(owner, spec)` 為鍵冪等 write 一個 impact，owner 一律 `aibdd-flows-specify`，`quotes` 指回 `${PLAN_SPEC}` 原文、`rationale` 寫該 spec 的規格增量；只被讀取對照以界定範圍的 boundary 規格不寫入 matrix。只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
 
-   3.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、change_type enum 語意與各使用情境應用 command。
+   3.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、資料模型、status 語意與冪等 write 各情境應用 command；詳細 flag 用法以該 reference 為準。
 
-   3.1 matrix 尚不存在時，跑一次 init 建立空檔；已存在則略過。
+   3.1 首批 sourcing 一次 `init` 建立空檔。
 
-   3.2 `$IMPACT_ENTRIES` 內本輪會讀取、對照或更新者，各檔選擇語意適配之 change_type 跑一次 upsert command。
+   3.2 `$IMPACT_ENTRIES` 內本輪本 phase 實際建立／改動的 spec（此 phase 僅產出 skeleton `.feature` 與 `.activity` scope），各 spec owner=`aibdd-flows-specify`、`--quote` 帶其所本之 `${PLAN_SPEC}` 原文句（≥1）、`--rationale` 寫規格增量；以 `read` 依 owner+spec-path 定位後 found 則 `write --id` 取代、否則 `write` 新建（CLI 用法見已載入的 manual）。只被讀取對照之 boundary 規格（contracts／data）不寫入。
 
-   3.3 `$IMPACT_ENTRIES` 內本輪需求明文淘汰的既存檔案，各檔以 change_type=remove 跑一次 upsert command 更新 impact matrix 紀錄；實際檔案刪除不在本步。
+   3.3 `$IMPACT_ENTRIES` 內本輪需求明文淘汰、但本步未刪檔的既存 spec，以 `read` 取回 id 後 `transit-status --status inconsistent` 標記為待處理；`remove` 留待真正刪除該檔的步驟與刪檔同時執行，本步不 `remove`。
 
-   3.4 使用 list command 讀取 impact matrix，若存在不屬於本輪 plan impact 的 entries，各跑一次 delete command 修正 impact matrix 紀錄，不進行任何刪除檔案操作。
+   3.4 本輪未觸及之既存 impact 保留不動。
 
-   3.5 全部 upsert／delete 完成後，跑一次 validate；ok 為 false 時依 questions 修正，直到 validate 通過。
-
-   3.6 validate 通過後，跑一次 list command 讀取 impact matrix 狀態作為 `$ENTRIES_AFTER`，並原樣顯示給用戶；`$ENTRIES_BEFORE` 為空集合。
+   3.5 全部 write／remove 完成後，以 `read`（無 filter）取回狀態作為 `$ENTRIES_AFTER` 並原樣顯示給用戶；`$ENTRIES_BEFORE` 為空集合。
 
 4. WRITE `${PLAN_REPORTS_DIR}/discovery-sourcing.md`，格式以 `aibdd-flows-specify/assets/templates/discovery-sourcing.template.md` 為準，語感參照 `aibdd-flows-specify/assets/templates/discovery-sourcing.example.md`，但 Function package charters 章節先不紀錄任何 function packages；UPDATE `${PLAN_SPEC}`，參照 `aibdd-flows-specify/assets/templates/spec.template.md` 之 Discovery Sourcing Summary 段落加上指向 `discovery-sourcing.md` 的 pointer 與可選執行摘要。
 

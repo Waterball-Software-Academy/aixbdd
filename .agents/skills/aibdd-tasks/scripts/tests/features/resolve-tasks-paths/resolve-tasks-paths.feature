@@ -41,17 +41,21 @@ Feature: resolve tasks paths from impact matrix and aibdd-core resolver
         """
       And a file at "specs/plans/demo-plan/reports/impact-matrix.yml" with content:
         """
-        version: 1
-        entries:
+        version: 2
+        impacts:
+        - id: 00000000-0000-4000-8000-000000000004
+          owner: aibdd-flows-specify
+          quotes:
+          - scope
+          rationale: scope
+          status: pending
+          specs:
           - path: packages/01-room/features/open-room.feature
-            change_type: add
-            impact_summary: open or join room
+            status: inconsistent
           - path: packages/02-game/features/guess-number.feature
-            change_type: add
-            impact_summary: guess boss number
+            status: inconsistent
           - path: contracts/room.api.yml
-            change_type: add
-            impact_summary: room contract
+            status: inconsistent
         """
       When resolve_tasks_paths is run with plan package "specs/plans/demo-plan"
       Then CLI exit code is 0
@@ -84,11 +88,17 @@ Feature: resolve tasks paths from impact matrix and aibdd-core resolver
         """
       And a file at "specs/plans/empty-scope/reports/impact-matrix.yml" with content:
         """
-        version: 1
-        entries:
+        version: 2
+        impacts:
+        - id: 00000000-0000-4000-8000-000000000005
+          owner: aibdd-flows-specify
+          quotes:
+          - scope
+          rationale: scope
+          status: pending
+          specs:
           - path: contracts/common.yml
-            change_type: add
-            impact_summary: shared contract only
+            status: inconsistent
         """
       When build_feature_phase_scaffold is run with plan package "specs/plans/empty-scope"
       Then CLI exit code is 1
@@ -109,11 +119,17 @@ Feature: resolve tasks paths from impact matrix and aibdd-core resolver
         """
       And a file at "specs/plans/demo-plan/reports/impact-matrix.yml" with content:
         """
-        version: 1
-        entries:
+        version: 2
+        impacts:
+        - id: 00000000-0000-4000-8000-000000000006
+          owner: aibdd-flows-specify
+          quotes:
+          - scope
+          rationale: scope
+          status: pending
+          specs:
           - path: packages/01-room/features/open-room.feature
-            change_type: add
-            impact_summary: open or join room
+            status: inconsistent
         """
       When resolve_tasks_paths is run with plan package "specs/plans/demo-plan"
       Then JSON matrix_feature_paths should equal:

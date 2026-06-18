@@ -6,7 +6,7 @@
 
 ## Impact 覆蓋義務
 
-以 `$PLAN_MUTABLE_IMPACT_ENTRIES`（來自 `${IMPACT_MATRIX_YML}` 之 `query`，且已受 `$PLAN_SCOPE` 過濾）中 contracts／data 相關 entry，與 `${CONTRACTS_DIR}/**` 中對客戶端暴露之 `operationId`（或同義路由入口）做交集盤點；交集內之每一入口視為須覆蓋之 boundary-entry operation。對每一須覆蓋之 operation，預設須各有 happy／alt／err 各至少一條獨立 path（檔粒度仍遵守 `sequence-path-granularity.md`）；若規格上某一類別無合理語意（例如僅唯一成功態），須於 `$IMPLEMENTATION_MODEL.blocked_reasons[]` 記載該 operation、缺漏類別與規格／契約依據，不得默認縮減全集。`conditional_update` entry 須對照 `discovery-sourcing.md` 之 `Resolved sourcing decisions` 判定是否納入 mutable intersection；未拍板者記入 `blocked_reasons[]`。
+以 `$PLAN_MUTABLE_IMPACT_SPECS`（來自 `${IMPACT_MATRIX_YML}` 之 `read`，且已受 `$PLAN_SCOPE` 過濾）中 contracts／data 相關 spec，與 `${CONTRACTS_DIR}/**` 中對客戶端暴露之 `operationId`（或同義路由入口）做交集盤點；交集內之每一入口視為須覆蓋之 boundary-entry operation。對每一須覆蓋之 operation，預設須各有 happy／alt／err 各至少一條獨立 path（檔粒度仍遵守 `sequence-path-granularity.md`）；若規格上某一類別無合理語意（例如僅唯一成功態），須於 `$IMPLEMENTATION_MODEL.blocked_reasons[]` 記載該 operation、缺漏類別與規格／契約依據，不得默認縮減全集。sourcing 決策尚未於 `discovery-sourcing.md` 之 `Resolved sourcing decisions` 拍板者所牽動的 spec，記入 `blocked_reasons[]` 待澄清，不逕自納入 mutable intersection。
 
 ## Path 可追溯性
 

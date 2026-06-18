@@ -22,17 +22,21 @@ Feature: build and check feature phase scaffold from matrix-derived scope
         """
       And a file at "specs/plans/demo-plan/reports/impact-matrix.yml" with content:
         """
-        version: 1
-        entries:
+        version: 2
+        impacts:
+        - id: 00000000-0000-4000-8000-000000000001
+          owner: aibdd-flows-specify
+          quotes:
+          - scope
+          rationale: scope
+          status: pending
+          specs:
           - path: packages/01-room/features/open-room.feature
-            change_type: add
-            impact_summary: open or join room
+            status: inconsistent
           - path: packages/02-game/features/set-secret.feature
-            change_type: add
-            impact_summary: set player secret
+            status: inconsistent
           - path: packages/02-game/features/guess-number.feature
-            change_type: add
-            impact_summary: guess boss number
+            status: inconsistent
         """
       And a file at "specs/packages/01-room/features/open-room.feature" with content:
         """
@@ -82,14 +86,19 @@ Feature: build and check feature phase scaffold from matrix-derived scope
         """
       And a file at "specs/plans/demo-plan/reports/impact-matrix.yml" with content:
         """
-        version: 1
-        entries:
+        version: 2
+        impacts:
+        - id: 00000000-0000-4000-8000-000000000002
+          owner: aibdd-flows-specify
+          quotes:
+          - scope
+          rationale: scope
+          status: pending
+          specs:
           - path: packages/01-room/features/open-room.feature
-            change_type: add
-            impact_summary: open or join room
+            status: inconsistent
           - path: packages/02-game/features/guess-number.feature
-            change_type: add
-            impact_summary: guess boss number
+            status: inconsistent
         """
       And a file at "specs/packages/01-room/features/open-room.feature" with content:
         """
@@ -128,14 +137,19 @@ Feature: build and check feature phase scaffold from matrix-derived scope
         """
       And a file at "specs/plans/demo-plan/reports/impact-matrix.yml" with content:
         """
-        version: 1
-        entries:
+        version: 2
+        impacts:
+        - id: 00000000-0000-4000-8000-000000000003
+          owner: aibdd-flows-specify
+          quotes:
+          - scope
+          rationale: scope
+          status: pending
+          specs:
           - path: packages/01-room/features/open-room.feature
-            change_type: add
-            impact_summary: open or join room
+            status: inconsistent
           - path: packages/02-game/features/guess-number.feature
-            change_type: add
-            impact_summary: guess boss number
+            status: inconsistent
         """
       And a file at "specs/packages/01-room/features/open-room.feature" with content:
         """

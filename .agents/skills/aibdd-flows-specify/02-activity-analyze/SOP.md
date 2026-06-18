@@ -27,7 +27,7 @@
 
   1.1 若 `$MODE` 為 RECONCILE：THINK all `$P` 限縮為 `${PLAN_SPEC}` 本批次變更章節之段落，加上 `$ENTRIES_BEFORE` 與 `$ENTRIES_AFTER` 有新增、改判、移除差異之 entries 所牽動的既有段落；兩快照一致之 entry 對應的既有段落不重新建模。
 
-  1.2 `$ENTRIES_AFTER` 中 change_type=remove 之 activity entries、以及 `$ENTRIES_BEFORE` 有而 `$ENTRIES_AFTER` 無且 activity entry artifact 已落地者，記入 `$OBSOLETE_ACTIVITIES` 待 DELETE。`$ENTRIES_BEFORE` 不可考時，無法確證來源之產出不刪，記入 `$GAPS` 待澄清。
+  1.2 本輪需求已不再涵蓋（不再對應任何 UAT flow／action、或需求明文淘汰）且 activity artifact 已落地之既存 spec，記入 `$OBSOLETE_ACTIVITIES` 待 DELETE。無法確證者記入 `$GAPS` 待澄清。
 
 2. Faithful REASONING 萃取 api-wise 業務 action：
 
@@ -67,17 +67,15 @@
 
 6. 針對 `$UAT_FLOWS` 每條 flow DELEGATE /aibdd-form-activity，交付該 flow 之 `$ACTIVITY_ANALYSIS` 並落檔 target_path 定為 `${ACTIVITIES_DIR}/<activity_relpath>`，既有檔需更新且建模有實質變更時帶 overwrite；所須輸入與 `.activity` 格式參照 `aibdd-form-activity/references/role-and-contract.md`。form activity 建模落檔不是停點，每次返回後依語法驗證報告處理，ok 為 false 則修正後重新建模，不停下等待使用者指示。
 
-7. DELETE `$OBSOLETE_ACTIVITIES`：若 `$OBSOLETE_ACTIVITIES` 非空，DELETE `${ACTIVITIES_DIR}` 下該些 `.activity`；刪除清單於結尾報告列出。
+7. DELETE `$OBSOLETE_ACTIVITIES`：若 `$OBSOLETE_ACTIVITIES` 非空，DELETE `${ACTIVITIES_DIR}` 下該些 `.activity`，實際刪除者記為 `$DELETED_ACTIVITIES`；刪除清單於結尾報告列出。
 
-8. WRITE `${IMPACT_MATRIX_YML}`，更新本輪產出之 `.activity`，只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
+8. WRITE `${IMPACT_MATRIX_YML}`，回寫本輪產出之 `.activity`。為每個本輪建立／改寫的 `.activity` spec，以 `(owner, spec)` 為鍵冪等 write 一個 impact，owner 一律 `aibdd-flows-specify`，`quotes` 指回 `${PLAN_SPEC}` 原文、`rationale` 寫該 `.activity` 的規格增量。只經本步 CLI command 更新 `${IMPACT_MATRIX_YML}`：
 
-   8.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、change_type enum 語意與各使用情境應用 command。
+   8.0 READ `aibdd-core::impact-matrix/cli-usage.md`，取得 CLI 通用規則、資料模型、status 語意與冪等 write 各情境應用 command；詳細 flag 用法以該 reference 為準。
 
-   8.1 針對新建之每個 `.activity`，以其相對 `${TRUTH_BOUNDARY_ROOT}` 路徑（即 `packages/<NN-slug>/activities/<activity_relpath>`）以 change_type=add 跑一次 upsert command。
+   8.1 針對新建或以 mode="overwrite" 改寫之每個 `.activity`，取其相對 `${TRUTH_BOUNDARY_ROOT}` 路徑（即 `packages/<NN-slug>/activities/<activity_relpath>`）為 spec，owner=`aibdd-flows-specify`、`--quote` 帶其所本之 `${PLAN_SPEC}` 原文句（≥1）、`--rationale` 寫規格增量、spec status 以 `inconsistent` 落地；以 `read` 依 owner+spec-path 定位後 found 則 `write --id` 取代、否則 `write` 新建（CLI 用法見已載入的 manual）。
 
-   8.2 針對以 mode="overwrite" 改寫之每個既有 `.activity`，檔在 plan 前已存在者以 change_type=update 跑一次 upsert command， 本 plan 先前批次新增者以 change_type=update 跑一次 upsert command。
-
-   8.4 全部 upsert 完成後，跑一次 validate；ok 為 false 時依 questions 修正，直到 validate 通過。
+   8.2 對 `$DELETED_ACTIVITIES` 之每個 `.activity`，以 `read` 取回其 impact id 後 `remove --id`（matrix `remove` 對應實際刪檔）。
 
 
 9. 釐清 `$GAPS`：若 `$GAPS` 非空，逐項 DELEGATE /clarify-loop 釐清，每項附其對應 `${PLAN_SPEC}` 段落、候選 function package 或 activiy dir 作 anchor；澄清結論若改變 action 顆粒度／歸屬、flow 切分或 actor，回對應步驟重新依序執行。

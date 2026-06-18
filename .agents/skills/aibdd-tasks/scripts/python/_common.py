@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import Any
 
 FEATURE_TITLE_RE = re.compile(r"^\s*Feature:\s*(?P<title>.+?)\s*$", re.MULTILINE)
-TASKS_FEATURE_CHANGE_TYPES = ("add", "update")
 
 
 def emit(ok: bool, summary: str, violations: list[dict[str, Any]]) -> int:
@@ -183,15 +182,13 @@ def query_impacted_feature_paths(matrix_path: Path, *, repo_root: Path) -> list[
         raise SystemExit(f"impact matrix not found: {matrix_path}")
 
     ensure_shared_lib_on_path(repo_root)
-    from lib.impact_matrix import filter_entries, load_matrix
+    from lib.impact_matrix import load_matrix, read_impacts
 
     data = load_matrix(matrix_path)
-    entries = filter_entries(
-        data,
-        suffix=".feature",
-        change_types=list(TASKS_FEATURE_CHANGE_TYPES),
+    impacts = read_impacts(data, spec_path=r"\.feature$")
+    return sorted(
+        {spec["path"] for impact in impacts for spec in impact.get("specs", [])}
     )
-    return sorted(entry["path"] for entry in entries)
 
 
 def parse_feature_paths(raw: str | None) -> list[str]:

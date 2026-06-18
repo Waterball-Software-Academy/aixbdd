@@ -4,16 +4,13 @@
 
 `/aibdd-tasks` 的 impacted feature membership 以 `${IMPACT_MATRIX_YML}` 為機讀 SSOT。
 
-查詢條件：
+查詢條件：matrix 中所有 `.feature` spec。
 
-1. `path` 結尾為 `.feature`
-2. `change_type` 為 `add` 或 `update`
-
-`read_only_compare` 與 `conditional_update` 不納入 tasks feature phase membership。
+以 `read --spec-path '\.feature$'` 取回的 impacts，收集其 `impacts[].specs[].path`，即為本輪 task feature membership；不再有 `change_type` 軸。
 
 ## Path Shape
 
-matrix entry 的 `path` 為 `${TRUTH_BOUNDARY_ROOT}` 相對路徑，例如 `packages/01-房間/features/開房或加入遊戲房.feature`。
+每筆 `specs[].path` 為 `${TRUTH_BOUNDARY_ROOT}` 相對路徑，例如 `packages/01-房間/features/開房或加入遊戲房.feature`。
 
 tasks scripts 與 checker 一律以這個相對路徑 shape 比對 feature phase。
 
