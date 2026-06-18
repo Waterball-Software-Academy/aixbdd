@@ -83,7 +83,7 @@ def _extract_default_value(tokens: list[str]) -> str | None:
 
 class DBMLSpecParser(SpecParser):
     def parse(self, path: Path) -> list[Part]:
-        text = _strip_block_comments(path.read_text())
+        text = path.read_text()
         spec_label = path.as_posix()
         parts: list[Part] = []
         seen_ref_targets: set[str] = set()
@@ -111,31 +111,6 @@ class DBMLSpecParser(SpecParser):
             seen_ref_targets.add(ref_part.target_part_path)
             parts.append(ref_part)
         return parts
-
-
-def _strip_block_comments(text: str) -> str:
-    out: list[str] = []
-    i = 0
-    quote: str | None = None
-    while i < len(text):
-        char = text[i]
-        if quote:
-            out.append(char)
-            if char == quote and (i == 0 or text[i - 1] != "\\"):
-                quote = None
-            i += 1
-            continue
-        if text.startswith("/*", i):
-            end = text.find("*/", i + 2)
-            if end == -1:
-                break
-            i = end + 2
-            continue
-        if char in ("'", '"', "`"):
-            quote = char
-        out.append(char)
-        i += 1
-    return "".join(out)
 
 
 def _iter_table_blocks(text: str):
