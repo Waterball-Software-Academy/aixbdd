@@ -57,7 +57,7 @@ git clone -c core.symlinks=true <repo-url>
 2. Run `/aibdd-flows-specify` (Address what you wanna build — extract the feature/flow list)
 3. Run `/aibdd-rules-specify` (Enumerate atomic acceptance rules per feature)
 4. Run `/aibdd-spec-by-example` (Expand each atomic rule into a runnable Cucumber Example)
-5. Run `/aibdd-plan` (No arguments needed)
+5. Run `/aibdd-api-plan` and/or `/aibdd-data-plan` (Derive this round's API contract and data schema; run whichever the round needs)
 6. Run `/aibdd-tasks`  (No arguments needed)
 7. Run `/aibdd-implement`  (No arguments needed)
 8. Run `/aibdd-red-execute`, then `/aibdd-green-execute`, then `/aibdd-refactor-execute`
@@ -82,10 +82,15 @@ AIBDD:  [enumerates atomic acceptance rules into each feature]
 You:    /aibdd-spec-by-example
 AIBDD:  [expands each atomic rule into a runnable Cucumber Example]
 
-You:    /aibdd-plan
-AIBDD:  [locks technical boundary truth]
-        [maps implementation structure and DSL truth]
-        [records impacted feature scope]
+You:    /aibdd-api-plan
+AIBDD:  [derives operation-contract slices from accepted Discovery truth]
+        [delegates the boundary's declared OpenAPI specifier]
+        [writes the contracts impact back to the matrix]
+
+You:    /aibdd-data-plan
+AIBDD:  [derives persistent state aggregates and entities]
+        [delegates the boundary's declared DBML/DDL specifier]
+        [writes the data impact back to the matrix]
 
 You:    /aibdd-tasks
 AIBDD:  [renders execution-ready tasks from accepted planning truth]
@@ -117,7 +122,7 @@ AIBDD is a process, not a bag of commands. The skills run in the order software 
 
 **Clarify -> Specify Flows -> Specify Rules -> Specify Examples -> Plan -> Derive Acceptance -> Execute -> Evaluate -> Reconcile**
 
-Each stage feeds the next. Flows, rules, and examples specification writes the artifacts plan consumes. Plan records the DSL and feature scope that tasks and the red gate consume. Tasks become live execution. Execution is evaluated through red, green, and refactor gates. When something changes upstream, reconcile cascades the correction from the earliest affected planner so you do not have to fake consistency by hand.
+Each stage feeds the next. Flows, rules, and examples specification writes the artifacts the contract planners consume. The contract planners turn accepted Discovery truth into the boundary's API contract and data schema; the accepted feature scope plus the DSL seeded at kickoff are what tasks and the red gate consume. Tasks become live execution. Execution is evaluated through red, green, and refactor gates. When something changes upstream, reconcile cascades the correction from the earliest affected planner so you do not have to fake consistency by hand.
 
 | Skill | Your specialist | What it does |
 |---|---|---|
@@ -127,8 +132,10 @@ Each stage feeds the next. Flows, rules, and examples specification writes the a
 | `/aibdd-rules-specify` | **Rule specifier** | Enumerates atomic acceptance rules into each feature skeleton, then fixes or clarifies findings. |
 | `/aibdd-spec-by-example` | **Example author** | Expands every atomic rule into a runnable Cucumber Example via the 4-pattern templates, in business language, before planning begins. |
 | `/aibdd-form-activity` | **Flow formulator** | Writes `.activity` DSL from flows-specify output and validates the syntax so flow truth is explicit and machine-usable. |
-| `/aibdd-plan` | **Technical planner** | Converts accepted flows/rules truth into technical boundary truth, implementation planning, and red-usable DSL mappings without creating shadow truth. |
-| `/aibdd-form-api-spec`, `/aibdd-form-entity-spec`, `/aibdd-form-ddl-spec`, `/aibdd-form-story-spec` | **Contract formulators** | Translate the planner's reasoning package into the boundary's declared contract format — OpenAPI, DBML, SQL DDL, or Storybook CSF3 + component. Delegated by plan; they format truth, they do not decide scope. |
+| `/aibdd-api-plan` | **Operation-contract planner** | Derives this round's operation-contract slices from accepted Discovery truth and delegates the boundary's declared `operation_contract_specifier` to write the OpenAPI contract — without redrawing Discovery truth or inventing shadow scope. |
+| `/aibdd-data-plan` | **Data-schema planner** | Derives persistent state (aggregates, entities, value objects) from accepted Discovery truth and delegates the boundary's declared `state_specifier` to write the DBML / SQL DDL schema. |
+| `/aibdd-form-api-spec`, `/aibdd-form-entity-spec`, `/aibdd-form-ddl-spec`, `/aibdd-form-story-spec` (+ `/aibdd-form-class-diagram`, `/aibdd-form-sequence-diagram`) | **Contract formulators** | Translate a planner's reasoning package into the boundary's declared format — OpenAPI, DBML, SQL DDL, Storybook CSF3 + component, or Mermaid class / sequence diagrams. Delegated by the contract planners; they format truth, they do not decide scope. |
+| `/aibdd-table-to-entity` | **Entity-table mapper** | Builds `entity_to_table_mapping.yml` from a boundary's physical schema specs (DBML / SQL DDL) so persistence code can bind domain entities to their tables. |
 | `/aibdd-tasks` | **Task graph builder** | Generates structured `tasks.md` from the accepted plan package, preserving implementation topology and execution order. |
 | `/aibdd-implement` | **Execution driver** | Turns every checkbox into a live todo item and keeps task state synchronized with actual execution. |
 | `/aibdd-spec-by-example-analyze` | **Example & step mapper** | Turns feature rules into concrete Examples and maps every Scenario step to legal DSL, so the red gate can render runtime-visible steps with no guessing. |
@@ -155,7 +162,7 @@ This is not "press one button and hope." AIBDD is human-in-the-loop, but the loo
 
 The chain from requirement to execution stays visible:
 
-`idea -> flows-specify (activity + feature list) -> rules-specify (feature rules) -> spec-by-example (rule examples) -> plan (DSL + feature scope) -> tasks -> red/green/refactor`
+`idea -> flows-specify (activity + feature list) -> rules-specify (feature rules) -> spec-by-example (rule examples) -> api-plan / data-plan (API contract + data schema) -> tasks -> red/green/refactor`
 
 That matters when you need audits, debugging, impact analysis, or simply a clean answer to "why did we build it this way?"
 
