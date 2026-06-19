@@ -1,6 +1,6 @@
 ---
 name: aibdd-rules-specify
-description: "AIBDD Rules Specify SOP。為 /aibdd-flows-specify 產出的每個 rule-less `.feature` 骨架列舉 atomic rules（4 種類型前綴、單一主詞／單一條件、可指回需求原文），再跑 findings 分析（NEED_TO_FIX 就地修正、NEED_TO_CLARIFY 交 /clarify-loop）。TRIGGER when 使用者下 /aibdd-rules-specify、flows 完成後要為每個 feature 補驗收規則、或被 /aibdd-reconcile cascade 委派。SKIP when 尚無 `.feature` 骨架（請先 /aibdd-flows-specify）、或只是要為 atomic rule 補可跑 Example（那是 /aibdd-spec-by-example）。"
+description: "AIBDD Rules Specify SOP。為 /aibdd-flows-specify 產出的每個 rule-less `.feature` 骨架列舉 atomic rules（4 種類型前綴、單一主詞／單一條件、可指回需求原文），再跑 findings 分析（NEED_TO_FIX 就地修正、NEED_TO_CLARIFY 交 /clarify-loop）。TRIGGER when 使用者下 /aibdd-rules-specify、flows 完成後要為每個 feature 補驗收規則、或 /aibdd-reconcile 校準後本 owner 名下有 inconsistent 的 .feature spec 待重新對齊。SKIP when 尚無 `.feature` 骨架（請先 /aibdd-flows-specify）、或只是要為 atomic rule 補可跑 Example（那是 /aibdd-spec-by-example）。"
 metadata:
   user-invocable: true
   source: project-level
