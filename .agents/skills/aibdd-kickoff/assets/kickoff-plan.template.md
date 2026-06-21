@@ -1,89 +1,51 @@
-<!-- INSTRUCT: 01-ask-config/SOP.md 把每個 {{PLACEHOLDER}} 填好後 WRITE 到 ${PROJECT_ROOT}/KICKOFF_PLAN.md。
-     此檔為 File First 暫存訪談檔；落檔後就是 kickoff 題庫與答案的唯一 SSOT。
-     schema 詳見 ../assets/kickoff-plan-contract.md。 -->
-
 # KICKOFF_PLAN
 
 ## Status
-
-{{STATUS}}
+{{STATUS}}   <!-- collecting_answers | answered | executed -->
 
 ## Context
-
-| Field | Value |
-|---|---|
-| Project root | `{{PROJECT_ROOT}}` |
-| Boundary codebase subdir | `{{BOUNDARY_CODEBASE_SUBDIR}}` |
-| Boundary codebase root | `{{BOUNDARY_CODEBASE_ROOT}}` |
-| Plan path | `{{PLAN_PATH}}` |
-| Supported stacks | python_e2e ｜ java_e2e ｜ nextjs_playwright |
+| 項目 | 值 |
+|------|----|
+| project root | {{PROJECT_ROOT}} |
+| boundary codebase subdir | {{BOUNDARY_CODEBASE_SUBDIR}} |
+| boundary codebase root | {{BOUNDARY_CODEBASE_ROOT}} |
+| plan path | {{PLAN_PATH}} |
+| supported stacks | python_e2e ｜ java_e2e ｜ nextjs_playwright |
 
 ## Questions
+<!-- 依序插入 q1–q4 各自的 question record（來源：assets/questions/q{1..4}-*.template.md） -->
+{{Q1_RECORD}}
 
-### q1-tech-stack
+{{Q2_RECORD}}
 
-- prompt: 要建立哪一種 stack？
-- context: |
-    python_e2e：Python + FastAPI + SQLAlchemy + Alembic + Behave E2E + Testcontainers。
-    java_e2e：Java + Spring Boot 4 + JdbcClient + Flyway + Cucumber 7 + Testcontainers。
-    nextjs_playwright：Next.js 16 + Storybook 10 + playwright-bdd + Zod 4。
-    其他 frontend / Unit Test only / Mobile 尚未支援；本輪不提供選擇。
-- options:
-    - `python_e2e` — Python 後端 stack（FastAPI + Behave）
-    - `java_e2e` — Java 後端 stack（Spring Boot 4 + Cucumber）
-    - `nextjs_playwright` — Next.js 前端 stack（Storybook + playwright-bdd）
-- recommendation: `python_e2e`
-- answer.raw: {{Q1_RAW_ANSWER}}
-- resolved_decision: { key: stack, value: {{Q1_RESOLVED_STACK}} }
-- status: {{Q1_STATUS}}
+{{Q3_RECORD}}
 
-### q2-project-spec-language
-
-- prompt: 專案規格主要用哪一種語言撰寫？
-- context: |
-    決定 Gherkin executable step prose 與 feature filename title 的 language asset；
-    DSL key 預設跟隨規格語言（`DSL_KEY_LOCALE = prefer_spec_language`）。
-- options:
-    - `zh-hant` — 繁體中文
-    - `zh-hans` — 簡體中文
-    - `en-us`  — 美式英文
-    - `ja-jp`  — 日文
-    - `ko-kr`  — 韓文
-- recommendation: `zh-hant`
-- answer.raw: {{Q2_RAW_ANSWER}}
-- resolved_decision: { key: project_spec_language, value: {{Q2_RESOLVED_PROJECT_SPEC_LANGUAGE}} }
-- status: {{Q2_STATUS}}
-
-### q3-backend-service-name
-
-- prompt: 這個 service 要叫什麼名字？
-- context: |
-    kebab-case，例如 `course-api`。寫入 boundary.yml 的 id。
-    `java_e2e` 同時作為 Maven `<artifactId>`；`nextjs_playwright` 同時作為 `PROJECT_SLUG`。
-- default: `backend`
-- answer.raw: {{Q3_RAW_ANSWER}}
-- resolved_decision: { key: tlb_id, value: {{Q3_RESOLVED_TLB_ID}} }
-- status: {{Q3_STATUS}}
-
-### q4-codebase-layout
-
-- prompt: 程式碼要放在 repo root 還是子目錄？
-- context: |
-    `repo_root`：程式碼與 `specs/` 直接掛在 repo root（`BOUNDARY_CODEBASE_SUBDIR=""`）。
-    `subdir`：所有程式碼與 `specs/` 掛在 `${PROJECT_ROOT}/${BOUNDARY_CODEBASE_SUBDIR}/`。
-- options:
-    - `repo_root` — 在 repo root（預設；`BOUNDARY_CODEBASE_SUBDIR=""`）
-    - `subdir:<kebab-case-dir>` — 子目錄（回答格式：`Q4: subdir:<dir-name>`）
-- recommendation: `repo_root`
-- answer.raw: {{Q4_RAW_ANSWER}}
-- resolved_decision: { key: boundary_codebase_subdir, value: {{Q4_RESOLVED_BOUNDARY_CODEBASE_SUBDIR}} }
-- status: {{Q4_STATUS}}
+{{Q4_RECORD}}
 
 ## Resolved Decisions
-
+<!-- machine-readable，給 kickoff_layout.py 消費 -->
 ```yaml
-stack: {{RESOLVED_STACK}}
-project_spec_language: {{RESOLVED_PROJECT_SPEC_LANGUAGE}}
-tlb_id: {{RESOLVED_TLB_ID}}
-boundary_codebase_subdir: {{RESOLVED_BOUNDARY_CODEBASE_SUBDIR}}
+stack: {{STACK}}                              # python_e2e | java_e2e | nextjs_playwright
+project_spec_language: {{PROJECT_SPEC_LANGUAGE}}  # zh-hant | zh-hans | en-us | ja-jp | ko-kr
+tlb_id: {{TLB_ID}}                            # kebab-case
+boundary_codebase_subdir: {{BOUNDARY_CODEBASE_SUBDIR}}   # "" | <kebab-case>
+# Optional Java overrides（缺則由 script 推導）：
+# group_id: com.example
+# base_package: com.example.<tlb-id without hyphens>
+# db_name: <tlb_id with - replaced by _>
 ```
+
+<!-- @guideline -->
+**File Identity**：本檔是 File-First 的暫存訪談檔，Owner = `/aibdd-kickoff`，**非正式 artifact**，Phase 5 完成後刪除。落點 `${PLAN_PATH}` = `${PROJECT_ROOT}/KICKOFF_PLAN.md`。
+
+**組裝**：`## Questions` 段由 `assets/questions/q1..q4-*.template.md` 四支 question record 依序填入；每支題目本文與 reply token 以該檔為 SSOT，本殼不重述題目細節。
+
+**Batch Reply Format**（`/clarify-loop` 一次問完 Q1–Q4，禁逐題往返）：
+```text
+Q1: python_e2e | java_e2e | nextjs_playwright
+Q2: zh-hant | zh-hans | en-us | ja-jp | ko-kr
+Q3: <kebab-case>            # java_e2e 同時為 Maven artifactId；nextjs_playwright 同時為 PROJECT_SLUG
+Q4: repo_root | subdir:<kebab-case-dir>
+```
+
+**Question record 欄位**：`id` / `prompt` / `kind`（`CON` 選項題｜`FREE` 自由題）/ `options` 或 `default` / `answer.raw`（答後）/ `resolved_decision.key` + `.value`（答後）/ `status`（`unanswered` → `answered`，無法解析則 `unresolved`）。

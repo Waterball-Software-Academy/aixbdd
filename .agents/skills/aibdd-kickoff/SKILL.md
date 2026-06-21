@@ -1,5 +1,5 @@
 ---
-description: 專案初始化引導；支援 Python E2E、Java E2E 兩個 stack，收集唯一 TLB 名稱，產出 arguments.yml、boundary.yml、component-diagram.class.mmd、specs/shared/dsl.yml 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Vue/Svelte 等其他 frontend 框架、Unit Test only、Mobile，或其他尚未支援的 stack。
+description: 專案初始化引導；支援 python_e2e / java_e2e / nextjs_playwright 三種 stack，收集 stack / 規格語言 / service 名 / codebase layout，產出 arguments.yml、boundary.yml、component-diagram.class.mmd、shared dsl 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Unit Test only、Mobile，或其他尚未支援的 stack。
 metadata:
   skill-type: planner
   source: project-level
@@ -9,66 +9,73 @@ name: aibdd-kickoff
 
 # aibdd-kickoff
 
-Initialize an AIBDD project by deriving stack-aware config and writing one top-level boundary truth skeleton, including boundary shared DSL seed at `${BOUNDARY_SHARED_DSL}`.
+Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level boundary truth skeleton（含 `${BOUNDARY_SHARED_DSL}` 的 boundary shared DSL seed）。嚴格遵照 Purpose 的紀律執行 SOP。
 
-嚴格遵照底下 Principles 來執行 SOP。
+# Purpose
 
-## PRINCIPLE: STRICT SOP
+把「新專案初始化」收斂成一條 phase-by-phase SOP：取得 caller context → File First 收集配置決策 → 跑純複製 script 鋪出 boundary skeleton → 填 stack-aware 配置 → 驗證清理 → 回報並導向 `/aibdd-auto-starter`。貫穿全程的幾條紀律（方針優先於細節，逐步執行時恆常遵守）：
 
-1. **依序不漏步**：自底下列 SOP 逐一執行；每做一步，在訊息中**明示該步編號**。
-
-2. **限縮延長推理**：僅當 sub-SOP 當步**明文**標示須 **`THINK / REASONING`** 時，才拉長內省與推演；否則以**最直接**可做之 `READ`／`PARSE`／`DERIVE`／`WRITE`／`UPDATE`／工具呼叫達成該步，省略與該步授權範圍無關的冗長鋪墊，以降低往返等待時間。
-
-## PRINCIPLE: 長流程待辦（兩層）
-
-長流程會跨多輪對話；在 **conversation compact**（對話摘要壓縮）之後，執行者仍要靠**同一套待辦**還原：目前卡在哪個 **phase**，該 phase 內細項又到哪一格。底下為**兩層**約定：**外層只列 phase**，**進入該 phase** 再把該 sub-SOP 第一層編號步驟拆成子項。尚未開始的 phase 不必預先展開成檔案級細項，以免待辦與實際 `SOP.md` 脫節。
-
-- **必須工具化**：Tier 0／Tier 1 對應的勾選項，**要以執行環境提供的任務／待辦建立與更新能力實體化**（例如 **`TODOCREATE`**、**`TASKCREATE`** 等 tool；或宿主 IDE／Agent 內與之等效的待辦 API），在跑 sub-SOP **當下**就建好清單並隨步驟推進更新狀態。**禁止**只靠聊天裡口頭列點、不經工具建立的「心裡待辦」——壓縮後無法還原，也無法核對漏步。
-- **Tier 0（phase）**：對應本檔 `# SOP` 最外層每一項；每一項對應一個 sub-SOP 目錄（例：`01-ask-config/`）。這一層的勾選語意是「該 phase 的細項已全部展開**且**依 `SOP.md` 跑完」。
-- **Tier 1（phase 內細項）**：僅在目前執行中的 phase 建立；對應該 phase `SOP.md` 裡**第一層編號步驟**拆解出的動作（`READ`／`WRITE`／`DERIVE` 等）。編號建議：`(phase序)`、`(phase序-子序)`（例：`1`、`1-1`），跨輪可對照；**進入該 phase 時**以 **`TODOCREATE`／`TASKCREATE`（或等效）** 補齊子項。
-
-**Tier 0 範例**：
-
-```markdown
-- [ ] (1) 展開並執行至完成：`01-ask-config/SOP.md`（細項見下）。
-- [ ] (2) 展開並執行至完成：`02-execute-layout/SOP.md`。
-```
-
-**進入 (1) 後**才把 (1) 拆成 Tier 1；其餘 phase 在 Tier 0 維持單列：
-
-```markdown
-- [ ] (1) 展開並執行至完成：`01-ask-config/SOP.md`。
-    - [ ] (1-1) DERIVE：判定 `$action`（resume / restart / cancel / new）。
-    - [ ] (1-2) WRITE：`${PLAN_PATH}`（File First — 出題前先存檔）。
-    - [ ] (1-3) DELEGATE：`/clarify-loop` 取得答案。
-    - [ ] (1-4) UPDATE：`${PLAN_PATH}` writeback 答案。
-- [ ] (2) 展開並執行至完成：`02-execute-layout/SOP.md`。
-```
-
-**(1)** 的子項全部完成後，將 Tier 0 之 **(1)** 標為完成，再對 **(2)** 重複「展開 → 跑完」。**未完成當前 phase** 前，**不要**為後續 phase 預開檔案層級的細項。
-
-## PRINCIPLE: Artifact output contract（硬限制）
-
-- 本 SOP **唯一允許產生或修改**的 artifact，**只能**來自於下述 SOP 中透過 CREATE / WRITE / UPDATE 明確標注的產出物。
-- 【嚴禁】除上述 target 外，**其他任何 READ / SEARCH / THINK / DERIVE 所觀察到的路徑，都只可作為分析依據，不得被順手建立、寫入、更新或補骨架。**
-
-## PRINCIPLE: File First
-
-- Interactive 路徑下，所有對 user 的提問**必須**走 **write → ask → write back** 三段式：問題的 SSOT 是 `KICKOFF_PLAN.md`，**禁止**在 file 之外另起一份問題集。
-- **Write Questions**：`01-ask-config/SOP.md` 必須先把整批 Q1–Q4 含 prompt / options / context 完整寫進 `${PLAN_PATH}`，檔案落地後才允許出題。
-- **Ask via Clarify-Loop**：從**已寫入的檔案**讀回題目組 batch payload，透過 `DELEGATE /clarify-loop` 詢問；**禁止** executor 自己在 chat 直接列題或自己 ASK。
-- **Write Back Answers**：user 答完**必須**把答案 writeback 進**同一份** `${PLAN_PATH}`，每題狀態變 `answered` 後才允許進 `02-execute-layout/`。
-- Non-interactive 路徑（`${NON_INTERACTIVE}=true`）跳過 `${PLAN_PATH}`；`$decisions` 直接由 default 推得，不走 File First。
+- **嚴格依序**：按 Phase 順序逐一執行，每步在訊息中講清楚自己在做哪個 Phase 哪一步；只在當步真的需要權衡時才深想，否則直接動手，省掉與當步無關的鋪陳。執行到哪讀到哪，不提早翻後續 Phase 的細節與 reference。
+- **長流程待辦**：流程跨多輪、會被 conversation compact，得靠待辦還原進度：用宿主的待辦工具建清單、隨步推進，別只在對話裡口頭記；外層每個 Phase 一項，進到某 Phase 才把它的步驟展開成子項。
+- **只動該動的**：只有各步明講要產出／修改的檔才准碰；過程中讀到、查到的其他路徑只作判斷依據，不得順手建立或補骨架。
+- **File First（僅互動路徑）**：所有對 user 的提問走 **寫 → 問 → 回寫** 三段式：題目與答案的唯一真相是 `KICKOFF_PLAN.md`，先把題目寫進檔再問、答完回寫進同一份檔；提問一律委派 `/clarify-loop`，executor 不自己在對話裡列題。非互動模式整個跳過 File First，配置直接採 default。
 
 # SOP
 
-請執行到哪讀到哪，千萬不要提早閱讀後續文件，這會讓用戶起始體驗到的延遲度很久，SOP 寫啥就做啥，沒叫你 [THINK/REASONING] 就絕對不准啟用 EXTENDED THINKING。
+### Phase 1 — 取得 caller context
 
-0. DERIVE caller payload bindings：
-   - `${PROJECT_ROOT}` ← caller payload 或 current workspace 推算；若無法解析則向 user 告知並 STOP。
-   - `${NON_INTERACTIVE}` ← caller payload 帶 `non_interactive: true` 或 `defaults_profile: happy-path` 或 headless sandbox（如 `.tests/<scenario>/before` 運行）任一成立則 true，否則 false。**此 flag 由 caller 注入；executor 禁止對 user 詢問「要走 interactive 還是 happy-path」**。
-   - `${PLAN_PATH}` = `${PROJECT_ROOT}/KICKOFF_PLAN.md`。
+1. **(read)** 取得專案根目錄（從 caller payload，或推算當前 workspace）；取不到就告知 user 並停止。互動模式下，這次 kickoff 的問答都記在根目錄的 `KICKOFF_PLAN.md`。
+2. **(think)** 判斷這次是不是非互動模式——這個旗標由 caller 注入，絕不反問 user。
+   - 請嚴格遵守 `rules/non-interactive-from-caller.md` 來執行此步驟。
 
-1. EXECUTE the sub-sop: `01-ask-config/SOP.md`
+### Phase 2 — 收集配置（File First：寫 → 問 → 回寫）
 
-2. EXECUTE the sub-sop: `02-execute-layout/SOP.md`
+1. **(think)** 非互動模式：直接採 default 決策（stack=python_e2e、規格語言 zh-hant、service 名 backend、放 repo root；headless 要別的 stack 由 caller payload 帶 `stack:` 覆寫），跳過 File First，直接進 Phase 3。
+2. **(delegate)** 互動模式且 `KICKOFF_PLAN.md` 已存在：問 user 要接續、重做、還是取消，經 /clarify-loop 出題；取消就停。
+   - delegate to SKILL /clarify-loop
+3. **(write)** 要新建問卷時：依 `assets/questions/` 四題與外殼 `assets/kickoff-plan.template.md`，渲染出 `KICKOFF_PLAN.md`（四題、答案欄留空）。
+   - 請嚴格遵守 `assets/kickoff-plan.template.md` 來執行此步驟。
+   - 請嚴格遵守 `assets/questions/q1-tech-stack.template.md` 來執行此步驟。
+   - 請嚴格遵守 `assets/questions/q2-project-spec-language.template.md` 來執行此步驟。
+   - 請嚴格遵守 `assets/questions/q3-backend-service-name.template.md` 來執行此步驟。
+   - 請嚴格遵守 `assets/questions/q4-codebase-layout.template.md` 來執行此步驟。
+4. **(delegate)** 一次問完四題（stack／規格語言／service 名／codebase layout），經 /clarify-loop；回答格式見各 question template 的 reply token 與外殼的 Batch Reply Format。
+   - 請嚴格遵守 `assets/kickoff-plan.template.md` 來執行此步驟。
+   - delegate to SKILL /clarify-loop
+5. **(write)** 把答案回寫 `KICKOFF_PLAN.md`、每題標 answered。任何一題模糊、重複或缺漏，就標 unresolved、告知 user 並停止——不要猜值硬填。
+   - 請嚴格遵守 `rules/answer-resolution-gate.md` 來執行此步驟。
+
+### Phase 3 — 產生 boundary skeleton
+
+1. **(run)** 把這批決策交給 `assets/scripts/kickoff_layout.py` 跑出 boundary skeleton（用決策檔傳入，跑完清掉暫存）；失敗就轉述錯誤並停。從它的輸出取得 boundary codebase 根目錄與 shared DSL 路徑，供後續步驟使用。
+   - 請嚴格遵守 `assets/scripts/kickoff_layout.py` 來執行此步驟。
+
+### Phase 4 — 填 stack-aware 配置
+
+1. **(write)** 依下方 stack 查表，把對應的 per-stack tail 接到 `arguments.yml` 末尾，並填掉 `arguments.yml` 與 `boundary.yml` 裡的通用 placeholder（service id、boundary role／type／description）；若 codebase 指定了子目錄，一併設進 `arguments.yml`。
+
+| stack | tail 模板 | role | type | description（接在 service 名後） |
+|---|---|---|---|---|
+| `python_e2e` | `python-e2e` | `backend` | `web-service` | Python FastAPI backend service |
+| `java_e2e` | `java-e2e` | `backend` | `web-service` | Java Spring Boot backend service |
+| `nextjs_playwright` | `nextjs-playwright` | `frontend` | `web-app` | Next.js + Playwright frontend application |
+2. **(write)** 把 boundary type 填進 component diagram 的 annotation。
+   - 請嚴格遵守 `rules/mermaid-annotation-charset.md` 來執行此步驟。
+3. **(write)** java_e2e：填好 Java base package。
+   - 請嚴格遵守 `rules/java-base-package.md` 來執行此步驟。
+4. **(write)** 規格語言不是 zh-hant 時：切換語系設定。
+   - 請嚴格遵守 `rules/language-single-source.md` 來執行此步驟。
+
+### Phase 5 — 驗證 + 清理
+
+1. **(write)** 收尾：確認 `arguments.yml`／`boundary.yml`／component diagram 三檔都沒有殘留的 `${KICKOFF_` placeholder（有就指出位置並停）、shared DSL 檔存在；都過了就刪掉 `KICKOFF_PLAN.md` 暫存檔。
+
+### Phase 6 — 回報
+
+1. **(write)** 向 user 回報：「Kickoff 已完成。已建立：<列出產出的 artifact，含 shared DSL>。下一步，來建立專案骨架吧，請直接使用 /aibdd-auto-starter，或是告訴我『繼續』。」
+
+# §CROSS-REFERENCES
+
+- `/clarify-loop` — Phase 2 的提問一律經此 delegate（resume 題 + Q1–Q4 batch）。
+- `/aibdd-auto-starter` — 下游：以本 skill 產出的 `arguments.yml`（含 `STARTER_VARIANT`）生成 walking skeleton。
+- `/aibdd-flows-specify` — skeleton 之後的規劃系統流程入口。
