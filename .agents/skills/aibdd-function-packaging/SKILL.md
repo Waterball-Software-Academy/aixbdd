@@ -10,7 +10,7 @@ metadata:
 
 # AIxBDD - Function Packaging
 
-嚴格遵照底下 PRINCIPLEs 來執行 SOP。 `# SOP` 下每一個編號項目為有序 sub-SOP（phase），phase 中每一個編號項目為有序 step。在本 skill 執行完成前，任何需要 conversation compact 的情境必須一字不漏保留所有 PRINCIPLEs。
+嚴格遵照底下 PRINCIPLEs 來執行 SOP。 `# SOP` 下每一個編號項目為有序 step。在本 skill 執行完成前，任何需要 conversation compact 的情境必須一字不漏保留所有 PRINCIPLEs。
 
 ## PRINCIPLE: CWD 為產出錨點
 
@@ -35,54 +35,80 @@ metadata:
 
 ## PRINCIPLE: 嚴格依序執行
 
-- 依序執行 `# SOP` 下的編號項目；每做一步，在訊息中明示該步編號。
-- 每一個 sub-SOP（phase）、sub-SOP step 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify-loop` 等待回覆、以及最後一步的結尾報告。
+- 依序執行 `# SOP` 下的編號 step；每做一步，在訊息中明示該步編號。
+- 每個 step 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify-loop` 等待回覆、以及最後一步的結尾報告。
 
 ## PRINCIPLE: 限縮推理
 
-- 僅當 sub-SOP step 明文標示須 THINK、REASONING 時才進行深度推論；其餘 step 依據提示之 READ、SEARCH、CREATE、WRITE、UPDATE、EXECUTE、DELEGATE 直接呼叫最合適的工具快速實現，禁止無關或未指示的推論行為。
+- 僅當 step 明文標示須 THINK、REASONING 時才進行深度推論；其餘 step 依據提示之 READ、SEARCH、CREATE、WRITE、UPDATE、EXECUTE、DELEGATE 直接呼叫最合適的工具快速實現，禁止無關或未指示的推論行為。
 
-## PRINCIPLE: 以兩層待辦清單記錄進度
+## PRINCIPLE: 以待辦清單記錄進度
 
-在本 skill 執行完成前，任何需要 conversation compact 的情境必須保留當前所有待辦與進度：目前正在進行的 sub-SOP（phase）和細項 sub-SOP step。外層只列 sub-SOP（phase），進入該 phase 再把該 phase 第一層編號步驟拆成子項，尚未開始的 phase 不必預先展開。
+在本 skill 執行完成前，任何需要 conversation compact 的情境必須保留當前待辦與進度：目前正在進行 `# SOP` 的哪一個 step。待辦對應本檔 `# SOP` 每一個編號 step，用執行環境提供的待辦建立與更新能力維護（例：TODOCREATE、TASKCREATE 或等效工具），隨步驟推進更新狀態；嚴禁只在對話列點、不經工具建立的上下文待辦。
 
-- Tier 0：sub-SOP（phase），對應本檔 `# SOP` 最外層每一項；勾選代表該 phase 的細項已全部展開並依該 phase `SOP.md` 跑完。
-- Tier 1：phase 內細項，對應該 phase `SOP.md` 裡第一層編號步驟拆解出的動作，進入該 phase 時才補齊子項。編號方式為 (phase 序)、(phase 序-step 序)。
-- 呼叫工具維護待辦清單：勾選 Tier 0、Tier 1 要使用執行環境提供的待辦建立與更新能力維護（例：TODOCREATE、TASKCREATE 或等效工具）；嚴禁只在對話列點、不經工具建立的上下文待辦。
-
-Tier 0 範例（語意範本；實務請用 TODOCREATE／TASKCREATE 或等效工具建立）：
+範例（語意範本；實務請用 TODOCREATE／TASKCREATE 或等效工具建立）：
 
 ```markdown
-- [ ] (1) 展開並執行至完成：aibdd-function-packaging/01-bind-inputs/SOP.md。
-- [ ] (2) 展開並執行至完成：aibdd-function-packaging/02-reason-packaging/SOP.md。
-- [ ] (3) 展開並執行至完成：aibdd-function-packaging/03-apply-packaging/SOP.md。
+- [ ] (1) 解析 arguments。
+- [ ] (2) 解析本批次 plan package。
+- [ ] (3) 載入校正基準。
+- [ ] (4) 識別 impact matrix 標記的既有 package。
+- [ ] (5) 判定全新需求的 package 歸屬。
+- [ ] (6) 梳理決策與 rationale。
+- [ ] (7) 落地新 package 目錄。
+- [ ] (8) 校正 function-packaging.md。
+- [ ] (9) 回報結果。
 ```
-
-進入某 phase 後才把它拆成 Tier 1，其餘 phase 在 Tier 0 維持單列。
-
-Tier 1 範例（以 phase 2 為例）：
-
-```markdown
-- [ ] (1) 展開並執行至完成：aibdd-function-packaging/01-bind-inputs/SOP.md。
-- [ ] (2) 展開並執行至完成：aibdd-function-packaging/02-reason-packaging/SOP.md。
-    - [ ] (2-1) 步驟 1：解析 arguments。
-    - [ ] (2-2) 步驟 2：載入校正基準。
-    - [ ] (2-3) 步驟 3：識別 impact matrix 標記的既有 package。
-    - [ ] (2-4) 步驟 4：判定全新需求的 package 歸屬。
-    - [ ] (2-5) 步驟 5：梳理決策與 rationale。
-- [ ] (3) 展開並執行至完成：aibdd-function-packaging/03-apply-packaging/SOP.md。
-```
-
-某 phase 的子項全部完成後，把 Tier 0 該項標為完成，再對下一個 phase 重複展開與執行，依序往後；未完成當前 phase 前，不為後續 phase 預展開 Tier 1。
 
 # SOP
 
-僅閱讀當前執行 phase 的 SOP.md，嚴禁提早閱讀後續 phase 文件，避免延遲起始體驗。
+1. 解析 arguments
 
-1. 綁定輸入: EXECUTE phase `aibdd-function-packaging/01-bind-inputs/SOP.md`。
+   1.1 在 `CWD` SEARCH `**/arguments.yml` 檔案，找不到則 STOP 並對使用者輸出「我在 CWD 底下找不到 **/arguments.yml 檔案，你是否已經執行過 /aibdd-kickoff 了？」。
 
-2. 推理 function packages 校正: EXECUTE phase `aibdd-function-packaging/02-reason-packaging/SOP.md`。
+   1.2 EXECUTE command 以 resolver 綁定本 SOP 引用的變數並對使用者輸出 resolver stdout（每行一筆 `KEY=value`），resolver 非 0 退出時 STOP 並對使用者輸出其 stderr；resolver 輸出含 `<<NNN-plan-slug>>` 借位者由 `$PLAN_PACKAGE_SLUG` 解析，`${FEATURE_SPECS_DIR}`、`${TRUTH_FUNCTION_PACKAGE}` 另含 `<<NN-functional-module>>` 借位由各 package 決策的 `NN-<slug>` 解析。
 
-3. 落地 function packages 校正: EXECUTE phase `aibdd-function-packaging/03-apply-packaging/SOP.md`。
+   ```bash
+   python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
+   CURRENT_PLAN_PACKAGE=${CURRENT_PLAN_PACKAGE}
+   FEATURE_SPECS_DIR=${FEATURE_SPECS_DIR}
+   IMPACT_MATRIX_YML=${IMPACT_MATRIX_YML}
+   PLAN_PACKAGES_DIR=${PLAN_PACKAGES_DIR}
+   PLAN_REPORTS_DIR=${PLAN_REPORTS_DIR}
+   PLAN_SPEC=${PLAN_SPEC}
+   PROJECT_SPEC_LANGUAGE=${PROJECT_SPEC_LANGUAGE}
+   TRUTH_BOUNDARY_PACKAGES_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}
+   TRUTH_BOUNDARY_ROOT=${TRUTH_BOUNDARY_ROOT}
+   TRUTH_FUNCTION_PACKAGE=${TRUTH_FUNCTION_PACKAGE}
+   EOF
+   ```
 
-4. 回報結果: 對使用者輸出（可使用不同詞彙但維持語意）「OK，/aibdd-function-packaging 已依本批次需求校正 `function-packaging.md`：新開的 package 已建立目錄並標記 `added`、其餘受牽動的既有 package 標記 `related`。下面逐一列出本批次 `added`／`related` 的 package：<逐一列出>。接著請執行 /aibdd-flows-specify，在這些 package 內展開 UAT flow 與 feature。」
+2. 解析本批次 plan package: 對話歷史已指名具體 `NNN-<slug>`（例：reconcile 剛校準完那個 package、使用者點名 `${PLAN_PACKAGES_DIR}/NNN-<slug>`、或「繼續校正 NNN 那個 package」這類指涉），且 ASSERT `${PLAN_PACKAGES_DIR}/NNN-<slug>/` 存在於 `CWD`，則設 `$PLAN_PACKAGE_SLUG` 為該 `NNN-<slug>`，否則對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify-loop）要校正哪一個 plan package、設 `$PLAN_PACKAGE_SLUG` 為其 slug，STOP 待使用者回答，候選僅一個甚至為空也必須釐清。
+
+3. 載入校正基準
+
+   3.1 若 `${PLAN_REPORTS_DIR}/function-packaging.md` 不存在則參考 `aibdd-function-packaging/assets/templates/function-packaging.template.md` CREATE `${PLAN_REPORTS_DIR}/function-packaging.md` 空骨架，僅含 `# Function Packaging` 標題。
+
+   3.2 READ `${PLAN_REPORTS_DIR}/function-packaging.md` 內容作為 `$CURRENT_PACKAGING`。
+
+   3.3 READ `${PLAN_SPEC}` 需求描述段最新批次作為 `$LATEST_BATCH`。
+
+   3.4 EXECUTE command 以 `read --impact-status pending` 讀出 `${IMPACT_MATRIX_YML}` 全部 pending impact 作為 `$PENDING_IMPACTS`，CLI 用法詳見 `aibdd-core::references/impact-matrix/cli-usage.md`。
+
+4. 識別 impact matrix 標記的既有 package: 設 `$RELATED_PACKAGES` 為 `$PENDING_IMPACTS` 中 spec path 落在 `packages/NN-<slug>/` 下者所對映的既有 `packages/NN-<slug>` 集合；`${CONTRACTS_DIR}`、`${DATA_DIR}` 等 boundary spec 不對映 function package。
+
+5. 判定全新需求的 package 歸屬: 對 `$PENDING_IMPACTS` 中 specs 為空的每個 impact，參考 `aibdd-function-packaging/rules/function-package-granularity.md` 與 `$CURRENT_PACKAGING`，依其 quotes 與 `$LATEST_BATCH` REASONING 其需求該歸入哪個 function package；落入某既有 package 者把該 `packages/NN-<slug>` 加入 `$RELATED_PACKAGES`，無既有 package 可承載者依 slug 命名規則 PRINCIPLE derive 新 `packages/NN-<slug>` 加入 `$ADDED_PACKAGES`。
+
+6. 梳理決策與 rationale
+
+   6.1 對 `$RELATED_PACKAGES` 每個 package，參考 `aibdd-function-packaging/rules/function-package-granularity.md` READ 該 package 於 `${TRUTH_BOUNDARY_PACKAGES_DIR}` 下的既有 specs 了解職責，依 `$LATEST_BATCH` REASONING 其 rationale 以說明本批次對它要增修或新增哪些 spec。
+
+   6.2 對 `$ADDED_PACKAGES` 每個 package，參考 `aibdd-function-packaging/rules/function-package-granularity.md` 依 `$LATEST_BATCH` REASONING 其 rationale 以說明為何必須新開。
+
+   6.3 設 `$PACKAGING_DECISIONS` 為 `$RELATED_PACKAGES` 與 `$ADDED_PACKAGES` 各 package 的決策集合，每筆為 `{ package_path, flagged_reason, rationale }`，對應 `${PLAN_REPORTS_DIR}/function-packaging.md` 內容章節，語意參考 `aibdd-function-packaging/assets/templates/function-packaging.template.md`。
+
+7. 落地新 package 目錄: 對 `$PACKAGING_DECISIONS` 每個 `flagged_reason` 為 `added` 的決策，依其 `package_path` 的 `NN-<slug>` 解析 `${TRUTH_FUNCTION_PACKAGE}` 與 `${FEATURE_SPECS_DIR}`，CREATE `${TRUTH_FUNCTION_PACKAGE}` 與 `${FEATURE_SPECS_DIR}` 空骨架。
+
+8. 校正 function-packaging.md: 對 `$PACKAGING_DECISIONS` 每個決策參考 `aibdd-function-packaging/assets/templates/function-packaging.template.md` 在 `${PLAN_REPORTS_DIR}/function-packaging.md` 將該 `package_path` 的章節 UPDATE 為其 `flagged_reason` 與 `rationale`，章節不存在則新增；未列入 `$PACKAGING_DECISIONS` 的既有章節保持不動。
+
+9. 回報結果: 對使用者輸出（可使用不同詞彙但維持語意）「OK，/aibdd-function-packaging 已依本批次需求校正 `function-packaging.md`：新開的 package 已建立目錄並標記 `added`、其餘受牽動的既有 package 標記 `related`。下面逐一列出本批次 `added`／`related` 的 package：<逐一列出>。接著請執行 /aibdd-flows-specify，在這些 package 內展開 UAT flow 與 feature。」
