@@ -31,8 +31,7 @@ stack: {{STACK}}                              # python_e2e | java_e2e | nextjs_p
 project_spec_language: {{PROJECT_SPEC_LANGUAGE}}  # zh-hant | zh-hans | en-us | ja-jp | ko-kr
 tlb_id: {{TLB_ID}}                            # kebab-case
 boundary_codebase_subdir: {{BOUNDARY_CODEBASE_SUBDIR}}   # "" | <kebab-case>
-data_schema_format: {{DATA_SCHEMA_FORMAT}}    # web-service: dbml | ddl ；其他 type: n/a
-db_dialect: {{DB_DIALECT}}                    # none（dbml / 非 web-service）| postgresql | mysql | mssql
+data_schema_format: {{DATA_SCHEMA_FORMAT}}    # web-service: dbml | postgresql | mysql | mssql ；其他 type: n/a
 # Optional Java overrides（缺則由 script 推導）：
 # group_id: com.example
 # base_package: com.example.<tlb-id without hyphens>

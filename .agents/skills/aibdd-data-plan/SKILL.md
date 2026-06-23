@@ -87,7 +87,7 @@ metadata:
    - `${ACTIVITIES_DIR}` 下若有 `.activity` 則納入 `activity_truth`；若無則視為空集合（不得因此 STOP）。
    - 任一條件失敗 → 提示使用者回 `/aibdd-flows-specify`（spec.md／feature 骨架）或 `/aibdd-rules-specify`（atomic rules）補完，STOP。本步禁止補建或改寫 discovery markdown／feature／activity artifact。
 
-4. RESOLVE `$BOUNDARY_PROFILE`——依 `aibdd-core::references/ssot/boundary-profile-resolution.md`「解析取值」就地取 `state_specifier.{skill,format}`（有 `profile_overrides.state_specifier` 則整塊採用，否則沿用 base preset），產出目錄對齊 `${DATA_DIR}`。
+4. RESOLVE `$BOUNDARY_PROFILE`——依 `aibdd-core::references/ssot/boundary-profile-resolution.md`「解析取值」直接拿 `state_specifier.{skill,format}`，產出目錄對齊 `${DATA_DIR}`。
 
 5. BIND `$PLAN_SCOPE`（本輪 plan package + function package charters）
    1. READ `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 之 `## Function package charters` 與 `## Packaging decision`。
@@ -108,7 +108,7 @@ metadata:
 
 8. DERIVE state `target_path` 集合：以 `${PLAN_SPEC}`、`$PLAN_SCOPE` 所涵蓋之 `${FEATURE_SPECS_DIR}/**` 為 SSOT，從資料流動建立資料狀態聚合分析，把資料拆分成 Domain Aggregate／Entity／Value-Object——客觀、不腦補（可加讀 `${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${ACTIVITIES_DIR}/**`）；依切檔策略決定每份 state schema 的 `target_path`（相對 `${DATA_DIR}` 的檔案路徑）。`target_path` **不得**含 `<<NN-functional-module>>` 借位子層 — `${DATA_DIR}` 在 SSOT 已是 flat directory（見 `aibdd-core::spec-package-paths.md`）。
 
-9. DELEGATE `/${state_specifier.skill}`：請直接透過 Load SKILL 執行該 skill，並遵循其自身的禁令與輸入／輸出形狀，DELEGATE payload 內帶入步驟 8 之 `target_path`；specifier 依其認定之 `format` 寫入 `${DATA_DIR} ⊕ target_path`。
+9. DELEGATE `/${state_specifier.skill}`：請直接透過 Load SKILL 執行該 skill，並遵循其自身的禁令與輸入／輸出形狀，DELEGATE payload 內帶入步驟 8 之 `target_path` 與步驟 4 之 `state_specifier.format`；specifier 依**傳入之 `format`** 寫入 `${DATA_DIR} ⊕ target_path`。
 
 10. TRIGGER impact matrix writeback（本 skill 派生出的 data target paths）：EXECUTE `steps/impact-matrix-writeback.md`。
 

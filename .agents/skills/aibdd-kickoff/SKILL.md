@@ -69,7 +69,7 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
    - 請嚴格遵守 `rules/java-base-package.md` 來執行此步驟。
 4. **(write)** 規格語言不是 zh-hant 時：切換語系設定。
    - 請嚴格遵守 `rules/language-single-source.md` 來執行此步驟。
-5. **(write)** `data_schema_format = ddl` 時（僅 `type: web-service` 會有此值）：把 `profile_overrides.state_specifier` 寫進 `boundary.yml`；`dbml` 不寫。
+5. **(write)** `data_schema_format ∈ { postgresql, mysql, mssql }` 時（僅 `type: web-service` 會有此值）：把 `profile_overrides.state_specifier` 寫進 `boundary.yml`；`dbml` 不寫。
    - 請嚴格遵守 `rules/ddl-state-specifier-override.md` 來執行此步驟。
 
 ### Phase 5 — 驗證 + 清理

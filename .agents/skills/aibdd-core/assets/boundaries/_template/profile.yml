@@ -35,7 +35,7 @@ description: >
 
 state_specifier:                        # persistent state truth（資料模型）
   skill: <formulation-skill-or-none>    # 例：/aibdd-form-entity-spec；無持久狀態填 none
-  format: <dbml|none>
+  format: <dbml|postgresql|mysql|mssql|none>
   semantics: <persistent|ephemeral-mock>
   output_dir_key: DATA_DIR              # 寫入目錄對應的 arguments.yml 變數 key
   default_filename: <name-or-empty>     # 例：domain.dbml；無則空字串 ""
