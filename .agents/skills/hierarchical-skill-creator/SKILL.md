@@ -129,7 +129,7 @@ N. <告知使用者語句>                   ← optional，single-line
 
 - 目標路徑明指：用 `${VAR}` placeholder 鎖定，禁止裸路徑、禁止模糊量詞（「相關檔案」「需要的話」「順便」「適當地」「合理範圍內」）。
   - ✗ `把 sourcing 報告寫好，順便更新 spec.md 和相關檔案。`
-  - ✓ `WRITE ${PLAN_REPORTS_DIR}/discovery-sourcing.md（章節以 template 為準）。`
+  - ✓ `WRITE ${PLAN_REPORTS_DIR}/function-packaging.md（章節以 template 為準）。`
 
 - 句末白名單聲明：三種句型擇一，不得省略：
   1. 「本步僅允許 <動詞> <目標> [與 <動詞> <目標>]。」

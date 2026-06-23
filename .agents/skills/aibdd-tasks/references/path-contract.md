@@ -25,7 +25,7 @@
 - `internal-structure.class.mmd` = `${PLAN_INTERNAL_STRUCTURE}`
 - `tasks.md` = `${CURRENT_PLAN_PACKAGE}/tasks.md`
 - `impact-matrix.yml` = `${IMPACT_MATRIX_YML}`
-- `discovery-sourcing.md` = `${PLAN_REPORTS_DIR}/discovery-sourcing.md`
+- `function-packaging.md` = `${PLAN_REPORTS_DIR}/function-packaging.md`
 - `boundary-map.yml` = `${BOUNDARY_MAP_FILE}`
 
 ## Feature Scope Source

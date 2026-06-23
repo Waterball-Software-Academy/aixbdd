@@ -12,8 +12,8 @@
 
 2. 補齊 spec.md 與 impact matrix 骨架
 
-   2.1 若 `${PLAN_SPEC}` 不存在，參考 `aibdd-reconcile/assets/templates/spec.template.md` CREATE `${PLAN_SPEC}` 空骨架，僅含需求描述章節標題。
+   2.1 若 `${PLAN_SPEC}` 不存在，參考 `aibdd-core::references/ssot/spec.template.md` CREATE `${PLAN_SPEC}` 空骨架，僅含需求描述與澄清紀錄章節標題。
 
-   2.2 若 `${IMPACT_MATRIX_YML}` 不存在，EXECUTE command 跑一次 impact matrix `init` 建空檔，CLI 用法詳見 `aibdd-core/references/impact-matrix/cli-usage.md`。
+   2.2 若 `${IMPACT_MATRIX_YML}` 不存在，EXECUTE command 跑一次 impact matrix `init` 建空檔，CLI 用法詳見 `aibdd-core::references/impact-matrix/cli-usage.md`。
 
-3. 追加本輪需求: 參考 `aibdd-reconcile/assets/templates/spec.template.md` 的需求批次填寫規則，在 `${PLAN_SPEC}` WRITE `$RAW_IDEA`。
+3. 追加本輪需求: 參考 `aibdd-core::references/ssot/spec.template.md` 的需求批次填寫規則，在 `${PLAN_SPEC}` WRITE `$RAW_IDEA`。

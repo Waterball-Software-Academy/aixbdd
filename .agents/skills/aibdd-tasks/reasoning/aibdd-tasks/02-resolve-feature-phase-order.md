@@ -10,7 +10,7 @@ Start from matrix-derived membership: every `.feature` spec present in `${IMPACT
 
 ## Ordering Method
 
-Use `plan.md`, `research.md`, `boundary-map.yml`, and `discovery-sourcing.md` only to sort and group dependencies.
+Use `plan.md`, `research.md`, `boundary-map.yml`, and `function-packaging.md` only to sort and group dependencies.
 
 Do not add or remove features beyond matrix membership.
 
@@ -19,4 +19,4 @@ Do not add or remove features beyond matrix membership.
 - keep order stable once chosen
 - prefer `${TRUTH_BOUNDARY_ROOT}`-relative feature paths
 - do not silently drop a matrix-listed feature
-- if dependency order is ambiguous, prefer function package charter order from discovery sourcing, then lexicographic path order within each package
+- if dependency order is ambiguous, prefer the function package order as listed in `function-packaging.md` (`## packages/NN-<slug>` section order), then lexicographic path order within each package

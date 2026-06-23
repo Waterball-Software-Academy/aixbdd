@@ -125,7 +125,7 @@ Generate a structured `tasks.md` from a completed AIBDD plan package.
         19.1.2 STOP
 
 ### Phase 2 — LOAD plan and truth inputs
-> produces: `$$plan_md`, `$$research_md`, `$$internal_structure_text`, `$$boundary_map_text`, `$$feature_bundle`, `$$discovery_sourcing_text`, `$$code_symbol_index`
+> produces: `$$plan_md`, `$$research_md`, `$$internal_structure_text`, `$$boundary_map_text`, `$$feature_bundle`, `$$function_packaging_text`, `$$code_symbol_index`
 
 1. `$$plan_md` = READ `$$plan_md_path`
 2. ASSERT `$$plan_md` is non-empty
@@ -135,7 +135,7 @@ Generate a structured `tasks.md` from a completed AIBDD plan package.
 3. `$$research_md` = READ `$$research_md_path`
 4. `$$internal_structure_text` = READ `$$internal_structure_path`
 5. `$$boundary_map_text` = READ `$$boundary_map_path`
-6. `$$discovery_sourcing_text` = READ `${$$plan_reports_dir}/discovery-sourcing.md`
+6. `$$function_packaging_text` = READ `${$$plan_reports_dir}/function-packaging.md`
 7. `$$feature_bundle` = READ each path in `$$matrix_feature_paths` relative to `${$$workspace_root}/specs` or `${$$paths.truth_boundary_root}`
 8. ASSERT `$$feature_bundle` is non-empty
    8.1 IF assertion fails:
@@ -166,7 +166,7 @@ Generate a structured `tasks.md` from a completed AIBDD plan package.
 ### Phase 4 — RESOLVE feature phase order
 > produces: `$$ordered_feature_paths`, `$$feature_phase_labels`
 
-1. `$$ordered_feature_paths` = THINK per [`reasoning/aibdd-tasks/02-resolve-feature-phase-order.md`](reasoning/aibdd-tasks/02-resolve-feature-phase-order.md), input=`$$matrix_feature_paths`, `$$feature_bundle`, `$$plan_md`, `$$research_md`, `$$boundary_map_text`, `$$discovery_sourcing_text`, contract=[`references/impacted-feature-scope-contract.md`](references/impacted-feature-scope-contract.md)
+1. `$$ordered_feature_paths` = THINK per [`reasoning/aibdd-tasks/02-resolve-feature-phase-order.md`](reasoning/aibdd-tasks/02-resolve-feature-phase-order.md), input=`$$matrix_feature_paths`, `$$feature_bundle`, `$$plan_md`, `$$research_md`, `$$boundary_map_text`, `$$function_packaging_text`, contract=[`references/impacted-feature-scope-contract.md`](references/impacted-feature-scope-contract.md)
 2. ASSERT `$$ordered_feature_paths` is non-empty
    2.1 IF assertion fails:
        2.1.1 EMIT "無法解析 impacted feature scope；請先修正 impact matrix 或補足 discovery / plan evidence。" to user

@@ -1,6 +1,6 @@
 # Specs 根目錄佈局
 
-## 目錄樹（normative）
+## 目錄樹
 
 ```text
 ${SPECS_ROOT_DIR}/
@@ -21,6 +21,6 @@ ${SPECS_ROOT_DIR}/
     NNN-<slug>/
       spec.md
       reports/
-        discovery-sourcing.md
+        function-packaging.md
         impact-matrix.yml
 ```

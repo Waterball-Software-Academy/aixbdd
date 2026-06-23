@@ -1,7 +1,7 @@
 # 參數設定
 
 - **需求故事錨點** → `${PLAN_SPEC}`（`${CURRENT_PLAN_PACKAGE}/spec.md`）
-- **Discovery 報告** → `${PLAN_REPORTS_DIR}/discovery-sourcing.md`（澄清擱置機讀題組：`${PLAN_REPORTS_DIR}/discovery-clarify-pending.payload.yml`）
+- **Discovery 報告** → `${PLAN_REPORTS_DIR}/function-packaging.md`
 - **Feature 規格／`.feature` 根目錄** → `${FEATURE_SPECS_DIR}`
 
 請注意，所有路徑都是相對於 ${CWD} 所在路徑，請勿新增任何檔案是並非在 ${CWD} 之中，不可妥協。

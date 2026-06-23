@@ -8,7 +8,7 @@
    EOF
    ```
 
-2. 載入 CLI 手冊: READ `aibdd-core/references/impact-matrix/cli-usage.md` 內容，取得通用規則、資料模型、status 語意與各 verb 應用 command。
+2. 載入 CLI 手冊: READ `aibdd-core::references/impact-matrix/cli-usage.md` 內容，取得通用規則、資料模型、status 語意與各 verb 應用 command。
 
 3. 盤點需重建的 impact
 

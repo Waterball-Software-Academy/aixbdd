@@ -16,13 +16,13 @@
 
 2. 載入校準基準
 
-   2.1 EXECUTE command 以 `read`（無 filter）讀出 `${IMPACT_MATRIX_YML}` 全部 impact 作為 `$CURRENT_MATRIX` 並對使用者輸出，CLI 用法詳見 `aibdd-core/references/impact-matrix/cli-usage.md`。
+   2.1 EXECUTE command 以 `read`（無 filter）讀出 `${IMPACT_MATRIX_YML}` 全部 impact 作為 `$CURRENT_MATRIX` 並對使用者輸出，CLI 用法詳見 `aibdd-core::references/impact-matrix/cli-usage.md`。
 
    2.2 READ `${PLAN_SPEC}` 內最新批次的需求敘事作為 `$RAW_IDEA`。
 
    2.3 確立 finding 構成原則作為 `$FINDING_RULE`：一個 impact 把 `$RAW_IDEA` 的一或數句話交給某 owner 職責下 formulate 成 spec；本步逐句對照既有 spec 判斷該句是改動既有 spec、還是須由 owner 新建 spec。每個 finding 為 `{ owner, quotes, spec_path }`：`owner` 為所屬階段；`quotes` 為交給該 owner 的 `$RAW_IDEA` 原句，至少一句；`spec_path` 僅在影響既有 spec 時填其相對 `${TRUTH_BOUNDARY_ROOT}` 的路徑，否則留空，確定或有懷疑被牽動者皆視為受影響。
 
-3. `aibdd-flows-specify` 階段探索: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${FEATURE_SPECS_DIR}` 下 `.feature` 骨架與 `${ACTIVITIES_DIR}` 下 `.activity` 與 `${PLAN_REPORTS_DIR}/discovery-sourcing.md` REASONING 本階段被牽動的 finding，包含但不限於 UAT flow、function package 範圍劃分、feature 範圍劃分，加入 `$STAGE_FINDINGS`。
+3. `aibdd-flows-specify` 階段探索: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${FEATURE_SPECS_DIR}` 下 `.feature` 骨架與 `${ACTIVITIES_DIR}` 下 `.activity` 與 `${PLAN_REPORTS_DIR}/function-packaging.md` REASONING 本階段被牽動的 finding，包含但不限於 UAT flow、function package 範圍劃分、feature 範圍劃分，加入 `$STAGE_FINDINGS`。
 
 4. `aibdd-rules-specify` 階段探索: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${FEATURE_SPECS_DIR}` 下既有 `.feature` 的 atomic rules REASONING 本階段被牽動的 finding，包含但不限於 feature 範圍不變下各條 atomic rule 的對錯與增刪，加入 `$STAGE_FINDINGS`。
 

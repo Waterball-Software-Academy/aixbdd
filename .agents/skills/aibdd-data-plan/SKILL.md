@@ -22,7 +22,7 @@ metadata:
 
 ## PRINCIPLE: 不重畫 Discovery 真相
 
-- Discovery 已 accepted 的 rule-only `${FEATURE_SPECS_DIR}/**`、`${ACTIVITIES_DIR}/**`、`${IMPACT_MATRIX_YML}`、`${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${PLAN_SPEC}` 之需求全文 **為唯讀輸入**；本 skill **不得**改寫任何 feature／activity 內容、不得改 atomic rule 文字、不得新增 Scenario／Background／Examples。
+- Discovery 已 accepted 的 rule-only `${FEATURE_SPECS_DIR}/**`、`${ACTIVITIES_DIR}/**`、`${IMPACT_MATRIX_YML}`、`${PLAN_REPORTS_DIR}/function-packaging.md`、`${PLAN_SPEC}` 之需求全文 **為唯讀輸入**；本 skill **不得**改寫任何 feature／activity 內容、不得改 atomic rule 文字、不得新增 Scenario／Background／Examples。
 - `${IMPACT_MATRIX_YML}` 僅能經 `impact_matrix_cli.py` 的 `write`／`add-spec`／`transit-status`／`remove` 維護本 skill 派生出的 data impact；不得手改 YAML 本體。
 - 若發現上游真相不足以推導 data schema，必須**回頭委派** `/clarify-loop`，由 Discovery owner 修正後再續跑；**禁止**就地補洞。
 
@@ -81,7 +81,7 @@ metadata:
 
 3. ASSERT Discovery 真相已 accepted（READ-ONLY）
    - `${PLAN_SPEC}` 存在且含需求敘事全文與 discovery sourcing pointer（章節對齊 `/aibdd-flows-specify`）。
-   - `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 存在。
+   - `${PLAN_REPORTS_DIR}/function-packaging.md` 存在。
    - `${IMPACT_MATRIX_YML}` 存在。
    - `${FEATURE_SPECS_DIR}` 下至少一份 rule-only `.feature` 檔。
    - `${ACTIVITIES_DIR}` 下若有 `.activity` 則納入 `activity_truth`；若無則視為空集合（不得因此 STOP）。
@@ -91,15 +91,15 @@ metadata:
    - PARSE `${BOUNDARY_YML}` 之 `type` 欄位為 `$boundary_type`；若不存在則 STOP & 報錯。
    - 自該 boundary profile 取出 `state_specifier.{skill,format}`；產出目錄對齊 `${DATA_DIR}`。
 
-5. BIND `$PLAN_SCOPE`（本輪 plan package + function package charters）
-   1. READ `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 之 `## Function package charters` 與 `## Packaging decision`。
+5. BIND `$PLAN_SCOPE`（本輪 plan package + 受牽動的 function packages）
+   1. READ `${PLAN_REPORTS_DIR}/function-packaging.md` 之每個 `## packages/NN-<slug> — <flagged-reason>` 章節。
    2. DERIVE `$plan_package_slug` 自 `${CURRENT_PLAN_PACKAGE}` basename。
-   3. DERIVE `$function_package_slugs[]`：`Packaging decision` 所列本輪涉及的 `packages/NN-<slug>`；每一 slug 須在 `Function package charters` 有對應小卡。
-   4. DERIVE `$PLAN_SCOPE = { plan_package_slug, function_package_slugs[], charter_cards[] }`。
-   5. 若 `Packaging decision` 與 `Function package charters` 不一致、或無法解析任一 function package slug，STOP 並回報 discovery sourcing 不完整。
+   3. DERIVE `$function_package_slugs[]`：`function-packaging.md` 各 `## packages/NN-<slug>` 章節所列本輪受牽動的 `packages/NN-<slug>`。
+   4. DERIVE `$PLAN_SCOPE = { plan_package_slug, function_package_slugs[] }`。
+   5. 若無法解析任一 function package slug，STOP 並回報前置資訊不完整。
 
 6. TRIGGER impact matrix read，BIND `$PLAN_MUTABLE_IMPACT_SPECS`
-   1. 以 `read --spec-status inconsistent` 讀本輪 mutable workset（仍 `inconsistent` 的 spec 才算待做），攤平 `impacts[].specs[].path` 為 `$PLAN_MUTABLE_IMPACT_SPECS`。CLI 用法詳見 `aibdd-core::impact-matrix/cli-usage.md`。
+   1. 以 `read --spec-status inconsistent` 讀本輪 mutable worklist（仍 `inconsistent` 的 spec 才算待做），攤平 `impacts[].specs[].path` 為 `$PLAN_MUTABLE_IMPACT_SPECS`。CLI 用法詳見 `aibdd-core::impact-matrix/cli-usage.md`。
    2. FILTER：只保留 path 落在 `$PLAN_SCOPE.function_package_slugs[]` 所屬 `${TRUTH_BOUNDARY_PACKAGES_DIR}/<slug>/**`、或 `${DATA_DIR}/**` 的 spec；其餘不納入本 skill 推導 scope。
    3. 若 matrix 缺失或 `violations` 非空，STOP 並回報 impact matrix 不完整。
 
@@ -108,7 +108,7 @@ metadata:
    - READ code skeleton index（排除 ignored directories 與非主 worktree）。
    - 只 READ，不得 CREATE 任何空檔或目錄骨架。
 
-8. DERIVE state `target_path` 集合：以 `${PLAN_SPEC}`、`$PLAN_SCOPE` 所涵蓋之 `${FEATURE_SPECS_DIR}/**` 為 SSOT，從資料流動建立資料狀態聚合分析，把資料拆分成 Domain Aggregate／Entity／Value-Object——客觀、不腦補（可加讀 `${PLAN_REPORTS_DIR}/discovery-sourcing.md`、`${ACTIVITIES_DIR}/**`）；依切檔策略決定每份 state schema 的 `target_path`（相對 `${DATA_DIR}` 的檔案路徑）。`target_path` **不得**含 `<<NN-functional-module>>` 借位子層 — `${DATA_DIR}` 在 SSOT 已是 flat directory（見 `aibdd-core::spec-package-paths.md`）。
+8. DERIVE state `target_path` 集合：以 `${PLAN_SPEC}`、`$PLAN_SCOPE` 所涵蓋之 `${FEATURE_SPECS_DIR}/**` 為 SSOT，從資料流動建立資料狀態聚合分析，把資料拆分成 Domain Aggregate／Entity／Value-Object——客觀、不腦補（可加讀 `${PLAN_REPORTS_DIR}/function-packaging.md`、`${ACTIVITIES_DIR}/**`）；依切檔策略決定每份 state schema 的 `target_path`（相對 `${DATA_DIR}` 的檔案路徑）。`target_path` **不得**含 `<<NN-functional-module>>` 借位子層 — `${DATA_DIR}` 在 SSOT 已是 flat directory（見 `aibdd-core::spec-package-paths.md`）。
 
 9. DELEGATE `/${state_specifier.skill}`：請直接透過 Load SKILL 執行該 skill，並遵循其自身的禁令與輸入／輸出形狀，DELEGATE payload 內帶入步驟 8 之 `target_path`；specifier 依其認定之 `format` 寫入 `${DATA_DIR} ⊕ target_path`。
 

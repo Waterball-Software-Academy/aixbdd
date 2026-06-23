@@ -8,7 +8,7 @@
    EOF
    ```
 
-2. 載入 CLI 手冊: READ `aibdd-core/references/impact-matrix/cli-usage.md` 內容，取得通用規則、資料模型、status 語意與各 verb 應用 command。
+2. 載入 CLI 手冊: READ `aibdd-core::references/impact-matrix/cli-usage.md` 內容，取得通用規則、資料模型、status 語意與各 verb 應用 command。
 
 3. 標記過時 spec：對 `$STALE_SPECS` 每一筆 `{ impact_id, spec_path, owner, quote, rationale }` 執行下列 CLI command；任一 command 回 ok 為 false 時依其 `violations` 修正該 command 後重試，直到 ok。
 
