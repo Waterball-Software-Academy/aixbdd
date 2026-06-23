@@ -40,7 +40,6 @@
 
 3. READ：boundary type profile
    - PARSE `${BOUNDARY_YML}` 之 `type` 欄位為 `$boundary_type`。此 `$boundary_type` 欄位在後續 subsop 中會被使用到，需要被嚴格記住。若此欄位不存在則 STOP & 報錯。
-   - BIND `$boundary_profile`：依 `aibdd-core::references/ssot/boundary-profile-resolution.md`「解析取值」就地合出，各 `*_specifier.{skill,format}` 供 `02-contracts-design` 派遣。
 
 4. BIND `$PLAN_SCOPE`（本輪 plan package + function package charters）
    1. READ `${PLAN_REPORTS_DIR}/discovery-sourcing.md` 之 `## Function package charters` 與 `## Packaging decision`。
