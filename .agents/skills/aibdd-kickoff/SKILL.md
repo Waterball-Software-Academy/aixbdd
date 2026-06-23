@@ -79,9 +79,3 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
 ### Phase 6 — 回報
 
 1. **(write)** 向 user 回報：「Kickoff 已完成。已建立：<列出產出的 artifact，含 shared DSL>。下一步，來建立專案骨架吧，請直接使用 /aibdd-auto-starter，或是告訴我『繼續』。」
-
-# §CROSS-REFERENCES
-
-- `/clarify-loop` — Phase 2 的提問一律經此 delegate（resume 題 + Q1–Q4 batch；`type: web-service` 時再加 Q5 第二輪 data schema 格式）。
-- `/aibdd-auto-starter` — 下游：以本 skill 產出的 `arguments.yml`（含 `STARTER_VARIANT`）生成 walking skeleton。
-- `/aibdd-flows-specify` — skeleton 之後的規劃系統流程入口。
