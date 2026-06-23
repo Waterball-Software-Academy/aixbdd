@@ -54,12 +54,6 @@ component_contract_specifier:
   output_dir_key: <FE_STORIES_DIR|...>
   default_filename: <name-or-empty>
 
-# --- persistence handler（plan / SBE 的 persistence-ownership coverage gate 參考）--
-persistence_handler:
-  handler_id: <state-setup-handler>     # 例：state-builder（backend）/ mock-state-given（frontend）
-  state_ref_pattern: "<ref-pattern>"    # 例：data/*.dbml#<table>
-  coverage_gate: <deferred-v1|active>   # 本 boundary 的 required-field 覆蓋閘門狀態
-
 # --- L4 binding target 允許前綴（check_dsl_entries.py 讀取；無此需求整段刪除）------
 allowed_l4_target_prefixes:
   - <prefix>/        # 每條前綴附一句語意說明（例：contracts/ — OpenAPI ref）
