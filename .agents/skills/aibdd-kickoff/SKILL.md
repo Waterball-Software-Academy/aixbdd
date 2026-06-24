@@ -33,20 +33,23 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
 1. **(think)** 非互動模式：直接採 default 決策（stack=python_e2e、規格語言 zh-hant、service 名 backend、放 repo root；headless 要別的 stack 由 caller payload 帶 `stack:` 覆寫），跳過 File First，直接進 Phase 3。
 2. **(delegate)** 互動模式且 `KICKOFF_PLAN.md` 已存在：問 user 要接續、重做、還是取消，經 /clarify-loop 出題；取消就停。
    - delegate to SKILL /clarify-loop
-3. **(write)** 要新建問卷時：依 `assets/questions/` 五題與外殼 `assets/kickoff-plan.template.md`，渲染出 `KICKOFF_PLAN.md`（五題、答案欄留空）。
+3. **(write)** 要新建問卷時：依 `assets/questions/` 第一輪四題與外殼 `assets/kickoff-plan.template.md`，渲染出 `KICKOFF_PLAN.md`（四題、答案欄留空；Q5／Q6 為條件式第二輪，於下方對應步驟才渲染）。
    - 請嚴格遵守 `assets/kickoff-plan.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q1-tech-stack.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q2-project-spec-language.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q3-backend-service-name.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q4-codebase-layout.template.md` 來執行此步驟。
-   - 請嚴格遵守 `assets/questions/q6-install-spectrum.template.md` 來執行此步驟。
-4. **(delegate)** 一次問完五題（stack／規格語言／service 名／codebase layout／是否安裝 aibdd-spectrum），經 /clarify-loop；回答格式見各 question template 的 reply token 與外殼的 Batch Reply Format。
+4. **(delegate)** 一次問完第一輪四題（stack／規格語言／service 名／codebase layout），經 /clarify-loop；回答格式見各 question template 的 reply token 與外殼的 Batch Reply Format。
    - 請嚴格遵守 `assets/kickoff-plan.template.md` 來執行此步驟。
    - delegate to SKILL /clarify-loop
 5. **(write)** 把答案回寫 `KICKOFF_PLAN.md`、每題標 answered。任何一題模糊、重複或缺漏，就標 unresolved、告知 user 並停止——不要猜值硬填。
    - 請嚴格遵守 `rules/answer-resolution-gate.md` 來執行此步驟。
-6. **(delegate)** `type: web-service` 才問 Q5 data schema 格式（其他 type 跳過本步）：渲染 `{{Q5_RECORD}}`、經第二輪 `/clarify-loop` 問完回寫。
-   - 請嚴格遵守 `assets/questions/q5-data-schema-format.template.md` 來執行此步驟。
+6. **(delegate)** 第二輪條件式提問——依答案**逐一檢查兩個檢查點**，把適用的題以一次 `/clarify-loop` 問完回寫：
+   - 檢查點 1（先檢查 `type`）：`type: web-service` → 納入 Q5 data schema 格式，渲染 `{{Q5_RECORD}}`；否則跳過 Q5。
+     - 請嚴格遵守 `assets/questions/q5-data-schema-format.template.md` 來執行此步驟。
+   - 檢查點 2（再檢查 `stack`）：`stack: java_e2e` → 納入 Q6 是否安裝 aibdd-spectrum，渲染 `{{Q6_RECORD}}`；否則跳過 Q6。
+     - 請嚴格遵守 `assets/questions/q6-install-spectrum.template.md` 來執行此步驟。
+   - 兩檢查點皆不符 → 整步跳過。
    - 請嚴格遵守 `rules/answer-resolution-gate.md` 來執行此步驟。
    - delegate to SKILL /clarify-loop
 
