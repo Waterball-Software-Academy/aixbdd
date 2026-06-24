@@ -11,8 +11,7 @@ ${SPECS_ROOT_DIR}/
   test-strategy.yml
   contracts/
   data/
-  shared/
-    dsl.yml
+  isa.yml
   packages/
     NN-<slug>/
       features/

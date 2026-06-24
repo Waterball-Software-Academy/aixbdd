@@ -1,0 +1,42 @@
+# =============================================================================
+# isa-template.yml — <boundary-id> preset 的 isa 種子模版（authoring template）
+# =============================================================================
+# kickoff 會把本檔整份讀出、materialize 成專案的 specs/isa.yml。
+#
+# isa = 整個專案最小單位 Step Definition（與測試程式碼綁定）。
+#   · 內建 instruction_type（非 custom）：裝了框架由框架實作，沒裝則用 handler 實作。
+#   · custom isa：一律由 handler 實作（執行端自寫 Cucumber step def 對上同一句）。
+# 內建 format 一律 regex 具名捕獲 (?P<x>...)，不可用 {name} 佔位。
+#
+# 依本 boundary 的需求填 config 與 instructions；完整範例見 web-service preset 的
+# isa-template.yml。
+# =============================================================================
+
+config:
+  api:
+    resource_path: specs/api
+    project_path: src/test/resources/specs/api
+  data:
+    permission: isolated
+    source:
+      - name: primary
+        resource_path: specs/data/primary
+        project_path: src/test/resources/specs/data/primary
+
+instructions:
+  # ── 內建指令（依需求增減；format 用 regex 具名捕獲）──────────────────────────
+  # - name: Time control
+  #   format: ^現在時間為 "(?P<time>[^"]+)"$
+  #   instruction_type: time_control
+
+  # ── custom 指令（一律走 handler）──────────────────────────────────────────
+  # - name: <custom 指令名>
+  #   format: '<業務句，{佔位} 表參數>'
+  #   description: "詳細描述測試意圖"
+  #   instruction_type: custom
+  #   data_format: data_table
+  #   allow_dynamic_parameters: false
+  #   handler: <handler 名>
+  #   target_part_path: code:<path>#<Class>.<method>
+  #   export_vars: {}
+  #   datatable_parameters: {}

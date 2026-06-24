@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-/aibdd-kickoff layout copier (pure file copy + shared DSL seed).
+/aibdd-kickoff layout copier (pure file copy + isa seed).
 
 Copies the invariant template tree (assets/templates/shared/) to the target
 boundary codebase root, copies the invariant arguments.yml from the aibdd-core
 SSOT (references/ssot/arguments.yml) into the target .aibdd/, then materializes
-specs/shared/dsl.yml from the active boundary preset's shared-dsl-template.yml.
+specs/isa.yml from the active boundary preset's isa-template.yml.
 
 Per-stack tail appending and placeholder substitution for other kickoff
 artifacts are handled by 02-execute-layout/SOP.md as post-copy LLM Edit ops.
@@ -24,7 +24,7 @@ Other fields (tlb_id / project_spec_language / ...) are read by the SOP,
 not by this script.
 
 Emits JSON to stdout:
-  {"ok": true, "boundary_codebase_root": "...", "shared_dsl_path": "..."}.
+  {"ok": true, "boundary_codebase_root": "...", "isa_path": "..."}.
 """
 
 from __future__ import annotations
@@ -49,25 +49,25 @@ STACK_BOUNDARY_ASSET_DIR: dict[str, str] = {
 }
 
 
-def materialize_shared_dsl(dst: Path, stack: str) -> Path:
+def materialize_isa(dst: Path, stack: str) -> Path:
     boundary_asset_dir = STACK_BOUNDARY_ASSET_DIR.get(stack)
     if boundary_asset_dir is None:
-        raise ValueError(f"unsupported stack for shared DSL seed: {stack}")
+        raise ValueError(f"unsupported stack for isa seed: {stack}")
 
     template_path = (
         BOUNDARIES_ROOT
         / boundary_asset_dir
-        / "shared-dsl-template.yml"
+        / "isa-template.yml"
     )
     if not template_path.is_file():
-        raise FileNotFoundError(f"shared DSL template not found: {template_path}")
+        raise FileNotFoundError(f"isa template not found: {template_path}")
 
     content = template_path.read_text()
 
-    shared_dsl_path = dst / SPECS_ROOT_DIR / "shared" / "dsl.yml"
-    shared_dsl_path.parent.mkdir(parents=True, exist_ok=True)
-    shared_dsl_path.write_text(content)
-    return shared_dsl_path
+    isa_path = dst / SPECS_ROOT_DIR / "isa.yml"
+    isa_path.parent.mkdir(parents=True, exist_ok=True)
+    isa_path.write_text(content)
+    return isa_path
 
 
 def main() -> int:
@@ -96,14 +96,14 @@ def main() -> int:
     if seed_gitkeep.exists():
         seed_gitkeep.unlink()
 
-    shared_dsl_path = materialize_shared_dsl(dst, stack)
+    isa_path = materialize_isa(dst, stack)
 
     print(
         json.dumps(
             {
                 "ok": True,
                 "boundary_codebase_root": str(dst),
-                "shared_dsl_path": str(shared_dsl_path),
+                "isa_path": str(isa_path),
             }
         )
     )

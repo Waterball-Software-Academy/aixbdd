@@ -67,8 +67,7 @@ ${PROJECT_ROOT}/
 │       ├── actors/
 │       ├── contracts/                                  # operation contracts; web-service 由 /aibdd-form-api-spec 產出 OpenAPI
 │       ├── data/                                       # boundary state truth; web-service 由 /aibdd-form-entity-spec 產出 DBML
-│       ├── shared/
-│       │   └── dsl.yml                                 # kickoff：boundary shared DSL preset seed
+│       ├── isa.yml                                     # kickoff：共用 instructions 定義（isa seed）
 │       ├── test-strategy.yml
 │       └── packages/                                   # caller-context 提供 slug；Discovery 建 `NN-<slug>/`
 ├── docker-compose.yml                                  # local PostgreSQL（單一 service）
@@ -437,11 +436,11 @@ Starter 安全邊界：
 
 ## Template 檔案對照表
 
-template 檔名規則：`__` 表示路徑分隔符 `/`；filename 中的 `BASE_PKG` 會被 generator 替換為 `${BASE_PACKAGE_PATH}`。template 內容用 Python `string.Template` 的 `${VAR}` 語法做變數替換。
+template 檔名規則：`__` 表示路徑分隔符 `/`；filename 中的 `BASE_PKG` 會被 generator 替換為 `${BASE_PACKAGE_PATH}`。template 內容用 Python `string.Template` 的 `${VAR}` 語法做變數替換。尾綴 `.tmpl`／`.template` 會在輸出時去除（如 `pom.xml.tmpl` → `pom.xml`），讓含 element 位置注入點的 template 仍是合法 XML、不被編輯器誤判。
 
 | Template 檔名（`__` = `/`，`BASE_PKG` = `${BASE_PACKAGE_PATH}`） | 輸出路徑 |
 |-------------------------------------------------------------------|----------|
-| `pom.xml` | `pom.xml` |
+| `pom.xml.tmpl` | `pom.xml` |
 | `docker-compose.yml` | `docker-compose.yml` |
 | `.gitattributes` | `.gitattributes` |
 | `.aibdd__dev-constitution.md` | `.aibdd/dev-constitution.md` |
@@ -478,6 +477,24 @@ template 檔名規則：`__` 表示路徑分隔符 `/`；filename 中的 `BASE_P
 未由 starter 寫入、需另行產生的檔案：
 
 - `.gitignore`：請自行建立或從既有 Spring Boot 專案複製過來。
+
+（`INSTALL_SPECTRUM=true` 時另會建立 `src/test/resources/dsl-features/`，見下方 aibdd-spectrum overlay。）
+
+---
+
+## aibdd-spectrum overlay（選配，由 kickoff Q6 決定）
+
+當 `arguments.yml` 的 `INSTALL_SPECTRUM` 為 `true`（kickoff Q6 選 yes）時，generator 在 java-e2e 基底骨架上疊加 aibdd-spectrum（SpecFormula）安裝；為 `false`／缺省／未替換佔位時，pom 與基底完全相同（byte-identical）。**僅 java-e2e 消費此旗標**——其他 stack 即使選 yes 也不受影響，保持乾淨 pom。
+
+疊加內容由 `pom.xml.tmpl` 的 `${SPECFORMULA_*}` 佔位填入，版本預設 `0.0.5`（可由 `arguments.yml` 的 `SPECFORMULA_VERSION` 覆寫），全部自 Maven Central 取得，**不需 local install**：
+
+- properties：`<specformula.version>`
+- dependencies（test scope）：`ai.specformula:specformula-cucumber`、`specformula-testcontainer`、`specformula-dsl`
+- build/plugins：`specformula-dsl` 的 `preprocess` goal（`sourceDirectory = src/test/resources/dsl-features`），把 `.dsl.feature` 展開為 `.isa.feature` 後再交 Cucumber
+- build/testResources：排除 `dsl-features/**` 原始檔、加入 `${project.build.directory}/generated-test-resources` 為輸出
+- 空目錄：`src/test/resources/dsl-features/`（放 `.dsl.feature` 來源）
+
+> 註：isa.yml（`src/test/resources/isa.yml`）此版本尚未由 starter 產生／配置。
 
 ---
 
