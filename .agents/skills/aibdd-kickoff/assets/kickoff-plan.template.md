@@ -13,7 +13,7 @@
 | supported stacks | python_e2e ｜ java_e2e ｜ nextjs_playwright |
 
 ## Questions
-<!-- 依序插入 q1–q4 各自的 question record（來源：assets/questions/q{1..4}-*.template.md） -->
+<!-- 依序插入 q1–q5 各自的 question record（來源：assets/questions/q{1..5}-*.template.md） -->
 {{Q1_RECORD}}
 
 {{Q2_RECORD}}
@@ -22,6 +22,8 @@
 
 {{Q4_RECORD}}
 
+{{Q5_RECORD}}
+
 ## Resolved Decisions
 <!-- machine-readable，給 kickoff_layout.py 消費 -->
 ```yaml
@@ -29,6 +31,7 @@ stack: {{STACK}}                              # python_e2e | java_e2e | nextjs_p
 project_spec_language: {{PROJECT_SPEC_LANGUAGE}}  # zh-hant | zh-hans | en-us | ja-jp | ko-kr
 tlb_id: {{TLB_ID}}                            # kebab-case
 boundary_codebase_subdir: {{BOUNDARY_CODEBASE_SUBDIR}}   # "" | <kebab-case>
+data_schema_format: {{DATA_SCHEMA_FORMAT}}    # web-service: dbml | postgresql | mysql | mssql ；其他 type: n/a
 # Optional Java overrides（缺則由 script 推導）：
 # group_id: com.example
 # base_package: com.example.<tlb-id without hyphens>
@@ -46,6 +49,11 @@ Q1: python_e2e | java_e2e | nextjs_playwright
 Q2: zh-hant | zh-hans | en-us | ja-jp | ko-kr
 Q3: <kebab-case>            # java_e2e 同時為 Maven artifactId；nextjs_playwright 同時為 PROJECT_SLUG
 Q4: repo_root | subdir:<kebab-case-dir>
+```
+
+**Q5 Reply Format**（僅 `type: web-service` 才在第二輪 `/clarify-loop` 提問；其他 type 不問）：
+```text
+Q5: dbml | ddl:postgresql | ddl:mysql | ddl:mssql
 ```
 
 **Question record 欄位**：`id` / `prompt` / `kind`（`CON` 選項題｜`FREE` 自由題）/ `options` 或 `default` / `answer.raw`（答後）/ `resolved_decision.key` + `.value`（答後）/ `status`（`unanswered` → `answered`，無法解析則 `unresolved`）。

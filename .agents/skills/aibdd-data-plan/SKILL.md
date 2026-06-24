@@ -17,7 +17,7 @@ metadata:
 
 ## PRINCIPLE: Artifact output contract（硬限制）
 
-- 本 SOP **唯一允許產生或修改**的 artifact，**只能**來自下述 SOP 中透過 DELEGATE（specifier 寫 `${DATA_DIR}`）與 impact matrix `write`／`add-spec`／`transit-status`／`remove` 明確標注的產出物。
+- 本 SOP **唯一允許產生或修改**的 artifact，**只能**來自下述 SOP 中透過 DELEGATE（state specifier 寫 `${DATA_DIR}`、`/aibdd-table-to-entity` 寫 `${DATA_DIR}/entity_to_table_mapping.yml`）與 impact matrix `write`／`add-spec`／`transit-status`／`remove` 明確標注的產出物。
 - 【嚴禁】除上述 target 外，**其他任何 READ / SEARCH / THINK / DERIVE 所觀察到的路徑，都只可作為分析依據，不得被順手建立、寫入、更新或補骨架。**
 
 ## PRINCIPLE: 不重畫 Discovery 真相
@@ -87,9 +87,7 @@ metadata:
    - `${ACTIVITIES_DIR}` 下若有 `.activity` 則納入 `activity_truth`；若無則視為空集合（不得因此 STOP）。
    - 任一條件失敗 → 提示使用者回 `/aibdd-flows-specify`（spec.md／feature 骨架）或 `/aibdd-rules-specify`（atomic rules）補完，STOP。本步禁止補建或改寫 discovery markdown／feature／activity artifact。
 
-4. READ：boundary type profile 與 state specifier
-   - PARSE `${BOUNDARY_YML}` 之 `type` 欄位為 `$boundary_type`；若不存在則 STOP & 報錯。
-   - 自該 boundary profile 取出 `state_specifier.{skill,format}`；產出目錄對齊 `${DATA_DIR}`。
+4. RESOLVE `$BOUNDARY_PROFILE`——依 `aibdd-core::references/ssot/boundary-profile-resolution.md`「解析取值」直接拿 `state_specifier.{skill,format}`，產出目錄對齊 `${DATA_DIR}`。
 
 5. BIND `$PLAN_SCOPE`（本輪 plan package + 受牽動的 function packages）
    1. READ `${PLAN_REPORTS_DIR}/function-packaging.md` 之每個 `## packages/NN-<slug> — <flagged-reason>` 章節。
@@ -114,11 +112,13 @@ metadata:
 
 10. TRIGGER impact matrix writeback（本 skill 派生出的 data target paths）：EXECUTE `steps/impact-matrix-writeback.md`。
 
-11. （此步驟必須嚴格遵守，至少要有一條澄清項目）`$NEED_TO_CLARIFY`, `$NEED_TO_FIX` = DO FAITHFUL REASONING 針對本 skill 已導出之 state schemas 與 impact writeback 整體結果，依照 `steps/derive-findings.md` 中的分析切角去進行深度分析，並找到所有需要修正、澄清的地方。
+11. DELEGATE `/aibdd-table-to-entity`：請直接透過 Load SKILL 執行該 skill，並遵循其自身的禁令與輸入／輸出形狀，產出 `${DATA_DIR}/entity_to_table_mapping.yml`。
 
-12. 若 `$NEED_TO_FIX` 非空：依 `$NEED_TO_FIX` 修正本 skill 之 state target paths、specifier delegation input 與 impact matrix writeback，必要時重跑步驟 `8` 到 `10`。
+12. （此步驟必須嚴格遵守，至少要有一條澄清項目）`$NEED_TO_CLARIFY`, `$NEED_TO_FIX` = DO FAITHFUL REASONING 針對本 skill 已導出之 state schemas 與 impact writeback 整體結果，依照 `steps/derive-findings.md` 中的分析切角去進行深度分析，並找到所有需要修正、澄清的地方。
 
-13. 若 `$NEED_TO_CLARIFY` 非空：DELEGATE `/clarify-loop` 一次進行提問。
+13. 若 `$NEED_TO_FIX` 非空：依 `$NEED_TO_FIX` 修正本 skill 之 state target paths、specifier delegation input 與 impact matrix writeback，必要時重跑步驟 `8` 到 `11`。
 
-14. 和使用者說道（詞可變、語意不變）：「我已經以 Discovery 真相把本輪須穩定保存的系統狀態推導成 data schema，並委派 specifier 落到 ${DATA_DIR}。你看一下我產的 DBML／資料規格確認設計沒問題。」
+14. 若 `$NEED_TO_CLARIFY` 非空：DELEGATE `/clarify-loop` 一次進行提問。
+
+15. 和使用者說道（詞可變、語意不變）：「我已經以 Discovery 真相把本輪須穩定保存的系統狀態推導成 data schema，並委派 specifier 落到 ${DATA_DIR}。你看一下我產的 DBML／資料規格確認設計沒問題。」
     - **禁止建議下一步**：結尾**不得**建議、推薦、引導或暗示任何下一個要執行的 skill／slash command／後續流程（例如 `/aibdd-api-plan`、`/aibdd-implement`、`/aibdd-tasks` 等一律不得出現）。本 skill 到此為止，只回報本輪產出並請使用者檢視，後續由使用者自行決定。
