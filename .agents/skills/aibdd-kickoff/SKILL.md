@@ -45,6 +45,10 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
    - delegate to SKILL /clarify-loop
 5. **(write)** 把答案回寫 `KICKOFF_PLAN.md`、每題標 answered。任何一題模糊、重複或缺漏，就標 unresolved、告知 user 並停止——不要猜值硬填。
    - 請嚴格遵守 `rules/answer-resolution-gate.md` 來執行此步驟。
+6. **(delegate)** `type: web-service` 才問 Q5 data schema 格式（其他 type 跳過本步）：渲染 `{{Q5_RECORD}}`、經第二輪 `/clarify-loop` 問完回寫。
+   - 請嚴格遵守 `assets/questions/q5-data-schema-format.template.md` 來執行此步驟。
+   - 請嚴格遵守 `rules/answer-resolution-gate.md` 來執行此步驟。
+   - delegate to SKILL /clarify-loop
 
 ### Phase 3 — 產生 boundary skeleton
 
@@ -68,6 +72,8 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
    - 下游 `/aibdd-auto-starter` 僅在此值為 `true` 且 variant 為 `java-e2e` 時，於 pom.xml 疊加 specformula 依賴與 specformula-dsl plugin。
 5. **(write)** 規格語言不是 zh-hant 時：切換語系設定。
    - 請嚴格遵守 `rules/language-single-source.md` 來執行此步驟。
+6. **(write)** `data_schema_format ∈ { postgresql, mysql, mssql }` 時（僅 `type: web-service` 會有此值）：把 `profile_overrides.state_specifier` 寫進 `boundary.yml`；`dbml` 不寫。
+   - 請嚴格遵守 `rules/ddl-state-specifier-override.md` 來執行此步驟。
 
 ### Phase 5 — 驗證 + 清理
 
@@ -76,9 +82,3 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
 ### Phase 6 — 回報
 
 1. **(write)** 向 user 回報：「Kickoff 已完成。已建立：<列出產出的 artifact，含 isa.yml>。下一步，來建立專案骨架吧，請直接使用 /aibdd-auto-starter，或是告訴我『繼續』。」
-
-# §CROSS-REFERENCES
-
-- `/clarify-loop` — Phase 2 的提問一律經此 delegate（resume 題 + Q1–Q4、Q6 batch）。
-- `/aibdd-auto-starter` — 下游：以本 skill 產出的 `arguments.yml`（含 `STARTER_VARIANT`）生成 walking skeleton。
-- `/aibdd-flows-specify` — skeleton 之後的規劃系統流程入口。
