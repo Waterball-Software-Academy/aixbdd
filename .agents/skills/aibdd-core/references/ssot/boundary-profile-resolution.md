@@ -1,6 +1,7 @@
 # Boundary Profile Resolution
 
-Boundary profile 合併規則的 SSOT。讀路徑（取 specifier 值）消費者各自照本檔就地做。
+1. Boundary profile 解析規則的 SSOT。
+2. 消費者讀路徑（取 specifier 值）時，各自依本檔步驟做。
 
 ## 兩個來源（優先序）
 
