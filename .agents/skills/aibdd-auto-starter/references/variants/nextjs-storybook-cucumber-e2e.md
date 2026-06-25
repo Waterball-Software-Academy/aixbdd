@@ -47,8 +47,7 @@ ${PROJECT_ROOT}/
 │       ├── actors/
 │       ├── contracts/
 │       ├── data/
-│       ├── shared/
-│       │   └── dsl.yml                    # kickoff：boundary shared DSL preset seed
+│       ├── isa.yml                        # kickoff：共用 instructions 定義（isa seed）
 │       ├── test-strategy.yml
 │       └── packages/                       # caller-context 提供 slug；Discovery 建 `NN-<slug>/`
 ├── package.json                            # next/react/vite/storybook/playwright/vitest 依賴

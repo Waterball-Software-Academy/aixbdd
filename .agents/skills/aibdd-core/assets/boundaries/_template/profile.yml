@@ -35,7 +35,7 @@ description: >
 
 state_specifier:                        # persistent state truth（資料模型）
   skill: <formulation-skill-or-none>    # 例：/aibdd-form-entity-spec；無持久狀態填 none
-  format: <dbml|none>
+  format: <dbml|postgresql|mysql|mssql|none>
   semantics: <persistent|ephemeral-mock>
   output_dir_key: DATA_DIR              # 寫入目錄對應的 arguments.yml 變數 key
   default_filename: <name-or-empty>     # 例：domain.dbml；無則空字串 ""
@@ -53,12 +53,6 @@ component_contract_specifier:
   format: <csf3|...>
   output_dir_key: <FE_STORIES_DIR|...>
   default_filename: <name-or-empty>
-
-# --- persistence handler（plan / SBE 的 persistence-ownership coverage gate 參考）--
-persistence_handler:
-  handler_id: <state-setup-handler>     # 例：state-builder（backend）/ mock-state-given（frontend）
-  state_ref_pattern: "<ref-pattern>"    # 例：data/*.dbml#<table>
-  coverage_gate: <deferred-v1|active>   # 本 boundary 的 required-field 覆蓋閘門狀態
 
 # --- L4 binding target 允許前綴（check_dsl_entries.py 讀取；無此需求整段刪除）------
 allowed_l4_target_prefixes:

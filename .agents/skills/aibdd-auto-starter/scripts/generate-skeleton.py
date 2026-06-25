@@ -50,6 +50,17 @@ def slugify(name: str) -> str:
     return slug.strip("-")
 
 
+def _is_truthy(val: object) -> bool:
+    """Interpret an arguments.yml flag as boolean (safe default: False).
+
+    Accepts real YAML booleans and common string spellings; anything else
+    (including an unresolved ``${...}`` placeholder) is treated as False.
+    """
+    if isinstance(val, bool):
+        return val
+    return str(val).strip().lower() in ("true", "yes", "1", "on")
+
+
 def resolve_args_variables(args_data: dict) -> dict:
     """Resolve ${VAR} references within arguments.yml values."""
     resolved: dict = {}
@@ -111,6 +122,83 @@ def build_variables_python(args_data: dict, project_name: str) -> dict:
     }
 
 
+def _java_spectrum_blocks(resolved: dict) -> dict:
+    """pom.xml.tmpl overlay fills for aibdd-spectrum (SpecFormula).
+
+    When INSTALL_SPECTRUM is truthy, return the four placeholder fills
+    (property / dependencies / testResources / dsl plugin); otherwise all four
+    are empty strings so the base pom renders byte-identical. This is the only
+    code path that consumes INSTALL_SPECTRUM, so non-java variants always keep a
+    clean pom even when the flag happens to be set.
+
+    The injected ``${...}`` tokens are Maven property references, not Python
+    Template vars: they live in substitution *values*, which safe_substitute
+    copies verbatim (single pass), so they reach the rendered pom intact.
+    """
+    keys = (
+        "SPECFORMULA_PROPERTY",
+        "SPECFORMULA_DEPENDENCIES",
+        "SPECFORMULA_TEST_RESOURCES",
+        "SPECFORMULA_PLUGINS",
+    )
+    if not _is_truthy(resolved.get("INSTALL_SPECTRUM")):
+        return {k: "" for k in keys}
+
+    version = str(resolved.get("SPECFORMULA_VERSION", "0.0.5"))
+
+    def dep(artifact: str) -> str:
+        return (
+            "\n\t\t<dependency>"
+            "\n\t\t\t<groupId>ai.specformula</groupId>"
+            f"\n\t\t\t<artifactId>{artifact}</artifactId>"
+            "\n\t\t\t<version>${specformula.version}</version>"
+            "\n\t\t\t<scope>test</scope>"
+            "\n\t\t</dependency>"
+        )
+
+    return {
+        "SPECFORMULA_PROPERTY": (
+            f"\n\t\t<specformula.version>{version}</specformula.version>"
+        ),
+        "SPECFORMULA_DEPENDENCIES": (
+            "\n\n\t\t<!-- aibdd-spectrum (SpecFormula), installed via kickoff Q6 -->"
+            + dep("specformula-cucumber")
+            + dep("specformula-testcontainer")
+            + dep("specformula-dsl")
+        ),
+        "SPECFORMULA_TEST_RESOURCES": (
+            "\n\t\t<testResources>"
+            "\n\t\t\t<testResource>"
+            "\n\t\t\t\t<directory>src/test/resources</directory>"
+            "\n\t\t\t\t<excludes>"
+            "\n\t\t\t\t\t<!-- raw .dsl.feature sources are expanded by specformula-dsl, not copied as-is -->"
+            "\n\t\t\t\t\t<exclude>dsl-features/**</exclude>"
+            "\n\t\t\t\t</excludes>"
+            "\n\t\t\t</testResource>"
+            "\n\t\t\t<testResource>"
+            "\n\t\t\t\t<directory>${project.build.directory}/generated-test-resources</directory>"
+            "\n\t\t\t</testResource>"
+            "\n\t\t</testResources>"
+        ),
+        "SPECFORMULA_PLUGINS": (
+            "\n\t\t\t<!-- DSL preprocessing: expand .dsl.feature into .isa.feature before Cucumber runs -->"
+            "\n\t\t\t<plugin>"
+            "\n\t\t\t\t<groupId>ai.specformula</groupId>"
+            "\n\t\t\t\t<artifactId>specformula-dsl</artifactId>"
+            "\n\t\t\t\t<version>${specformula.version}</version>"
+            "\n\t\t\t\t<executions>"
+            "\n\t\t\t\t\t<execution>"
+            "\n\t\t\t\t\t\t<goals><goal>preprocess</goal></goals>"
+            "\n\t\t\t\t\t</execution>"
+            "\n\t\t\t\t</executions>"
+            "\n\t\t\t\t<configuration>"
+            "\n\t\t\t\t\t<sourceDirectory>${project.basedir}/src/test/resources/dsl-features</sourceDirectory>"
+            "\n\t\t\t\t</configuration>"
+            "\n\t\t\t</plugin>"
+        ),
+    }
+
+
 def build_variables_java(args_data: dict, project_name: str) -> dict:
     """Build the variable dict for java-e2e template substitution."""
     resolved = resolve_args_variables(args_data)
@@ -144,6 +232,7 @@ def build_variables_java(args_data: dict, project_name: str) -> dict:
         "DB_USER": resolved.get("DB_USER", "postgres"),
         "DB_PASSWORD": resolved.get("DB_PASSWORD", "postgres"),
         "DB_PORT": resolved.get("DB_PORT", "5432"),
+        **_java_spectrum_blocks(resolved),
     }
 
 
@@ -258,6 +347,9 @@ def create_empty_dirs_java(project_dir: Path, variables: dict) -> None:
         "src/main/resources/static",
         "src/main/resources/templates",
     ]
+    if _is_truthy(variables.get("INSTALL_SPECTRUM")):
+        # specformula-dsl plugin sourceDirectory — raw .dsl.feature live here
+        empty_dirs.append("src/test/resources/dsl-features")
     for d in empty_dirs:
         dir_path = project_dir / d
         if not dir_path.exists():

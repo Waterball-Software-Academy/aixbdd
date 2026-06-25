@@ -30,7 +30,7 @@
 		<java.version>${JAVA_VERSION}</java.version>
 		<cucumber.version>${CUCUMBER_VERSION}</cucumber.version>
 		<jjwt.version>${JJWT_VERSION}</jjwt.version>
-		<springdoc.version>${SPRINGDOC_VERSION}</springdoc.version>
+		<springdoc.version>${SPRINGDOC_VERSION}</springdoc.version>${SPECFORMULA_PROPERTY}
 	</properties>
 	<dependencies>
 		<dependency>
@@ -140,10 +140,10 @@
 			<artifactId>cucumber-junit-platform-engine</artifactId>
 			<version>$${cucumber.version}</version>
 			<scope>test</scope>
-		</dependency>
+		</dependency>${SPECFORMULA_DEPENDENCIES}
 	</dependencies>
 
-	<build>
+	<build>${SPECFORMULA_TEST_RESOURCES}
 		<plugins>
 			<plugin>
 				<groupId>org.asciidoctor</groupId>
@@ -217,7 +217,7 @@
 						</configuration>
 					</execution>
 				</executions>
-			</plugin>
+			</plugin>${SPECFORMULA_PLUGINS}
 		</plugins>
 	</build>
 

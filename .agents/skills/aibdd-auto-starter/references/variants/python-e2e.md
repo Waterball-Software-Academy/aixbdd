@@ -69,8 +69,7 @@ ${PROJECT_ROOT}/
 │       ├── actors/
 │       ├── contracts/                    # operation contracts; web-service uses OpenAPI via /aibdd-form-api-spec
 │       ├── data/                         # boundary state truth; web-service uses DBML via /aibdd-form-entity-spec
-│       ├── shared/
-│       │   └── dsl.yml                    # kickoff：boundary shared DSL preset seed
+│       ├── isa.yml                       # kickoff：共用 instructions 定義（isa seed）
 │       ├── test-strategy.yml
 │       └── packages/                      # caller-context 提供 slug；Discovery 建 `NN-<slug>/`
 ├── requirements.txt

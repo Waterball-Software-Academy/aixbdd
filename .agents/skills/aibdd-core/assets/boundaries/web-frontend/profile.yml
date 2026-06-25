@@ -34,14 +34,6 @@ component_contract_specifier:
   output_dir_key: FE_STORIES_DIR
   default_filename: ""
 
-# Handler used to seed boundary-persisted state in plan DSL.
-# Consumed by /aibdd-plan persistence-ownership coverage gate and
-# /aibdd-spec-by-example-analyze entity-coverage gate.
-persistence_handler:
-  handler_id: mock-state-given
-  state_ref_pattern: "src/lib/schemas/<schema>.ts#<SchemaName>"
-  coverage_gate: deferred-v1
-
 # Allowed L4 binding target prefixes for this preset.
 # Consumed by check_dsl_entries.py.
 allowed_l4_target_prefixes:
@@ -58,9 +50,6 @@ allowed_l4_target_prefixes:
 # Future Expansion (not active in v1):
 #   state_specifier: Zod-schema-based mock data-model formulation skill
 #     (frontend equivalent of /aibdd-form-entity-spec)
-#   persistence_handler.coverage_gate: enable Zod-schema-required-field coverage gate
-#     (mirrors web-service NOT-NULL column coverage)
-#
 # Activated in v1 (was previously deferred):
 #   operation_contract_specifier: now /aibdd-form-api-spec — plan authors api.yml
 #     from frontend reasoning. Consumer-mode usage (importing upstream backend's

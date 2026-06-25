@@ -33,3 +33,12 @@ DB_NAME: ${KICKOFF_TLB_ID}
 DB_USER: postgres
 DB_PASSWORD: postgres
 DB_PORT: '5432'
+
+# -----------------------------------------------------------------------------
+# 8. INSTALL_SPECTRUM — 是否安裝 aibdd-spectrum（specformula）測試框架。
+# 由 kickoff Q6（install_spectrum）回答決定：true → auto-starter 在 pom.xml 加入
+# specformula 依賴（specformula-cucumber / specformula-testcontainer / specformula-dsl，
+# 版本 0.0.5、test scope，從 Maven Central 取得）與 specformula-dsl preprocess plugin
+# （.dsl.feature → .isa.feature）。false → 保持乾淨 pom。僅 java_e2e 生效。
+# -----------------------------------------------------------------------------
+INSTALL_SPECTRUM: ${KICKOFF_INSTALL_SPECTRUM}

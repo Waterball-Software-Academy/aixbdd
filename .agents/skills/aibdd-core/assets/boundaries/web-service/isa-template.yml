@@ -1,0 +1,109 @@
+# =============================================================================
+# isa-template.yml — web-service(後端 server）isa 種子模版
+# =============================================================================
+# kickoff 會把本檔整份讀出、materialize 成專案的 specs/isa.yml。
+#
+# isa = 整個專案最小單位 Step Definition（與測試程式碼綁定）。
+#   · 內建 instruction_type（非 custom）：裝了框架由框架實作，沒裝則用 handler 實作。
+#   · custom isa：一律由 handler 實作（執行端自寫 Cucumber step def 對上同一句）。
+# 內建 format 一律 regex 具名捕獲 (?P<x>...)（如 (?P<entity>/(?P<summary>/(?P<status_code>），
+# 不可用 {name} 佔位。
+# =============================================================================
+
+config:
+  api:
+    resource_path: specs/api
+    project_path: src/test/resources/specs/api
+  data:
+    permission: isolated
+    reuse: false
+    source:
+      - name: primary
+        resource_path: specs/data/primary
+        project_path: src/test/resources/specs/data/primary
+        db_type: postgresql
+
+instructions:
+
+  # ── time control（設定模擬時間）──────────────────────────────────────────
+  - name: Time control
+    format: ^現在時間為 "(?P<time>[^"]+)"$
+    instruction_type: time_control
+
+  # ── entity setup（持久化狀態準備；entity 走 capture、欄位走 DataTable/JSON）──
+  - name: Data preparation
+    format: ^準備一個(?P<entity>[一-鿿a-zA-Z0-9_]+), with table:$
+    instruction_type: entity_setup
+    data_format: data_table
+  - name: Data preparation (JSON)
+    format: ^準備一個(?P<entity>[一-鿿a-zA-Z0-9_]+), with JSON:$
+    instruction_type: entity_setup
+    data_format: json
+
+  # ── API call（操作呼叫；summary 靠 config.api 的 OpenAPI 動態對應 operation）──
+  - name: API call
+    format: ^\((?:No Actor|UID="(?P<userId>\$[<>\w.]+)")\) (?P<summary>.+?), call table:$
+    instruction_type: api_call
+    data_format: data_table
+  - name: API call (JSON)
+    format: ^\((?:No Actor|UID="(?P<userId>\$[<>\w.]+)")\) (?P<summary>.+?), call JSON:$
+    instruction_type: api_call
+    data_format: json
+
+  # ── response validate（一條收成功/失敗/狀態碼，靠 status_code capture 區分）──
+  - name: Response validation
+    format: ^(?P<summary>.+?)\((?P<status_code>\d{3})\)回應,?\s*with table:$
+    instruction_type: response_validate
+    data_format: data_table
+  - name: Response validation (JSON)
+    format: ^(?P<summary>.+?)\((?P<status_code>\d{3})\)回應為,?\s*with JSON:$
+    instruction_type: response_validate
+    data_format: json
+
+  # ── entity validate（單實體狀態驗證）─────────────────────────────────────
+  - name: Entity validation
+    format: ^應該存在一個(?P<entity>[一-鿿a-zA-Z0-9_]+), with table:$
+    instruction_type: entity_validate
+    data_format: data_table
+
+  # ── entity non-existence（不存在驗證；框架給 negative 一個獨立型別）────────
+  - name: Entity non-existence validation
+    format: ^應該不存在一個(?P<entity>[一-鿿a-zA-Z0-9_]+), with table:$
+    instruction_type: entity_non_existence_validate
+    data_format: data_table
+
+  # ── custom 模版（複製下面整段、改名與契約即可新增一個 custom 指令）──────────
+  # custom isa 一律由 handler 實作；執行端須自寫 Cucumber step def 對上同一句
+  # （參照 benchmark stepdefs/CustomSteps.java）。
+  # schema：3 必填（instruction_type: custom / handler / format）＋ 契約欄位：
+  #   export_vars              輸出契約：執行後導出哪些 $var（type + nullable）
+  #   datatable_parameters     輸入契約：DataTable 欄位 schema（type + required + enums + target）
+  #   allow_dynamic_parameters true 時接受任意 DataTable header
+  #
+  # - name: <custom 指令名，如 paymentGateway.external-stub>
+  #   format: '外部資源 "{資源名}" 回應 "{結果}", with table:'
+  #   description: "詳細描述測試意圖"
+  #   instruction_type: custom
+  #   data_format: data_table
+  #   allow_dynamic_parameters: false
+  #   handler: <handler 名，如 external-stub>
+  #   target_part_path: code:src/stubs/<stub>.py#<Class>.<method>
+  #   export_vars:                       # 輸出契約（對應 dsl 的 >alias.id 捕獲）
+  #     "{{資源名}}.stubId":             # key 用 format 捕獲名插值（須與 format 的 {資源名} 一致）
+  #       type: String
+  #       description: "建立的 stub 識別碼"
+  #       nullable: false
+  #   param_bindings:
+  #     結果: { target: 'stub_payload:body' }
+  #   datatable_parameters:              # 輸入契約
+  #     status:
+  #       type: String
+  #       required: true
+  #       description: "回應狀態"
+  #       enums: ["success", "failure", "timeout"]
+  #       target: 'stub_payload:status'
+  #     latencyMs:
+  #       type: Number
+  #       required: false
+  #       description: "模擬延遲（毫秒）"
+  #       target: 'stub_payload:latencyMs'

@@ -83,7 +83,7 @@ Boundary profile 宣告之 `operation_contract_specifier.skill` 是寫入 `${CON
 
 4. 載入 boundary profile 與 package 範疇
 
-   4.1 PARSE `${BOUNDARY_YML}` 之 `type` 欄位為 `$boundary_type`（不存在則 STOP 並報錯），自該 boundary profile 取出 `operation_contract_specifier.{skill,format}` 作為 `$SPECIFIER`，其產出目錄對齊 `${CONTRACTS_DIR}`。
+   4.1 參考 `aibdd-core::references/ssot/boundary-profile-resolution.md` 解析 `$BOUNDARY_PROFILE`，自其取出 `operation_contract_specifier.{skill,format}` 作為 `$SPECIFIER`，其產出目錄對齊 `${CONTRACTS_DIR}`。
 
    4.2 READ `${PLAN_REPORTS_DIR}/function-packaging.md` 取各 function package 的 flagged-reason（`added`／`related`）與 rationale 作為 `$PLAN_SCOPE`，作為待讀 feature truth 的範疇。
 

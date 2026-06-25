@@ -95,16 +95,14 @@ BOUNDARY_MAP_FILE: ${SPECS_ROOT_DIR}/boundary-map.yml
 
 # TRUTH_BOUNDARY_ROOT — boundary-level 規格真相 root，= specs root（值為目錄路徑）
 TRUTH_BOUNDARY_ROOT: ${SPECS_ROOT_DIR}
-# TRUTH_BOUNDARY_SHARED_DIR — boundary 共用詞彙目錄（值為目錄路徑）
-TRUTH_BOUNDARY_SHARED_DIR: ${TRUTH_BOUNDARY_ROOT}/shared
 # TRUTH_BOUNDARY_PACKAGES_DIR — 功能模組規格包 root（值為目錄路徑）
 TRUTH_BOUNDARY_PACKAGES_DIR: ${TRUTH_BOUNDARY_ROOT}/packages
 # CONTRACTS_DIR — operation contract 真相目錄，boundary-level（值為目錄路徑）
 CONTRACTS_DIR: ${TRUTH_BOUNDARY_ROOT}/contracts
 # DATA_DIR — state 真相目錄，boundary-level（值為目錄路徑）
 DATA_DIR: ${TRUTH_BOUNDARY_ROOT}/data
-# BOUNDARY_SHARED_DSL — boundary 共用 step／handler 詞彙檔（值為檔案路徑）
-BOUNDARY_SHARED_DSL: ${TRUTH_BOUNDARY_SHARED_DIR}/dsl.yml
+# BOUNDARY_ISA — 共用 instructions 定義（specs/isa.yml；值為檔案路徑）
+BOUNDARY_ISA: ${TRUTH_BOUNDARY_ROOT}/isa.yml
 # TEST_STRATEGY_FILE — boundary 測試分層與覆蓋策略（值為檔案路徑）
 TEST_STRATEGY_FILE: ${TRUTH_BOUNDARY_ROOT}/test-strategy.yml
 

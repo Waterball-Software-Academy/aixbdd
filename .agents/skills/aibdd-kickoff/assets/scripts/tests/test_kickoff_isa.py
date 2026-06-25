@@ -1,4 +1,4 @@
-"""Regression tests for kickoff shared DSL seed."""
+"""Regression tests for kickoff isa seed."""
 
 from __future__ import annotations
 
@@ -11,14 +11,12 @@ from pathlib import Path
 
 SCRIPT_PATH = Path(__file__).resolve().parents[1] / "kickoff_layout.py"
 
-STACK_ENTRY_MARKERS = {
-    "python_e2e": "shared.operation-response-success-and-failure.operation-success",
-    "java_e2e": "shared.operation-response-success-and-failure.operation-success",
-    "nextjs_playwright": "shared.route-given.on-page",
-}
+# Backend stacks both map to the web-service boundary preset (isa-template.yml).
+# nextjs_playwright -> web-frontend has no isa template yet (out of scope).
+SUPPORTED_STACKS = ("python_e2e", "java_e2e")
 
 
-class KickoffSharedDslTest(unittest.TestCase):
+class KickoffIsaTest(unittest.TestCase):
     def _run_layout(self, stack: str, project_root: Path) -> dict:
         decisions = {
             "project_root": str(project_root),
@@ -36,18 +34,19 @@ class KickoffSharedDslTest(unittest.TestCase):
         self.assertEqual(proc.returncode, 0, proc.stderr)
         return json.loads(proc.stdout)
 
-    def test_each_supported_stack_seeds_shared_dsl(self) -> None:
-        for stack, entry_marker in STACK_ENTRY_MARKERS.items():
+    def test_each_supported_stack_seeds_isa(self) -> None:
+        for stack in SUPPORTED_STACKS:
             with self.subTest(stack=stack):
                 with tempfile.TemporaryDirectory() as tmp:
                     root = Path(tmp)
                     result = self._run_layout(stack, root)
                     self.assertTrue(result["ok"])
-                    shared_dsl = Path(result["shared_dsl_path"])
-                    self.assertTrue(shared_dsl.is_file())
-                    content = shared_dsl.read_text()
-                    self.assertIn("dsl_steps:", content)
-                    self.assertIn(entry_marker, content)
+                    isa = Path(result["isa_path"])
+                    self.assertTrue(isa.is_file())
+                    self.assertEqual(isa.name, "isa.yml")
+                    content = isa.read_text()
+                    self.assertIn("instructions:", content)
+                    self.assertIn("instruction_type: api_call", content)
 
 
 if __name__ == "__main__":

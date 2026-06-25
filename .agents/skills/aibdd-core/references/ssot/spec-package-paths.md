@@ -15,11 +15,8 @@ specs/
 ├── boundary-map.yml              # 跨 boundary / sub-boundary 對照
 ├── test-strategy.yml             # boundary 測試分層與覆蓋策略
 ├── contracts/                    # operation contract truth（boundary-level）
-│   └── *.dsl.yml                 # operation part 對應的 handler DSL 語料
 ├── data/                         # state truth（boundary-level）
-│   └── *.dsl.yml                 # state part 對應的 handler DSL 語料
-├── shared/
-│   └── dsl.yml                   # boundary 共用 step / handler 詞彙
+├── isa.yml                      # 共用 instructions 定義
 ├── packages/
 │   └── NN-<functional-module>/   # 單一功能模組的 accepted behavior 規格包
 │       ├── features/             # SBE `.feature` 規格
