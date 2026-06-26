@@ -1,28 +1,43 @@
 # =============================================================================
-# dsl.yml 空範例（SpecFormula DSL 框架標準）
+# dsl.yml 空範例（SpecFormula DSL 框架標準；schema 對齊 specformula-java）
 # =============================================================================
-# 複製 dsl_steps 下的區塊，逐條填。每條上方以註解標狀態 `# [kw]`，
-# 經 refine 確認定義完成後改標 `# [kw] [done]`。欄位 schema：
-#   name      : 唯一標籤
-#   format    : 業務句；{name} 佔位（推薦）或 ^...$ regex（進階匹配逃生口）
-#   params    : 預設值 { key: 值 } 或 DataTable 欄位清單 [ a, b ]；可省略
-#   isa_steps : 有序 ISA 指令；instruction 須對上 isa.yml 的某 instruction format
-#               table 語法：
-#                 {{name}}        內插 format 捕獲值 / params
-#                 >{{alias}}.id   把回應欄位存進 context 別名（搭配 '<field'）
-#                 ${{alias}}.id   引用先前存的別名
-#                 &gt(0) 等        matcher
+# 頂層 key：dsl_steps（DslSpec）。每條 dsl_step（DslDefinition）展開成一或多個 isa step（DslSubStep）。
+# refine 確認某條定義完成後，在該條 name 上方加一行註解 `# done`（未完成則無此標記）。
+#
+# DslDefinition（一條 dsl_step）：
+#   name      ：唯一標籤（同掃描範圍不可重複）
+#   format    ：業務句比對式。{name} 單花括號佔位（ADR-0033，引號感知擷取），自動以 ^…$ 錨定；
+#               需要進階匹配可改寫完整 ^…$ regex。
+#   params    ：參數宣告＋預設（可省略）。兩種寫法：
+#                 [a, b]              → a、b 皆「必填」（無預設；須由 format 擷取或 PM DataTable/JSON 帶入）
+#                 { k: 預設, k2: }    → k 有預設值、k2（null）為必填；預設值可用 {{capture}} 內插 format 擷取值
+#   isa_steps ：有序 ISA step 清單；每條 instruction 須對上 isa.yml 某 instruction 的 format
+#
+# DslSubStep（一條 isa_step）：
+#   instruction：對上 isa.yml 的指令句（展開後即一行 .isa.feature）
+#   table      ：map<欄位, 值>；instruction 的 data_format 為 data_table / json 時用
+#                （json 由框架依 isa.yml 自動輸出 JSON DocString）
+#   text       ：字串；instruction 的 data_format 為 text 時用，輸出 """ DocString。與 table 二擇一。
+#
+# table / text 內的符號（展開時處理；ISA 符號原樣留進 .isa.feature）：
+#   {{name}}                     內插 format 擷取值 / params
+#   '>{{alias}}.id': '<field'    從回應捕獲存別名（VAR）
+#   ${{alias}}.id                引用別名；&gt(0) 等 CAS；@time(...) 等 TIME
 # =============================================================================
 
 dsl_steps:
 
-  # [kw]
   - name: <唯一標籤>
     format: '"{<參數>}" <業務句>'
-    params: {}                              # 或 { <key>: <預設值> } / [ <DataTable欄位>, ... ]
+    params: {}                              # 或 [ <必填參數>, … ] / { <key>: <預設>, <key2>: }
     isa_steps:
+      # (a) DataTable / JSON 型：用 table
       - instruction: '<對上 isa.yml 的指令句>'
         table: {}
-          # '<欄位>': '{{<參數>}}'           # 內插
-          # '>{{<別名>}}.id': '<<回應欄位>'   # 存別名
-          # '<欄位>': '${{<別名>}}.id'        # 引用別名
+          # '<欄位>': '{{<參數>}}'              # 內插
+          # '>{{<別名>}}.id': '<<回應欄位>'      # 存別名（VAR 捕獲）
+          # '<欄位>': '${{<別名>}}.id'           # 引用別名
+      # (b) text 型（instruction 的 data_format 為 text）：用 text，與 table 二擇一
+      # - instruction: '<text 型指令句>'
+      #   text: |
+      #     <多行 DocString，可含 {{<參數>}}>

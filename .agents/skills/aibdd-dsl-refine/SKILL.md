@@ -24,34 +24,36 @@ metadata:
 
 1. 依序不漏步：自底下列 SOP 逐一執行；每做一步，在訊息中明示該步編號。
 
-2. 限縮延長推理：僅當 sub-SOP 當步明文標示須 `THINK / REASONING` 時，才拉長內省與推演；否則以最直接可做之 `READ`／`PARSE`／`DERIVE`／`WRITE`／`UPDATE`／工具呼叫達成該步，省略與該步授權範圍無關的冗長鋪墊，以降低往返等待時間。
+2. 限縮延長推理：僅當當步明文標示須 `THINK / REASONING` 時，才拉長內省與推演；否則以最直接可做之 `READ`／`PARSE`／`DERIVE`／`WRITE`／`UPDATE`／工具呼叫達成該步，省略冗長鋪墊。
 
 ## PRINCIPLE: 長流程待辦（兩層）
 
-長流程會跨多輪對話；在 conversation compact（對話摘要壓縮）之後，執行者仍要靠同一套待辦還原：目前卡在哪個 phase，該 phase 內細項又到哪一格。底下為兩層約定：外層只列 phase，進入該 phase 再把該 sub-SOP 第一層編號步驟拆成子項。尚未開始的 phase 不必預先展開成檔案級細項，以免待辦與實際 `SOP.md` 脫節。
-
-- 必須工具化：Tier 0／Tier 1 對應的勾選項，要以執行環境提供的任務／待辦建立與更新能力實體化（例如 `TODOCREATE`、`TASKCREATE` 等 tool；或宿主 IDE／Agent 內與之等效的待辦 API），在跑 sub-SOP 當下就建好清單並隨步驟推進更新狀態。禁止只靠聊天裡口頭列點、不經工具建立的「心裡待辦」——壓縮後無法還原，也無法核對漏步。
-- Tier 0（phase）：對應本檔 `# SOP` 最外層每一項；每一項對應一個 sub-SOP 目錄（例：`01-<slug>/`）。這一層的勾選語意是「該 phase 的細項已全部展開且依 `SOP.md` 跑完」。
-- Tier 1（phase 內細項）：僅在目前執行中的 phase 建立；對應該 phase `SOP.md` 裡第一層編號步驟拆解出的動作（`READ`／`WRITE`／`DERIVE` 等）。編號建議：`(phase序)`、`(phase序-子序)`（例：`1`、`1-1`），跨輪可對照；進入該 phase 時以 `TODOCREATE`／`TASKCREATE`（或等效）補齊子項。
+長流程會跨多輪對話；在 conversation compact 之後，執行者仍要靠同一套待辦還原進度。外層只列 phase（本檔 `# SOP` 每一步），進入 LOOP 後每個 example 再把 sub-SOP 步驟拆成子項。必須以執行環境的待辦工具（`TODOCREATE`／`TASKCREATE` 或等效）實體化，禁止只靠聊天口頭列點。
 
 ## PRINCIPLE: 提問／澄清只委派 clarify-loop
 
-- 凡須向使用者提問或做結構化澄清（選 FP／feature、測試意圖或資料流不明、型別歸屬或欄位角色難判、是否變更／重構 `.feature`、example 確認等），本 SOP 一律以**一個 `DELEGATE /clarify-loop`** 批次提問，由其決定提問工具與白話文轉譯。
-- 凡屬 step 7 的「逐 example」提問，一律以 `assets/example-question.template.md` 組裝 payload，**Context 區必帶該 example 的完整 GWT 全文**，讓使用者在完整脈絡下回答。
+- 凡須向使用者提問或做結構化澄清，本 SOP 一律以**一個 `DELEGATE /clarify-loop`** 批次提問，由其決定提問工具與白話文轉譯。
+- 各提問點用對應模版組裝 payload：選 FP → `assets/fp-question.template.md`；選 features → `assets/features-question.template.md`；example 變更 → `01-refine-example/assets/change-question.template.md`；逐 dsl_step 的 ISA 確認 → `01-refine-example/assets/isa-question.template.md`。
+- **rich 內容（完整 Example、ISA 展開、DataTable）先 EMIT 到對話**（markdown 正常渲染表格與 code block），讓使用者在完整脈絡下檢視；clarify-loop 的 `context`/`question` 保持**精簡單句**並引用上方預覽。**切勿把展開／表格塞進 clarify-loop 的 question 欄位**（會被攤平成一坨、無法閱讀）。
 - 【嚴禁】在 SOP 內 inline 逐題提問、自行 classify／branch 使用者回覆，或在聊天中自組問句代替 clarify-loop。
 
 ## PRINCIPLE: feature 非 SSOT，先驗 step 再推 isa
 
-- `.feature`（SBE 產出）為**待驗證候選、非 SSOT**。每個未定義 step 先驗測試意圖與合理性（見 `rules/dsl-step-reasoning.md`），確認正確才推 isa_step。
+- `.feature`（SBE 產出）為**待驗證候選、非 SSOT**。每個未定義 step 先驗測試意圖與合理性（見 `01-refine-example/rules/dsl-step-reasoning.md`），確認正確才推 isa_step。
 - 【嚴禁】在不正確的 step 上推理 isa_step；合理性未過即先經 `/clarify-loop`（帶完整 Example）確認後變更 `.feature`，再續。
+
+## PRINCIPLE: worklist 只由腳本產出
+
+- 完成度暫存 `DSL_REFINE_PLAN.yml`（專案根）一律由 `scripts/cli/build_worklist.py` 產出／刷新，**AI 不得手動修改**；查看＝READ，刷新＝重跑腳本。
+- 持久真相是 dsl.yml 的 `# done` 標記；worklist 為衍生 session 暫存，啟動即刪除重建。詳見 `rules/refine-worklist-query.md`。
 
 # SOP
 
-請執行到哪讀到哪，千萬不要提早閱讀後續文件，這會讓用戶起始體驗到的延遲度很久，SOP 寫啥就做啥，沒叫你 [THINK/REASONING] 就絕對不准啟用 EXTENDED THINKING。
+請執行到哪讀到哪，千萬不要提早閱讀後續文件，SOP 寫啥就做啥，沒叫你 [THINK/REASONING] 就絕對不准啟用 EXTENDED THINKING。
 
-0. SEARCH `**/arguments.yml`（在 `CWD` 下）做 parameters binding，供後續所有 phase 使用；此檔一定存在，如不存在請直接停止執行，向使用者回報：「我在 `${CWD}` 底下找不到 `**/arguments.yml`，你是否已經執行過 /aibdd-kickoff 了？」
+0. SEARCH `**/arguments.yml`（在 `CWD` 下）做 parameters binding；此檔一定存在，如不存在停止並回報：「我在 `${CWD}` 底下找不到 `**/arguments.yml`，你是否已經執行過 /aibdd-kickoff 了？」
 
-1. RESOLVE arguments——將本 SOP 引用的 `${VAR}`（僅本 skill 用到者）透過 sibling resolver 綁定，並把 resolver stdout（每行一筆 `KEY=value`）原樣 EMIT 給用戶。Resolver 非 0 退出時，停止本 SOP 並把 stderr 透傳給用戶。`${CWD}` 為 shell working directory，不入 manifest。
+1. RESOLVE arguments——將下列 `${VAR}` 透過 sibling resolver 綁定，stdout 原樣 EMIT；非 0 退出則 STOP 並透傳 stderr。
 
    ```bash
    python3 .claude/skills/aibdd-core/scripts/cli/resolve_args.py <<'EOF'
@@ -64,48 +66,37 @@ metadata:
    EOF
    ```
 
-2. ASSERT arguments 必備鍵齊全——對 `${AIBDD_ARGUMENTS_PATH}` 逐項檢查下列鍵存在：`TRUTH_BOUNDARY_ROOT`、`TRUTH_BOUNDARY_PACKAGES_DIR`、`BOUNDARY_ISA`、`CONTRACTS_DIR`、`DATA_DIR`。任一缺鍵 → 列出缺鍵，提示使用者回 `/aibdd-kickoff` 補綁後再執行，STOP。本步禁止順手補建 arguments.yml 任何欄位。
+2. ASSERT arguments 必備鍵齊全——對 `${AIBDD_ARGUMENTS_PATH}` 檢查：`TRUTH_BOUNDARY_ROOT`、`TRUTH_BOUNDARY_PACKAGES_DIR`、`BOUNDARY_ISA`、`CONTRACTS_DIR`、`DATA_DIR`。缺鍵 → 列出、提示 `/aibdd-kickoff`、STOP。本步禁止順手補建 arguments.yml。
 
-3. ASSERT 上游真相已就緒（READ-ONLY，皆為唯讀輸入，本步不得建立或改寫任何檔）——任一條件失敗即列出缺項、STOP，並提示對應上游 skill：
-   - `${BOUNDARY_ISA}` 存在（kickoff isa 種子）；缺 → 提示 `/aibdd-kickoff`。
-   - `${TRUTH_BOUNDARY_PACKAGES_DIR}/*/features/*.feature` 至少一份且已列 atomic rules；缺 → 提示 `/aibdd-flows-specify`、`/aibdd-rules-specify`。
-   - **api-plan 已完成**：`${CONTRACTS_DIR}` 下有實際 operation contract 檔（排除 `.gitkeep`）；缺 → 提示先執行 `/aibdd-api-plan`。
-   - **data-plan 已完成**：`${DATA_DIR}` 下有 schema（DDL `.sql` 或 `.dbml`）與 `entity_to_table_mapping.yml`；缺 → 提示先執行 `/aibdd-data-plan`。
+3. ASSERT 上游真相已就緒（READ-ONLY；任一失敗即列缺項、STOP、提示對應 skill）：
+   - `${BOUNDARY_ISA}` 存在（kickoff isa 種子）；缺 → `/aibdd-kickoff`。
+   - `${TRUTH_BOUNDARY_PACKAGES_DIR}/*/features/*.feature` 至少一份且已列 atomic rules；缺 → `/aibdd-flows-specify`、`/aibdd-rules-specify`。
+   - **api-plan 已完成**：`${CONTRACTS_DIR}` 下有實際 operation contract 檔（排除 `.gitkeep`）；缺 → `/aibdd-api-plan`。
+   - **data-plan 已完成**：`${DATA_DIR}` 下有 schema（DDL `.sql`／`.dbml`）與 `entity_to_table_mapping.yml`；缺 → `/aibdd-data-plan`。
 
-4. SELECT FP ＋ feature files（互動；使用者未指定前不得自選或開始分析）
-   4.1 SEARCH `${TRUTH_BOUNDARY_PACKAGES_DIR}/*/` 列出 function package（FP）候選（`NN-slug`），DELEGATE `/clarify-loop` 讓使用者選一個 FP（候選僅一個或為空也要問，不得自選）。BIND `$FP_SLUG`，DERIVE FP-scoped 路徑：`$FP_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}/$FP_SLUG`、`$FP_FEATURES=$FP_DIR/features`。
-   4.2 SEARCH `$FP_FEATURES/*.feature` 列出 feature 候選，DELEGATE `/clarify-loop` 讓使用者選本輪要處理的 feature（可全選）。BIND `$TARGET_FEATURES[]`；空集合 → STOP。
+4. LOAD 參照真相（一次性，READ-ONLY；供整個 LOOP 共用，不在 loop 內逐 example 重讀）：
+   - isa instruction 目錄：READ `${BOUNDARY_ISA}` 與 `${TRUTH_BOUNDARY_PACKAGES_DIR}/*/*.isa.yml`（每條 name／format／instruction_type／data_format／custom 契約）。
+   - operation contracts：READ `${CONTRACTS_DIR}/**`（summary／path／query／header／required）。
+   - data schema：READ `${DATA_DIR}/**`（DDL／`.dbml` 與 `entity_to_table_mapping.yml`；表／欄位／NOT NULL／PK）。
+   - 本步只 READ。
 
-5. ENSURE 每個 `$TARGET_FEATURES` 的 `{feature}.dsl.yml` 就緒
-   - 對每個 feature，ASSERT `$FP_FEATURES/{feature}.dsl.yml` 是否存在；不存在 → 以本 skill asset `assets/dsl.template.yml` 為模版 CREATE 一份（保留 schema 註解；`dsl_steps` 下的示例佔位待 step 7 填入實際 dsl_step 時取代）。
-   - dsl_step 一律 per-feature（不跨 FP／feature 共用），故本 skill 不建立 package 層共用 dsl.yml。
-   - 本步只允許以模版 CREATE 上述 `{feature}.dsl.yml`，不得填任何實際 dsl_step 內容。
+5. BUILD worklist——RUN 下列腳本掃出「含未完成定義 dsl step」的 FP/feature/example，產出 `DSL_REFINE_PLAN.yml`（專案根；先刪舊檔再產，read-only 對 specs）。語意見 `rules/refine-worklist-query.md`。
 
-6. LOAD 參照真相（一次性，READ-ONLY；供 step 7 整個 loop 共用，不在 loop 內逐 example 重讀）
-   - isa instruction 目錄：READ `${BOUNDARY_ISA}` 與 `$FP_DIR/*.isa.yml`，彙整可用 instruction（name／format／instruction_type／data_format／custom 契約）。這是 step 7 每條 isa_step 的 instruction 唯一可對上的真相。
-   - operation contracts：READ `${CONTRACTS_DIR}/**`（operation summary／path／query／header／required 欄位），供判斷 api_call 的 operation 對應與必填欄位。
-   - data schema：READ `${DATA_DIR}/**`（DDL `.sql`／`.dbml` 與 `entity_to_table_mapping.yml`），供判斷 entity 三型的表／欄位、NOT NULL 與 PK。
-   - 本步只 READ，不寫任何檔。
+   ```bash
+   python3 .claude/skills/aibdd-dsl-refine/scripts/cli/build_worklist.py --packages-dir ${TRUTH_BOUNDARY_PACKAGES_DIR} --out DSL_REFINE_PLAN.yml
+   ```
 
-7. LOOP 逐個分析 Example——**每次只處理一個 example，快速產出它的 dsl_step 定義後即停下與使用者互動，經回應才取下一個。**
+   產出為空（全部完成）→ STOP 並回報完成；腳本回報找不到 package → STOP 並提示先完成 `/aibdd-flows-specify`。
 
-   **【強制：小步快出＋逐例互動】** 一輪只取「單一個」example：聚焦快速跑 7.1→7.4 產出它的 dsl_step，接著 7.5 必停下互動。【嚴禁】一個回合內連做多個 example、預讀或推理後續 example、或一次把多個 example／整份 isa.yml／dsl.yml 大量寫滿。產出要快、呈現要精簡，[THINK] 與上下文牢牢限縮在當前這一個 example。
+6. SELECT FP（單選；使用者未指定前不得自選或開始分析）——READ `DSL_REFINE_PLAN.yml` 的 `fps[]`，以 `assets/fp-question.template.md` 組裝、DELEGATE `/clarify-loop` 讓使用者選一個 FP。BIND `$FP_SLUG`、`$FP_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}/$FP_SLUG`、`$FP_FEATURES=$FP_DIR/features`、`$FP_PACKAGE_DSL=$FP_DIR/dsl.yml`。
 
-   7.1 ASSERT 跳過——該 example 的每個業務 Step 若在對應 dsl.yml 都已有 dsl_step 且狀態註解為 `[done]` → 跳過，不重做。
-   7.2 THINK＋驗證 step——[THINK] 依 `rules/dsl-step-reasoning.md`、對照 step 6 已載入的真相，**聚焦且快速**地對該 example 的每個未定義 step：先讀測試意圖（驗什麼／資料流／預期與 negative），再判合理性（自足、與 `Rule:` 一致、單一意圖、斷言有意義、資料流可接、可對應 isa）。只看這一個 example，不預讀後續。
-       - 合理性未過 → 該 step 需變更：以 `assets/example-question.template.md`（情境 A）帶完整 Example，DELEGATE `/clarify-loop` 取得同意後才改 `.feature`（依 `rules/feature-restructure.md`）。
-       - 【閘門】step 全部合理（或變更後已正確）才進 7.3；**絕不在不正確的 step 上推 isa**。
-   7.3 DERIVE＋CREATE dsl_step——（7.2 閘門已過、step 確認正確後）對該 example 每個尚未 `[done]` 的業務 Step，快速定義：
-       - 尚無對應 dsl_step → 在該 `{feature}.dsl.yml` 新建一條（format 對得上該句，`{name}` 佔位）；dsl_step 一律 per-feature，不跨 FP／feature 共用；
-       - 依 `rules/builtin-instruction-decision-tree.md` 選內建型別（一句可展開多條有序 isa_step）；
-       - 依 `rules/symbol-system-usage.md` 決定每個 table 欄位的符號，NOT NULL 但與情境無關的欄位填預設值（集中放 `params`）；
-       - 每條 isa_step 的 instruction 必須對上 step 6 已載入的 instruction 目錄某條 format；對不上且屬內建範圍外 → 依 `rules/custom-isa-placement.md` 在 FP 層 isa.yml 宣告契約（只寫契約，Step Definition 實作留 RED）；
-       - 步驟結構不利對應 isa（如一個 api_call 被拆成兩句）→ 依 `rules/feature-restructure.md` 經 `/clarify-loop` 同意後重構 `.feature`，再依新句建立 dsl_step。
-       WRITE 進該 dsl_step 的 `isa_steps`（狀態註解先維持 `# [kw]`、尚未標 done）。
-   7.4 DERIVE 抽變數（format 參數化）——判斷本輪 dsl_step 業務句中、會在「同 feature 其他 example」變動的字面值（人名、數字、日期等），抽成 format 變數 `{Name}`（搭配 isa_steps 的 `{{Name}}` 內插或 `params` 預設），使同 feature 後續 example 能重用同一條 dsl_step；列舉型固定描述維持字面、不抽。**抽變數與重用僅限該 feature 內，不跨 FP 及 feature**。
-   7.5 STOP ＋ 互動——以 `assets/example-question.template.md`（情境 B）組裝：Context 帶完整 Example，附剛寫入的 dsl_step **精簡片段（不渲染整段 .isa.feature、不貼大量內容）**，DELEGATE `/clarify-loop` 收「確認／調整／下一個」。**STOP：未得到使用者回應前，絕不進入下一個 example。** 確認 → 把該 dsl_step 狀態註解改標 `# [kw] [done]`，取下一個 example；調整 → 回 7.3 修訂後重 7.5。
+7. SELECT Features（多選）——READ worklist 選定 FP 的 `features[]`，以 `assets/features-question.template.md` 組裝、DELEGATE `/clarify-loop` 讓使用者複選。BIND `$TARGET_FEATURES[]`；空集合 → STOP。
 
-   貫穿 step 7 的規則 [DISCUSS]——卡住即委派澄清：7.2 的意圖／合理性／資料流、7.3 的型別歸屬（內建哪型／是否 custom）或欄位角色（斷言重點 vs NOT NULL 陪襯），一旦無法有把握判定（資訊不足、規格含糊、兩解皆通），停止臆測，以 `assets/example-question.template.md`（情境 C，仍帶完整 Example）DELEGATE `/clarify-loop` 澄清，取得答覆再續，不得帶猜測就寫入 dsl_step。
+8. ENSURE `{feature}.dsl.yml` 就緒——對每個 `$TARGET_FEATURES`，`$FP_FEATURES/{feature}.dsl.yml` 不存在 → 以 `assets/dsl.template.yml` 為模版 CREATE 空骨架。（跨 feature 共用的 `$FP_PACKAGE_DSL` 待 sub-SOP 重構步按需才建。）本步只 CREATE 空骨架，不填內容。
 
-   本 step 允許寫入：`{feature}.dsl.yml` 的 dsl_step 與狀態註解、FP 層 isa.yml 的 custom 契約、以及經 `/clarify-loop` 同意後重構的 `.feature`（僅步驟結構、不改驗收意圖）。【嚴禁】未經 `/clarify-loop` 同意逕改 `.feature`；【嚴禁】改 spec／contracts／data／既有 isa 內建定義；【嚴禁】在 custom 寫 Step Definition 實作。 
-    
+9. LOOP examples——對 worklist 中「屬 `$TARGET_FEATURES`、`status: pending`」的每個 example，逐一 EXECUTE the sub-sop：
+
+   `01-refine-example/SOP.md`（輸入：該 example 的 feature 路徑 `${FEATURE}`、example 標題、worklist 列的未完成 step）
+
+   每個 example 的 sub-SOP 返回後，**重跑 step 5 的 `build_worklist.py` 刷新 worklist**（反映剛標的 `# done`），再取下一個 `pending` example；直到 `$TARGET_FEATURES` 內無 `pending`。
+   **【強制：逐 example 互動】** 嚴禁一個回合內連做多個 example；sub-SOP 內的逐 dsl_step 確認沒過前，不得跳下一個。
