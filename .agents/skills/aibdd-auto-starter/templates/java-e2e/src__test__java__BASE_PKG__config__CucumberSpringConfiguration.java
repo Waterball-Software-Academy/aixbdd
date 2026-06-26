@@ -6,7 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 
 @CucumberContextConfiguration
-@SpringBootTest
+@SpringBootTest${SPECFORMULA_SPRINGBOOTTEST_PROPS}
 @AutoConfigureMockMvc
 @Import(TestcontainersConfiguration.class)
 public class CucumberSpringConfiguration {
