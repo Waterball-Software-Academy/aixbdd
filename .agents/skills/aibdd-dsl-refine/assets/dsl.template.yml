@@ -41,3 +41,17 @@ dsl_steps:
       # - instruction: '<text 型指令句>'
       #   text: |
       #     <多行 DocString，可含 {{<參數>}}>
+
+  # ---------------------------------------------------------------------------
+  # custom data_table 範例：指令在 isa.yml 宣告 datatable_parameters 時，dsl_step 必須
+  # 把欄位 schema 鏡射為 params ＋ isa_steps[].table，否則展開後 DataTable 為空。
+  # （required 欄位進 params 清單；情境無關預設改用 { k: 預設 }）
+  # ---------------------------------------------------------------------------
+  # - name: <唯一標籤>
+  #   format: '<對上 data_table custom 的業務句>'
+  #   params: [ <欄位1>, <欄位2>, … ]            # ＝ isa.yml 的 datatable_parameters keys
+  #   isa_steps:
+  #     - instruction: '<對上 isa.yml 的 data_table 指令句>'
+  #       table:
+  #         <欄位1>: '{{<欄位1>}}'
+  #         <欄位2>: '{{<欄位2>}}'

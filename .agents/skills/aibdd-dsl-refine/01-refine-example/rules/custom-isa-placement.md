@@ -40,6 +40,54 @@ Cucumber Step Definition（Java 實作）由 **RED 階段**完成，本階段不
 
 契約怎麼填，由 step 3-2 推出的測試意圖與資料流決定：此 custom 該輸出什麼 `$var`（供後續 dsl_step 引用）、吃哪些 DataTable 欄位。
 
+## 引用 custom 時：把 datatable_parameters 鏡射回 dsl_step
+
+某條 isa_step 對上的指令（custom 或內建）若 `data_format: data_table` 且 isa.yml 宣告了
+`datatable_parameters`，**該 dsl_step 必須把欄位 schema 鏡射出來**，否則展開後 DataTable 是空的、
+Linter 也驗不到欄位（本流程 step d 的 `expand_isa.py` 會對「缺 params/table」發 lint 警告）：
+
+- `params`：列出 `datatable_parameters` 的全部 key。
+  - `required: true` 且無預設 → 進必填清單 `[k1, k2, …]`；
+  - 有合理預設（情境無關欄位）→ 用 `{ k: 預設 }`。
+- `isa_steps[].table`：每個 key 一列，值預設 `'{{key}}'`（內插同名 param/capture）；
+  該欄若要捕獲／斷言／時間，再依符號系統改成 `>`/`<`/`&`/`@`（見 symbol-system-usage.md）。
+
+### Good（isa.yml 宣告 → dsl_step 鏡射）
+
+```yaml
+# isa.yml（契約）
+- name: Scoring conditions data table
+  format: ^該新客的評分條件如下：$
+  instruction_type: custom
+  data_format: data_table
+  datatable_parameters:
+    公司類型: { type: String, required: true, description: 公司類型 }
+    成立時間: { type: String, required: true, description: 成立時間區間 }
+    資本額:   { type: String, required: true, description: 資本額區間 }
+```
+```yaml
+# dsl.yml（鏡射 → 展開後才有完整 DataTable）
+- name: 新客評分條件
+  format: '該新客的評分條件如下：'
+  params: [公司類型, 成立時間, 資本額]
+  isa_steps:
+    - instruction: '該新客的評分條件如下：'
+      table:
+        公司類型: '{{公司類型}}'
+        成立時間: '{{成立時間}}'
+        資本額: '{{資本額}}'
+```
+
+### Bad
+
+```yaml
+# 對上 data_table custom 卻只寫 instruction、漏 params/table → 展開 DataTable 全空
+- name: 新客評分條件
+  format: '該新客的評分條件如下：'
+  isa_steps:
+    - instruction: '該新客的評分條件如下：'
+```
+
 ## Good
 
 ```yaml

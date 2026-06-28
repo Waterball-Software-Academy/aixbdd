@@ -75,10 +75,53 @@ def extract_values(fmt: str, line_text: str, params=None) -> dict:
 
 def classify(instr_text: str, instructions):
     """instr 對 isa.yml instructions → (instruction_type, data_format)。"""
-    for rx, itype, dfmt in instructions:
+    for rx, itype, dfmt, *_ in instructions:
         if rx.match(instr_text):
             return itype, dfmt
     return None, None
+
+
+def _param_keys(params) -> set:
+    """dsl_step.params（list 或 dict）→ 宣告的參數 key 集合。"""
+    if isinstance(params, dict):
+        return set(params.keys())
+    if isinstance(params, list):
+        return set(params)
+    return set()
+
+
+def lint_datatable(dsl_steps, instructions) -> "list[str]":
+    """檢查：dsl_step 對上 data_table 指令（isa.yml 有 datatable_parameters）時，
+    其 required 欄位是否都帶進了 isa_step.table，且 dsl_step.params 是否宣告。
+
+    回傳警告字串清單（空＝通過）。instructions 須為 (rx, itype, dfmt, datatable_parameters)。
+    """
+    warns: "list[str]" = []
+    for d in dsl_steps or []:
+        declared = _param_keys(d.get("params"))
+        for isa_step in d.get("isa_steps") or []:
+            instr = str(isa_step.get("instruction", ""))
+            dt_params = None
+            for rx, _itype, dfmt, *rest in instructions:
+                if rx.match(instr) and dfmt == "data_table":
+                    dt_params = rest[0] if rest else None
+                    break
+            if not dt_params:
+                continue
+            required = [k for k, v in dt_params.items() if (v or {}).get("required")]
+            table_keys = set((isa_step.get("table") or {}).keys())
+            miss_table = [k for k in required if k not in table_keys]
+            miss_param = [k for k in required if k not in declared]
+            if miss_table:
+                warns.append(
+                    f"dsl_step「{d.get('name')}」對上 data_table 指令「{instr}」，"
+                    f"isa_step.table 缺必填欄位：{', '.join(miss_table)}"
+                )
+            if miss_param:
+                warns.append(
+                    f"dsl_step「{d.get('name')}」params 未宣告 datatable 欄位：{', '.join(miss_param)}"
+                )
+    return warns
 
 
 def _render_isa_step(isa_step: dict, vmap: dict, source_kw, instructions, out: list) -> None:

@@ -100,3 +100,11 @@ metadata:
 
    每個 example 的 sub-SOP 返回後，**重跑 step 5 的 `build_worklist.py` 刷新 worklist**（反映剛標的 `# done`），再取下一個 `pending` example；直到 `$TARGET_FEATURES` 內無 `pending`。
    **【強制：逐 example 互動】** 嚴禁一個回合內連做多個 example；sub-SOP 內的逐 dsl_step 確認沒過前，不得跳下一個。
+
+10. FP 級去重（收尾）——loop 結束後，RUN 下列偵測器找出「同一條 dsl_step 跨 ≥2 feature 重複、未上移」的定義：
+
+    ```bash
+    python3 .claude/skills/aibdd-dsl-refine/scripts/cli/detect_shared_dsl.py --packages-dir ${TRUTH_BOUNDARY_PACKAGES_DIR} --fp $FP_SLUG
+    ```
+
+    有回報 → 依 `01-refine-example/rules/example-refactor.md` §2 把該條 hoist 到 `$FP_PACKAGE_DSL`、刪各 `{feature}.dsl.yml` 重複（保留 `# done`），經 `/clarify-loop` 同意後才動；hoist 後重跑 step 5 確認 worklist 仍空。本步只偵測＋重構，不改驗收意圖。無回報 → 完成。

@@ -44,6 +44,10 @@ fps:
             status: pending          # pending | done
             undone_steps:
               - '"王業務" 提交新客授信審核單，但沒填客戶名稱'   # 未完成的 GWT 原句
+            reuse:                   # 選填：此 step 在 FP 內已有定義 → c 步引用/hoist，勿重建
+              - step: '系統提示 "請填寫客戶名稱"'
+                defined_in: features/02-xxx.dsl.yml   # 既有定義位置（dsl.yml＝FP 層）
+                dsl_step: 系統提示訊息
 ```
 
 ## 三層查詢（讀 worklist 的某一層）
@@ -58,5 +62,12 @@ fps:
 
 - 掃 `packages/*/features/*.feature` ＋ 各 `{feature}.dsl.yml` ＋ FP 層 `{FP}/dsl.yml`（共用）→ 產出 `DSL_REFINE_PLAN.yml`。
 - 偵測純機械：example 每行 GWT 參數化 → `format_matcher` 比對「該 FP 的 `{FP}/dsl.yml` ＋ 該 feature 的 `{feature}.dsl.yml`」裡標 `# done` 的 dsl_step → 比不到即未完成。
+- **先找後建標註**：對每個未完成 step，再比對「FP 內所有 dsl_step 定義（不分 done）」；命中**別處**已定義者 → 在該 example 寫 `reuse` 提示（供 c 步引用/hoist，避免重建重複條）。
 - read-only 對 specs（只寫 worklist 本身）。
 - 合規性檢查、DSL→ISA、變更建議等語意工作不在腳本範圍（屬 AI/其他 rule）。
+
+## FP 級去重偵測（loop 收尾，read-only）
+
+`scripts/cli/detect_shared_dsl.py` 掃一個 FP 內各 `{feature}.dsl.yml`，回報「同 format 跨 ≥2 feature
+重複、且未上移到 `{FP}/dsl.yml`」的 dsl_step，供主 SOP step 10 補抽到 FP 層。只偵測回報、不改檔；
+實際 hoist／刪重複由 AI 編輯（保留 `# done`）並經 `/clarify-loop` 同意。

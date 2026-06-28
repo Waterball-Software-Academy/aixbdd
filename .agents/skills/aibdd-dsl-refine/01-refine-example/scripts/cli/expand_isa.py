@@ -20,7 +20,7 @@ _SCRIPTS_DIR = _CLI_DIR.parent
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
-from lib.expand import STEP_RE, expand_example  # noqa: E402
+from lib.expand import STEP_RE, expand_example, lint_datatable  # noqa: E402
 
 _EXAMPLE_RE = re.compile(r"^\s*(?:Example|Scenario)(?:\s+Outline)?:\s*(.*?)\s*$")
 
@@ -59,7 +59,9 @@ def load_instructions(isa_path: Path):
             rx = re.compile(fmt)
         except re.error:
             continue
-        out.append((rx, ins.get("instruction_type"), ins.get("data_format")))
+        out.append(
+            (rx, ins.get("instruction_type"), ins.get("data_format"), ins.get("datatable_parameters") or {})
+        )
     return out
 
 
@@ -94,6 +96,13 @@ def main() -> int:
         out.append(f"\n## Example: {title}")
         out.extend(expand_example(gwts, dsl_steps, instructions))
     print("\n".join(out))
+
+    # lint：custom data_table 指令的 datatable_parameters 必須鏡射進 dsl_step 的 params/table
+    warns = lint_datatable(dsl_steps, instructions)
+    if warns:
+        print("\n⚠ datatable lint：", file=sys.stderr)
+        for w in warns:
+            print(f"  - {w}", file=sys.stderr)
     return 0
 
 

@@ -19,7 +19,43 @@ _SCRIPTS_DIR = _CLI_DIR.parent
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
-from lib.scan import done_formats, format_matcher, iter_examples, undone_in_example  # noqa: E402
+from lib.scan import (  # noqa: E402
+    all_step_formats,
+    done_formats,
+    format_matcher,
+    iter_examples,
+    undone_in_example,
+)
+
+
+def _fp_definitions(pkg: Path) -> "list[tuple]":
+    """蒐集該 FP 內所有 dsl_step 定義（{FP}/dsl.yml ＋ 每個 {feature}.dsl.yml）。
+
+    回傳 [(matcher, location, dsl_step_name), ...]，供「先找後建」標註既有定義。
+    """
+    defs: "list[tuple]" = []
+    sources = []
+    fp_dsl = pkg / "dsl.yml"
+    if fp_dsl.exists():
+        sources.append(("dsl.yml", fp_dsl))
+    for fd in sorted(pkg.glob("features/*.dsl.yml")):
+        sources.append((f"features/{fd.name}", fd))
+    for location, path in sources:
+        for name, fmt in all_step_formats(path.read_text(encoding="utf-8")):
+            rx = format_matcher(fmt)
+            if rx:
+                defs.append((rx, location, name))
+    return defs
+
+
+def _reuse_hint(step_text: str, fp_defs, self_location: str):
+    """該未完成步驟若已有定義（在 FP 其它位置）→ 回傳 reuse 提示，否則 None。"""
+    for rx, location, name in fp_defs:
+        if location == self_location:
+            continue  # 同檔已存在不算「待重建」，交由 # done 流程
+        if rx.match(step_text):
+            return {"step": step_text, "defined_in": location, "dsl_step": name}
+    return None
 
 
 def build(packages_dir: Path) -> dict:
@@ -34,8 +70,10 @@ def build(packages_dir: Path) -> dict:
             if fp_dsl.exists()
             else []
         )
+        fp_defs = _fp_definitions(pkg)  # 先找後建：FP 內既有定義索引
         for ff in sorted(pkg.glob("features/*.feature")):
             feat_dsl = ff.with_suffix(".dsl.yml")
+            self_location = f"features/{feat_dsl.name}"
             done_matchers = list(fp_done_matchers)
             if feat_dsl.exists():
                 done_matchers += [
@@ -45,9 +83,13 @@ def build(packages_dir: Path) -> dict:
             for title, steps in iter_examples(ff.read_text(encoding="utf-8")):
                 undone = undone_in_example(steps, done_matchers)
                 if undone:
-                    examples.append(
-                        {"title": title, "status": "pending", "undone_steps": undone}
-                    )
+                    ex = {"title": title, "status": "pending", "undone_steps": undone}
+                    reuse = [
+                        h for h in (_reuse_hint(s, fp_defs, self_location) for s in undone) if h
+                    ]
+                    if reuse:
+                        ex["reuse"] = reuse  # 已有定義 → c 步引用/hoist，勿重建
+                    examples.append(ex)
             if examples:
                 fp["pending_examples"] += len(examples)
                 fp["features"].append({"name": ff.stem, "examples": examples})

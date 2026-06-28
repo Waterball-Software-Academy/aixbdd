@@ -17,6 +17,7 @@ TOKEN_RE = re.compile(r'("[^"]*")|(\d{4}-\d{2}-\d{2})|(\d+(?:\.\d+)?)')
 _EXAMPLE_RE = re.compile(r"^\s*(?:Example|Scenario)(?:\s+Outline)?:\s*(.*?)\s*$")
 _DONE_RE = re.compile(r"^\s*#\s*done\b")
 _NAME_RE = re.compile(r"^\s*-\s*name:")
+_NAME_VAL_RE = re.compile(r"^\s*-\s*name:\s*(.*\S)\s*$")
 _FORMAT_RE = re.compile(r"^\s*format:\s*(.*\S)\s*$")
 _PLACEHOLDER_RE = re.compile(r'"\{(\w+)\}"|\{(\w+)\}')
 _BARE_VAL = r"(?P<%s>\d{4}-\d{2}-\d{2}|\d+(?:\.\d+)?)"
@@ -87,6 +88,28 @@ def done_formats(dsl_text: str) -> "list[str]":
                         out.append(_sq_unquote(fm.group(1)))
                         break
             pending = False
+    return out
+
+
+def all_step_formats(dsl_text: str) -> "list[tuple[str, str]]":
+    """回傳 dsl.yml 中「所有」dsl_step 的 (name, format)（不論是否標 `# done`）。
+
+    供「先找後建」與「FP 級去重」比對既有定義用。
+    """
+    lines = dsl_text.splitlines()
+    out: "list[tuple[str, str]]" = []
+    for idx, ln in enumerate(lines):
+        nm = _NAME_VAL_RE.match(ln)
+        if not nm:
+            continue
+        name = _sq_unquote(nm.group(1))
+        for j in range(idx + 1, len(lines)):
+            if _NAME_RE.match(lines[j]):
+                break
+            fm = _FORMAT_RE.match(lines[j])
+            if fm:
+                out.append((name, _sq_unquote(fm.group(1))))
+                break
     return out
 
 
