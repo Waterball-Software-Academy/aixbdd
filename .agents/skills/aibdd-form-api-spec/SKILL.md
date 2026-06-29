@@ -1,7 +1,7 @@
 ---
 name: aibdd-form-api-spec
 description: >
-  從推理包翻譯為 OpenAPI (.yml)。負責 OpenAPI 語法規章 + 歸檔。
+  從推理包翻譯為 OpenAPI。負責 OpenAPI 語法規章 + 歸檔。
   切檔策略（單檔 / per-resource / per-module / per-boundary）由 Planner 透過 DELEGATE 參數指定，
   本 skill 不自決。不做跨 boundary 決策。
 user-invocable: false
@@ -9,7 +9,7 @@ user-invocable: false
 
 ## §1 角色
 
-Formulation skill。綁定 DSL = OpenAPI 3.x (.yml)。被 `aibdd-service-contract-analysis` 與 `/aibdd-plan`（透過 boundary operation contract specifier）DELEGATE。
+Formulation skill。綁定 DSL = OpenAPI 3.x。被 `aibdd-service-contract-analysis` 與 `/aibdd-plan`（透過 boundary operation contract specifier）DELEGATE。
 
 ---
 
@@ -22,7 +22,7 @@ Formulation skill。綁定 DSL = OpenAPI 3.x (.yml)。被 `aibdd-service-contrac
 | M/D/C 變更集 | EndpointGroup / InteractionMode / ModuleSlice 的增刪改 |
 | Axis 單位對應 | 推理包中每個 endpoint → OpenAPI path/method 的具體對應 |
 | 退出狀態 | Reason 步是否完整通過 |
-| `slice_list` | Planner 指定的切檔清單：每個 slice 的 `target_path` + `scope`（包含哪些 endpoint groups）。`target_path` 為 caller 提供之**相對於 `${CONTRACTS_DIR}` 的檔案路徑**（例：`api.yml`、`api/<resource>.yml`、`<boundary-id>/api.yml`；具體切檔策略由 Planner 決定）。`target_path` 內**不得**含 `<<NN-functional-module>>` 借位子層；`${CONTRACTS_DIR}` 在 SSOT 已是 flat directory（見 `aibdd-core::ssot/spec-package-paths.md`），functional module 借位只允許出現在 `${TRUTH_BOUNDARY_PACKAGES_DIR}` 子樹。`type` 亦不出現於 path — 由 `${BOUNDARY_YML}` `type` 欄位 SSOT。 |
+| `slice_list` | Planner 指定的切檔清單：每個 slice 的 `target_path` + `scope`（包含哪些 endpoint groups）。`target_path` 為 caller 提供之**相對於 `${CONTRACTS_DIR}` 的檔案路徑**。`target_path` 內**不得**含 `<<NN-functional-module>>` 借位子層；`${CONTRACTS_DIR}` 在 SSOT 已是 flat directory（見 `aibdd-core::ssot/spec-package-paths.md`），functional module 借位只允許出現在 `${TRUTH_BOUNDARY_PACKAGES_DIR}` 子樹。`type` 亦不出現於 path — 由 `${BOUNDARY_YML}` `type` 欄位 SSOT。 |
 
 **缺項**：推理包不完整或 `slice_list` 未指定 → 回退呼叫 Planner 補齊（白話文回報「推理包不完整」）。
 
@@ -33,7 +33,7 @@ Formulation skill。綁定 DSL = OpenAPI 3.x (.yml)。被 `aibdd-service-contrac
 1. **讀取 format reference**：`references/format-reference.md`（OpenAPI 3.x **語法合法**範例、狀態碼、型別）
 2. **讀取行為 / 封裝規約**：`references/patterns/command-resource.md`（狀態遷移、命令封裝、讀模型、後端裁定邊界）
 3. **讀取反模式**：`references/patterns/anti-patterns.md`（對照自查）
-4. **依 slice_list 展開**：每個 slice 產出一個 OpenAPI YAML；共用 schema 放 `common.yml`
+4. **依 slice_list 展開**：每個 slice 產出一個 OpenAPI 文件；共用 schema 放 `common.api.yml`
 5. **填入 path + method**：從推理包的 endpoint → RESTful path + HTTP method 映射（命名細節見 `patterns/rest-naming.md`）
 6. **錯誤與切檔**：`patterns/error-schema.md`、`patterns/modular-layout.md`
 7. **$ref 跨檔引用**：依切檔策略寫入正確的 `$ref` 引用
@@ -56,7 +56,7 @@ Formulation skill。綁定 DSL = OpenAPI 3.x (.yml)。被 `aibdd-service-contrac
 
 ### Error schema
 - 統一使用 `ErrorResponse { message, code }`（見 `patterns/error-schema.md`）
-- 放在 `common.yml#/components/schemas/ErrorResponse`
+- 放在 `common.api.yml#/components/schemas/ErrorResponse`
 
 ### 模組化 layout
 - 切檔策略由 Planner 決定；本 skill 配合落地（見 `patterns/modular-layout.md`）
@@ -69,7 +69,7 @@ Formulation skill。綁定 DSL = OpenAPI 3.x (.yml)。被 `aibdd-service-contrac
 
 以白話文 1–3 句匯報（依 `aibdd-core::planner-contract.md` §REPORT 匯報；不輸出 JSON / YAML）：
 
-> Form API Spec 完成。產出 N 個 OpenAPI .yml 檔案。
+> Form API Spec 完成。產出 N 個 OpenAPI 檔案。
 
 ---
 
@@ -80,4 +80,4 @@ Formulation skill。綁定 DSL = OpenAPI 3.x (.yml)。被 `aibdd-service-contrac
 - **references/patterns/anti-patterns.md**：RPC 氣味、純狀態 API、204+無讀模型、誤放後端裁量欄
 - **references/patterns/rest-naming.md**：path / method / operationId
 - **references/patterns/error-schema.md**：`ErrorResponse` 與 4xx 分工
-- **references/patterns/modular-layout.md**：common.yml、相對 `$ref`、slice `info`
+- **references/patterns/modular-layout.md**：common.api.yml、相對 `$ref`、slice `info`

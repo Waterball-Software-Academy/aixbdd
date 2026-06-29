@@ -44,7 +44,7 @@ operation_contract_specifier:           # operation contract truth（對外操�
   skill: <formulation-skill>            # 例：/aibdd-form-api-spec
   format: <openapi|...>
   output_dir_key: CONTRACTS_DIR
-  default_filename: <name>              # 例：api.yml
+  default_filename: <name>              # 例：main.api.yml
 
 # component_contract_specifier 只有 UI boundary 需要；純後端 boundary 整段刪除。
 # 宣告 Story-export-level 的 UI truth，作為 boundary invariant 的 binding anchor。

@@ -7,7 +7,7 @@ description: >
   interception with mock state held in the test-process fixture closure — no
   in-app mock module, no /__test__/* HTTP indirection. Operation contract formulation
   is delegated to `/aibdd-form-api-spec` (OpenAPI authored by plan from frontend
-  reasoning when no upstream contract is supplied; if `${CONTRACTS_DIR}/api.yml`
+  reasoning when no upstream contract is supplied; if `${CONTRACTS_DIR}/main.api.yml`
   already exists at plan start, it is treated as imported truth and plan only
   extends it via `slice_list`). Persistent state formulation remains `none` in
   v1 — see "Future Expansion" below.
@@ -23,7 +23,7 @@ operation_contract_specifier:
   skill: /aibdd-form-api-spec
   format: openapi
   output_dir_key: CONTRACTS_DIR
-  default_filename: api.yml
+  default_filename: main.api.yml
 
 # Component contract specifier (Story-export-level UI truth, boundary invariant I4 binding anchor).
 # Plan reasons about component modeling units and DELEGATEs CSF3 rendering;
@@ -51,7 +51,7 @@ allowed_l4_target_prefixes:
 #   state_specifier: Zod-schema-based mock data-model formulation skill
 #     (frontend equivalent of /aibdd-form-entity-spec)
 # Activated in v1 (was previously deferred):
-#   operation_contract_specifier: now /aibdd-form-api-spec — plan authors api.yml
+#   operation_contract_specifier: now /aibdd-form-api-spec — plan authors main.api.yml
 #     from frontend reasoning. Consumer-mode usage (importing upstream backend's
-#     api.yml) remains supported by placing api.yml in ${CONTRACTS_DIR} BEFORE
+#     main.api.yml) remains supported by placing main.api.yml in ${CONTRACTS_DIR} BEFORE
 #     plan runs; plan reads it as truth and only extends it via slice_list.

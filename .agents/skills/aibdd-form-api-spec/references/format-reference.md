@@ -1,6 +1,6 @@
 # OpenAPI 格式、型別推斷與命名規則
 
-## api.yml 骨架（語法合法）
+## OpenAPI 骨架（語法合法）
 
 OpenAPI 3.0.x。`responses` 必須使用 `description`，錯誤回應在 `content.application/json.schema` 內引用 schema，**不可**把 `200` 直接 `$ref` 到 schema 根（那是無效寫法）。
 
@@ -33,25 +33,25 @@ paths:
           content:
             application/json:
               schema:
-                $ref: common.yml#/components/schemas/ErrorResponse
+                $ref: common.api.yml#/components/schemas/ErrorResponse
         '404':
           description: 資源不存在
           content:
             application/json:
               schema:
-                $ref: common.yml#/components/schemas/ErrorResponse
+                $ref: common.api.yml#/components/schemas/ErrorResponse
         '422':
           description: 業務規則不滿足
           content:
             application/json:
               schema:
-                $ref: common.yml#/components/schemas/ErrorResponse
+                $ref: common.api.yml#/components/schemas/ErrorResponse
 
 components:
   schemas: {}
 ```
 
-共用錯誤型別與 §4／`patterns/error-schema.md` 對齊：`ErrorResponse` 至少 `message` + `code`（放在 `common.yml`）。
+共用錯誤型別與 §4／`patterns/error-schema.md` 對齊：`ErrorResponse` 至少 `message` + `code`（放在 `common.api.yml`）。
 
 ## Endpoint Path 命名規則
 

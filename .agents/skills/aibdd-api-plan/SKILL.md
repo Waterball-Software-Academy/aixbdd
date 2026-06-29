@@ -97,7 +97,7 @@ Boundary profile 宣告之 `operation_contract_specifier.skill` 是寫入 `${CON
 
 6. 推論並收斂 operation contract
 
-   6.1 參考 `$DISCOVERY_TRUTH` 依 `$WORKLIST_QUOTES` REASONING operation contract，切出良好模組化、精準切分的 target 作為 `$CONTRACT_TARGETS`，每筆為 `{ target_path, scope, impact_id }`；`target_path` 為相對 `${CONTRACTS_DIR}` 的 flat 檔案路徑（例 `api.yml`、`api/<resource>.yml`，不得含 `<<NN-functional-module>>` 借位子層，見 `aibdd-core::references/ssot/spec-package-paths.md`），`impact_id` 為驅動該 target 的 `$WORKLIST` impact；本步只推理不落地。
+   6.1 參考 `$DISCOVERY_TRUTH` 依 `$WORKLIST_QUOTES` REASONING operation contract，切出良好模組化、精準切分的 target 作為 `$CONTRACT_TARGETS`，每筆為 `{ target_path, scope, impact_id }`；`target_path` 為相對 `${CONTRACTS_DIR}` 的 flat 檔案路徑，OpenAPI 檔副檔名一律使用 `*.api.yml`（例：單檔 `main.api.yml`、per-resource `<resource>.api.yml`；不得含 `<<NN-functional-module>>` 借位子層，見 `aibdd-core::references/ssot/spec-package-paths.md`），`impact_id` 為驅動該 target 的 `$WORKLIST` impact；本步只推理不落地。
 
    6.2 對 `$CONTRACT_TARGETS` 參考 `aibdd-api-plan/reasoning/derive-findings.md` 的分析切角 REASONING 出 `$NEED_TO_FIX` 與 `$NEED_TO_CLARIFY`。
 

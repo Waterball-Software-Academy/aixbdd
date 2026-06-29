@@ -3,7 +3,7 @@
 ## 統一型別
 
 - 元件名稱固定：`ErrorResponse`
-- 放置位置：`common.yml`（或 slice 約定之共用檔）的 `components.schemas`
+- 放置位置：`common.api.yml`（或 slice 約定之共用檔）的 `components.schemas`
 - **必填欄位**：`message`（`string`）、`code`（`string` 或分類用短碼）
 
 範例：
@@ -24,7 +24,7 @@ ErrorResponse:
 各 operation 的 `400`／`403`／`404`／`422` 等應在 `content.application/json.schema` 使用相對路徑引用，例如：
 
 ```yaml
-$ref: common.yml#/components/schemas/ErrorResponse
+$ref: common.api.yml#/components/schemas/ErrorResponse
 ```
 
 ## 與 status code 的搭配

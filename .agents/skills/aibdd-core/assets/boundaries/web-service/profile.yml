@@ -16,4 +16,4 @@ operation_contract_specifier:
   skill: /aibdd-form-api-spec
   format: openapi
   output_dir_key: CONTRACTS_DIR
-  default_filename: api.yml
+  default_filename: main.api.yml

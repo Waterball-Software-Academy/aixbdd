@@ -2,13 +2,13 @@
 
 ## 典型檔案
 
-- **`common.yml`**：`ErrorResponse`、跨 slice 共用 DTO、通用列舉
-- **`api.yml`**（或依 `slice_list` 命名的多檔）：路徑與該 slice 專屬 schema
+- **`common.api.yml`**：`ErrorResponse`、跨 slice 共用 DTO、通用列舉（`$ref` 片段、非獨立 OpenAPI 文件）
+- **`main.api.yml`**（或依 `slice_list` 命名的多檔）：路徑與該 slice 專屬 schema
 
 ## 相對引用
 
-- 同目錄：`common.yml#/components/schemas/ErrorResponse`
-- 跨檔 schema：`./other-slice.yml#/components/schemas/Foo`
+- 同目錄：`common.api.yml#/components/schemas/ErrorResponse`
+- 跨檔 schema：`./other-slice.api.yml#/components/schemas/Foo`
 - 單檔內：`#/components/schemas/Foo`
 
 驗證或 lint 時應以**目錄 context** 跑 bundler（例如 Redocly／Swagger CLI），避免只單檔檢查導致 `$ref` 全紅。

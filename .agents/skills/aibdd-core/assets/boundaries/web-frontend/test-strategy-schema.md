@@ -104,7 +104,7 @@ coverage_gates:
 
 | Gate | 計算公式 | 預設 report 路徑 |
 |---|---|---|
-| `operation_coverage` | `|scenarios touching operationId|` / `|operationId in api.yml|` | `${PLAN_COVERAGE_REPORT_DIR}/operation-coverage.md` |
+| `operation_coverage` | `|scenarios touching operationId|` / `|operationId in main.api.yml|` | `${PLAN_COVERAGE_REPORT_DIR}/operation-coverage.md` |
 | `story_export_coverage` | `|stories bound by L4.source_refs.component|` / `|stories in ${FE_STORIES_DIR}|` | `${PLAN_COVERAGE_REPORT_DIR}/story-coverage.md` |
 | `schema_field_coverage` | `|Zod schema fields touched by fixtures|` / `|total Zod schema fields|` | `${PLAN_COVERAGE_REPORT_DIR}/schema-field-coverage.md` |
 
