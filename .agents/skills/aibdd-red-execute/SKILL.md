@@ -12,7 +12,7 @@ metadata:
 ## 這支 skill 在做什麼
 
 1. 接住呼叫者指定要處理的 `.feature` 檔，載入專案設定與各種規格來源。
-2. 把每一條 Scenario 的每一個步驟 (DSL Step)，從 dsl corpus 中尋找該 DSL step 撰寫成 Step Definition 的方法（參考 active boundary preset 的 handlers x variants）。
+2. 找出需要手寫的步驟並對應其撰寫方法。**custom isa 一律手寫（不分框架）**——來源取自 isa.yml ＋ 測試碼、不看 `.isa.feature`；builtin instruction 則：已安裝框架時由框架 BuiltinIsaPlugin 提供（不手寫），未安裝框架時另以固定 codegen 模版依 `instruction_type` 生成（見 SOP 7）。
 3. 依對應結果產生「執行器看得到」的 step definitions。
 4. 真的去跑一次測試，確認它紅得合法（而不是因為程式壞掉而紅）。
 5. 把這次紅燈的證據與對應關係整理成 red handoff，交給下游的 green。
@@ -41,6 +41,9 @@ metadata:
    FIXTURES_RUNTIME_REF=${FIXTURES_RUNTIME_REF}
    FEATURE_ARCHIVE_RUNTIME_REF=${FEATURE_ARCHIVE_RUNTIME_REF}
    RED_PREHANDLING_HOOK_REF=${RED_PREHANDLING_HOOK_REF}
+   INSTALL_SPECTRUM=${INSTALL_SPECTRUM}
+   BOUNDARY_ISA=${BOUNDARY_ISA}
+   TRUTH_BOUNDARY_PACKAGES_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}
    EOF
    ```
 
@@ -56,7 +59,12 @@ metadata:
 
 最後，我們開始撰寫測試程式碼。
 
-7. [LOOP] 針對每一個 target feature file in `$SCOPE_FEATURE_FILES`，請嚴格 EXECUTE `steps/implement-all-dsl-steps-in-feature-file.md`。
+7. 實作 StepDefinition：
+
+   7a. **恆執行（不分框架）**：嚴格 EXECUTE `steps/implement-custom-isa-stepdefs.md` —— 補齊 custom isa 的 StepDefinition。custom isa 一律手寫；來源掃 isa.yml ＋ 測試碼，**不**逐 `.isa.feature`。
+
+   7b. **僅當 `${INSTALL_SPECTRUM}` 為 false（未安裝框架）才額外執行**：builtin instruction 的 step def 不會由框架提供，須**額外**依 `instruction_type` 走固定 codegen 模版生成。`${INSTALL_SPECTRUM}` 為 true 時 builtin 由框架 BuiltinIsaPlugin 提供，本子步驟 SKIP。
+   （此 builtin codegen 步驟尚未改造、暫缺；現行 `steps/implement-all-dsl-steps-in-feature-file.md` 為舊 handler 模型，待後續重做為固定 codegen 模版。）
 
 8. EXECUTE `steps/red-basic-double-check.md` 來檢查測試品質。
 
