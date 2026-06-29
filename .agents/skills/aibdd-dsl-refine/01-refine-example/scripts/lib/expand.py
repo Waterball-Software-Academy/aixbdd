@@ -65,8 +65,11 @@ def extract_values(fmt: str, line_text: str, params=None) -> dict:
         m = rx.match(line_text)
         if m:
             captures = {k: v for k, v in m.groupdict().items() if v is not None}
+    params = params or {}
+    if isinstance(params, list):  # [a, b] = 全必填、無預設（schema 允許的 list 形式）
+        params = {k: None for k in params}
     vmap = {}
-    for k, default in (params or {}).items():
+    for k, default in params.items():
         if default is not None:  # null 預設 = 必填，留給 captures
             vmap[k] = _subst(default, captures)
     vmap.update(captures)  # captures 覆蓋預設
