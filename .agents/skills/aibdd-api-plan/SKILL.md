@@ -91,13 +91,13 @@ Boundary profile 宣告之 `operation_contract_specifier.skill` 是寫入 `${CON
 
    5.1 設 `$WORKLIST_QUOTES` 為 `$WORKLIST` 各 impact 的 quotes 聯集，每句標註其來源 impact id，為本批次本 owner 要落成 operation contract 的需求句。
 
-   5.2 READ `${PLAN_SPEC}` 取 `$WORKLIST_QUOTES` 所在的需求脈絡作為分析背景，並設 `$BATCH_NO` 為其需求描述段最新批次號。
+   5.2 READ `${PLAN_SPEC}` 全文作為本批次推論 operation contract 的主要真相來源；依據 `$WORKLIST_QUOTES` 在 `${PLAN_SPEC}` 全文 REASONING 每個 quote 跨段落相關的完整需求上下文作為 `$QUOTE_SEGMENTS`。並設 `$BATCH_NO` 為其需求描述段最新批次號。
 
    5.3 READ `$PLAN_SCOPE` 各 function package 之 `${FEATURE_SPECS_DIR}` feature truth 與 `${ACTIVITIES_DIR}` activity truth 作為 `$DISCOVERY_TRUTH`，為本批次推論 operation contract 的真相基準。
 
 6. 推論並收斂 operation contract
 
-   6.1 參考 `$DISCOVERY_TRUTH` 依 `$WORKLIST_QUOTES` REASONING operation contract，切出良好模組化、精準切分的 target 作為 `$CONTRACT_TARGETS`，每筆為 `{ target_path, scope, impact_id }`；`target_path` 為相對 `${CONTRACTS_DIR}` 的 flat 檔案路徑，OpenAPI 檔副檔名一律使用 `*.api.yml`（例：單檔 `main.api.yml`、per-resource `<resource>.api.yml`；不得含 `<<NN-functional-module>>` 借位子層，見 `aibdd-core::references/ssot/spec-package-paths.md`），`impact_id` 為驅動該 target 的 `$WORKLIST` impact；本步只推理不落地。
+   6.1 參考 `$DISCOVERY_TRUTH` 依 `$QUOTE_SEGMENTS` REASONING operation contract，若 segment 內有對外回傳欄位／請求參數／狀態列舉須逐項納入契約、不得概括，切出良好模組化、精準切分的 target 作為 `$CONTRACT_TARGETS`，每筆為 `{ target_path, scope, impact_id }`；`target_path` 為相對 `${CONTRACTS_DIR}` 的 flat 檔案路徑，OpenAPI 檔副檔名一律使用 `*.api.yml`（例：單檔 `main.api.yml`、per-resource `<resource>.api.yml`；不得含 `<<NN-functional-module>>` 借位子層，見 `aibdd-core::references/ssot/spec-package-paths.md`），`impact_id` 為驅動該 target 的 `$WORKLIST` impact；本步只推理不落地。
 
    6.2 對 `$CONTRACT_TARGETS` 參考 `aibdd-api-plan/reasoning/derive-findings.md` 的分析切角 REASONING 出 `$NEED_TO_FIX` 與 `$NEED_TO_CLARIFY`。
 

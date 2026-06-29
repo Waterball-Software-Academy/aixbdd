@@ -78,7 +78,7 @@ metadata:
 
    5.1 設 `$WORKLIST_QUOTES` 為 `$WORKLIST` 各 impact 的 quotes 聯集，每句標註其來源 impact id，為本批次本 owner 要落成 atomic rule 的需求句。
 
-   5.2 READ `${PLAN_SPEC}` 取 `$WORKLIST_QUOTES` 所在的需求脈絡作為分析背景，並設 `$BATCH_NO` 為其需求描述段最新批次號。
+   5.2 READ `${PLAN_SPEC}` 全文作為本批次列舉 atomic rule 的主要真相來源；依據 `$WORKLIST_QUOTES` 在 `${PLAN_SPEC}` 全文 REASONING 每個 quote 跨段落相關的完整需求上下文作為 `$QUOTE_SEGMENTS`。並設 `$BATCH_NO` 為其需求描述段最新批次號。
 
 6. 鎖定待補 rule 的 feature
 
@@ -88,7 +88,7 @@ metadata:
 
 7. 列舉 atomic rules
 
-   7.1 對 `$RULE_TARGETS` 每個 target 參考 `aibdd-rules-specify/rules/atomic-rule-granularity.md`，依其 `quotes` REASONING 該 `.feature` 的 atomic rules 作為該 target 的 `$RULES`，每條須遵守該檔的顆粒度、4 種類型前綴、原子化與禁止自生規則，且可指回其來源 quote；本步只推理不寫檔。
+   7.1 對 `$RULE_TARGETS` 每個 target 參考 `aibdd-rules-specify/rules/atomic-rule-granularity.md`，依該 target 的 `quotes` 對應的 `$QUOTE_SEGMENTS` REASONING 該 `.feature` 的 atomic rules 作為該 target 的 `$RULES`；上下文內若有表格／分級／允許值／回應欄位清單，須逐列展開成獨立 rule 或掛在 rule 下的補充行，不得概括成單條高階 rule；列舉完後須確認該 target 每個 segment 都已被 `$RULES` 完整涵蓋，未涵蓋者補列；每條須遵守該檔的顆粒度、4 種類型前綴、原子化與禁止自生規則，且可指回其來源 spec 原文；本步只推理不寫檔。
 
    7.2 對各 target 的 `$RULES` 參考 `aibdd-rules-specify/reasoning/derive-findings.md` REASONING 出 `$NEED_TO_FIX` 與 `$NEED_TO_CLARIFY`。
 

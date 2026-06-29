@@ -79,7 +79,7 @@ metadata:
 
    5.1 設 `$WORKLIST_QUOTES` 為 `$WORKLIST` 各 impact 的 quotes 聯集，每句標註其來源 impact id，為本批次本 owner 要補 Example 的需求句。
 
-   5.2 READ `${PLAN_SPEC}` 取 `$WORKLIST_QUOTES` 所在的需求脈絡作為分析背景，並設 `$BATCH_NO` 為其需求描述段最新批次號。
+   5.2 READ `${PLAN_SPEC}` 全文作為本批次補 Example 的主要真相來源，具體範例值與配分／區間／門檻等數字一律以 spec 原文為準、不得自行編造；依據 `$WORKLIST_QUOTES` 在 `${PLAN_SPEC}` 全文 REASONING 每個 quote 跨段落相關的完整需求上下文作為 `$QUOTE_SEGMENTS`。並設 `$BATCH_NO` 為其需求描述段最新批次號。
 
 6. 鎖定待補 Example 的 feature
 
@@ -95,7 +95,7 @@ metadata:
 
 8. 草擬並收斂 Example
 
-   8.1 對 `$RULES_TO_EXPAND` 每條取對應 pattern 之 `aibdd-spec-by-example/assets/templates/` 模板，依 `aibdd-spec-by-example/rules/five-elements-mapping.md`、`aibdd-spec-by-example/rules/business-language-judgments.md` 與 `aibdd-spec-by-example/rules/skeleton-vs-semantics-tradeoff.md` REASONING 出該 rule 的 5 個關鍵組成，套模板草擬其 Example block 作為 `$DRAFTS`；本步不寫檔。
+   8.1 對 `$RULES_TO_EXPAND` 每條取對應 pattern 之 `aibdd-spec-by-example/assets/templates/` 模板，依 `aibdd-spec-by-example/rules/five-elements-mapping.md`、`aibdd-spec-by-example/rules/business-language-judgments.md` 與 `aibdd-spec-by-example/rules/skeleton-vs-semantics-tradeoff.md` REASONING 出該 rule 的 5 個關鍵組成，再依據該 rule 對應 impact 的 `$QUOTE_SEGMENTS` REASONING 出 Example 的具體輸入與預期結果，套模板草擬其 Example block 作為 `$DRAFTS`；本步不寫檔。
 
    8.2 對 `$DRAFTS` 參考 `aibdd-spec-by-example/reasoning/derive-findings.md` 的語意切角、`aibdd-spec-by-example/rules/formatter-rules.md` 與 `aibdd-spec-by-example/rules/cucumber-literal-format.md` 的檢核 REASONING 出 `$NEED_TO_FIX` 與 `$NEED_TO_CLARIFY`。
 

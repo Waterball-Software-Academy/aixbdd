@@ -105,11 +105,11 @@ metadata:
 
    5.2 設 `$STALE_ACTIVITIES` 為 `$WORKLIST` 中 spec status 為 inconsistent 且以 `.activity` 結尾的 spec，為既有待重新建模的 UAT flow。
 
-   5.3 READ `${PLAN_SPEC}` 取 `$WORKLIST_QUOTES` 所在的需求脈絡作為建模背景，並設 `$BATCH_NO` 為其需求描述段最新批次號。
+   5.3 READ `${PLAN_SPEC}` 全文作為本批次建模的主要真相來源；依據 `$WORKLIST_QUOTES` 在 `${PLAN_SPEC}` 全文 REASONING 每個 quote 跨段落相關的完整需求上下文作為 `$QUOTE_SEGMENTS`。並設 `$BATCH_NO` 為其需求描述段最新批次號。
 
 6. 萃取 api-wise 業務 action
 
-   6.1 針對 `$WORKLIST_QUOTES` 每句，嚴格遵照 `aibdd-flows-specify/rules/apiwise-granularity.md` 的顆粒度定義 REASONING 萃取 RESTful-API-like 業務 action；請勿捕捉句子中不存在的元素，每個捕捉物都要明確指回其來源句與來源 impact id。
+   6.1 針對 `$QUOTE_SEGMENTS` 每段嚴格遵照 `aibdd-flows-specify/rules/apiwise-granularity.md` 的顆粒度定義 REASONING 萃取 RESTful-API-like 業務 action；請勿捕捉 segment 中不存在的元素，每個捕捉物都要明確指回其來源 spec 原文與來源 impact id。
 
    6.2 將每個證據充足的 action 綁定至 `$PLAN_SCOPE` 中某個 `added` 或 `related` 的 package：既有待更新者沿用其來源 impact 既有 spec path 所屬 package，全新者依該 action 與各 package rationale REASONING 配對；derive 其 binds_feature path 為 `${FEATURE_SPECS_DIR}/<NN>-<action-slug>.feature`（`<NN>` 為 package 內兩位數序號，`<action-slug>` 依 slug 命名規則 PRINCIPLE 命名），本步只命名不建檔。
 
@@ -122,7 +122,7 @@ metadata:
 
 7. 萃取 Actors
 
-   7.1 針對 `$ACTIONS` 之每個 action 自 `$WORKLIST_QUOTES` REASONING 其觸發者作為 `$ACTORS`，嚴格遵照 `aibdd-flows-specify/rules/activity-actor-granularity.md`；某 action 無法判定觸發 Actor 者蒐集成 `$ACTOR_GAPS`。
+   7.1 針對 `$ACTIONS` 之每個 action 自 `$QUOTE_SEGMENTS` REASONING 其觸發者作為 `$ACTORS`，嚴格遵照 `aibdd-flows-specify/rules/activity-actor-granularity.md`；某 action 無法判定觸發 Actor 者蒐集成 `$ACTOR_GAPS`。
 
    7.2 若 `$ACTOR_GAPS` 非空 則對其每個 gap DELEGATE `/clarify-loop` 釐清、附其 action 與來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論回到步驟 7.1 重新 REASONING，重複至 `$ACTOR_GAPS` 清空。
 
@@ -130,7 +130,7 @@ metadata:
 
    8.1 READ `aibdd-flows-specify/rules/activity-diagram-granularity.md`。
 
-   8.2 從 `$WORKLIST_QUOTES` 與 `$ACTIONS` REASONING 提煉獨立的 flows 作為 `$UAT_FLOWS`，每筆必備：
+   8.2 從 `$QUOTE_SEGMENTS` 與 `$ACTIONS` REASONING 提煉獨立的 flows 作為 `$UAT_FLOWS`，每筆必備：
      - uat_flow_id：本批次唯一
      - summary_one_line：一句話 journey
      - activity_relpath：相對其 package `${ACTIVITIES_DIR}` 之唯一相對路徑，須以 `.activity` 結尾、不得以 / 開頭，檔名依 slug 命名規則 PRINCIPLE 命名
