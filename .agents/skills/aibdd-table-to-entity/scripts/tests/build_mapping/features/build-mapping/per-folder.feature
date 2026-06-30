@@ -1,8 +1,5 @@
 Feature: build one entity_to_table_mapping.yml per schema-bearing folder
 
-  # 一個資料夾只使用單一 schema 格式（全 SQL 或全 DBML），不把 DBML 與 SQL 混在同層。
-  # DBML 的逐格式解析覆蓋見 dbml.feature；本檔聚焦「依資料夾分組產出」的機制，以 SQL DDL 表達。
-
   Rule: 同一資料夾的多個 DDL 檔合成同一份 mapping
     Example: primary folder with two PostgreSQL DDL files
       Given a temporary data directory
