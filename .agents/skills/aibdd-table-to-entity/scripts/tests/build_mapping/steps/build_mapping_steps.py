@@ -76,6 +76,24 @@ def step_mapping_equals(context):
     )
 
 
+@then('the generated mapping at "{relpath}" should equal:')
+def step_mapping_at_equals(context, relpath: str):
+    output_path = context.data_dir / relpath
+    assert output_path.is_file(), f"mapping file was not generated at {relpath}"
+    actual = _normalize_text(output_path.read_text(encoding="utf-8"))
+    assert actual == _normalize_text(context.text), (
+        f"mapping mismatch at {relpath}\n--- actual ---\n{actual}"
+    )
+
+
+@then("no mapping file should be generated at the data directory root")
+def step_no_root_mapping(context):
+    output_path = context.data_dir / "entity_to_table_mapping.yml"
+    assert not output_path.exists(), (
+        f"unexpected root mapping generated at {output_path}"
+    )
+
+
 @then('CLI stderr should contain "{fragment}"')
 def step_stderr_contains(context, fragment: str):
     assert fragment in context.last_result.stderr, (

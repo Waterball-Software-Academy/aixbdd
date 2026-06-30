@@ -11,6 +11,17 @@
 
 Identity mapping only: every `<table_name>` maps to itself. See SKILL.md.
 
+Per-folder generation: every directory under `DATA_DIR` (including `DATA_DIR`
+itself) that directly contains one or more schema files gets its own
+`entity_to_table_mapping.yml`, scoped to that folder's direct schema files.
+This lets a `DATA_DIR` split across sub-boundary folders (e.g. `primary/`,
+`secondary/`) carry one mapping per folder, while the outer `DATA_DIR` carries
+its own for any schema files sitting directly in it. The root mapping is always
+written (empty list when the root holds no direct schema files).
+
+Duplicate table names are rejected within a single output folder; the same
+table name may appear in different folders.
+
 Reuses `aibdd-core` spec_parsers (`dispatch_spec_parser`) so DBML / MySQL /
 PostgreSQL / MSSQL parsing logic stays in one place.
 
@@ -68,6 +79,13 @@ def _format_yaml(table_names: list[str]) -> str:
     return header + "\n".join(lines) + "\n"
 
 
+def _group_by_dir(files: list[Path]) -> dict[Path, list[Path]]:
+    groups: dict[Path, list[Path]] = {}
+    for path in files:
+        groups.setdefault(path.parent, []).append(path)
+    return groups
+
+
 def build_mapping(data_dir: Path) -> int:
     if not data_dir.is_dir():
         sys.stderr.write(
@@ -76,41 +94,55 @@ def build_mapping(data_dir: Path) -> int:
         return 2
 
     schema_files = _scan_schema_files(data_dir)
-    table_origin: dict[str, Path] = {}
-    table_order: list[str] = []
+    groups = _group_by_dir(schema_files)
+    # A folder emits a mapping only when it directly holds schema files. The one
+    # exception is a DATA_DIR with no schema files anywhere: emit an empty root
+    # mapping to preserve the "no data yet" contract. When subfolders carry the
+    # schema but the root does not, the root gets no mapping.
+    if not groups:
+        groups[data_dir] = []
+
     dbml_count = 0
     ddl_count = 0
+    total_tables = 0
 
-    for schema_file in schema_files:
-        if schema_file.name.lower().endswith(".dbml"):
-            dbml_count += 1
+    for out_dir in sorted(groups):
+        folder_files = sorted(groups[out_dir])
+        table_origin: dict[str, Path] = {}
+        table_order: list[str] = []
+
+        for schema_file in folder_files:
+            if schema_file.name.lower().endswith(".dbml"):
+                dbml_count += 1
+            else:
+                ddl_count += 1
+            for table_name in _extract_tables(schema_file):
+                if table_name in table_origin:
+                    sys.stderr.write(
+                        f"duplicate table {table_name!r}: "
+                        f"{table_origin[table_name]} and {schema_file}\n"
+                    )
+                    return 3
+                table_origin[table_name] = schema_file
+                table_order.append(table_name)
+
+        total_tables += len(table_order)
+        output_path = out_dir / "entity_to_table_mapping.yml"
+        new_content = _format_yaml(table_order)
+
+        if output_path.is_file() and output_path.read_bytes() == new_content.encode():
+            action = "unchanged"
         else:
-            ddl_count += 1
-        for table_name in _extract_tables(schema_file):
-            if table_name in table_origin:
-                sys.stderr.write(
-                    f"duplicate table {table_name!r}: "
-                    f"{table_origin[table_name]} and {schema_file}\n"
-                )
-                return 3
-            table_origin[table_name] = schema_file
-            table_order.append(table_name)
+            output_path.write_text(new_content)
+            action = "wrote"
 
-    output_path = data_dir / "entity_to_table_mapping.yml"
-    new_content = _format_yaml(table_order)
-
-    if output_path.is_file() and output_path.read_bytes() == new_content.encode():
-        action = "unchanged"
-    else:
-        output_path.write_text(new_content)
-        action = "wrote"
+        print(f"{action}: {output_path.resolve()} ({len(table_order)} entries)")
 
     print(
         f"scanned {len(schema_files)} schema file(s) "
-        f"(DBML={dbml_count}, DDL={ddl_count}); "
-        f"{len(table_order)} table(s) extracted"
+        f"(DBML={dbml_count}, DDL={ddl_count}) across {len(groups)} folder(s); "
+        f"{total_tables} table(s) extracted"
     )
-    print(f"{action}: {output_path.resolve()} ({len(table_order)} entries)")
     return 0
 
 
