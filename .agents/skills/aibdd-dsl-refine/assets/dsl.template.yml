@@ -1,0 +1,57 @@
+# =============================================================================
+# dsl.yml 空範例（SpecFormula DSL 標準 schema）
+# =============================================================================
+# 頂層 key：dsl_steps（DslSpec）。每條 dsl_step（DslDefinition）展開成一或多個 isa step（DslSubStep）。
+# refine 確認某條定義完成後，在該條 name 上方加一行註解 `# done`（未完成則無此標記）。
+#
+# DslDefinition（一條 dsl_step）：
+#   name      ：唯一標籤（同掃描範圍不可重複）
+#   format    ：業務句比對式。{name} 單花括號佔位（引號感知擷取），自動以 ^…$ 錨定；
+#               需要進階匹配可改寫完整 ^…$ regex。
+#   params    ：參數宣告＋預設（可省略）。兩種寫法：
+#                 [a, b]              → a、b 皆「必填」（無預設；須由 format 擷取或 PM DataTable/JSON 帶入）
+#                 { k: 預設, k2: }    → k 有預設值、k2（null）為必填；預設值可用 {{capture}} 內插 format 擷取值
+#   isa_steps ：有序 ISA step 清單；每條 instruction 須對上 isa.yml 某 instruction 的 format
+#
+# DslSubStep（一條 isa_step）：
+#   instruction：對上 isa.yml 的指令句（展開後即一行 .isa.feature）
+#   table      ：map<欄位, 值>；instruction 的 data_format 為 data_table / json 時用
+#                （json 由展開階段依 isa.yml 自動輸出 JSON DocString）
+#   text       ：字串；instruction 的 data_format 為 text 時用，輸出 """ DocString。與 table 二擇一。
+#
+# table / text 內的符號（展開時處理；ISA 符號原樣留進 .isa.feature）：
+#   {{name}}                     內插 format 擷取值 / params
+#   '>{{alias}}.id': '<field'    從回應捕獲存別名（VAR）
+#   ${{alias}}.id                引用別名；&gt(0) 等 CAS；@time(...) 等 TIME
+# =============================================================================
+
+dsl_steps:
+
+  - name: <唯一標籤>
+    format: '"{<參數>}" <業務句>'
+    params: {}                              # 或 [ <必填參數>, … ] / { <key>: <預設>, <key2>: }
+    isa_steps:
+      # (a) DataTable / JSON 型：用 table
+      - instruction: '<對上 isa.yml 的指令句>'
+        table: {}
+          # '<欄位>': '{{<參數>}}'              # 內插
+          # '>{{<別名>}}.id': '<<回應欄位>'      # 存別名（VAR 捕獲）
+          # '<欄位>': '${{<別名>}}.id'           # 引用別名
+      # (b) text 型（instruction 的 data_format 為 text）：用 text，與 table 二擇一
+      # - instruction: '<text 型指令句>'
+      #   text: |
+      #     <多行 DocString，可含 {{<參數>}}>
+
+  # ---------------------------------------------------------------------------
+  # custom data_table 範例：指令在 isa.yml 宣告 datatable_parameters 時，dsl_step 必須
+  # 把欄位 schema 鏡射為 params ＋ isa_steps[].table，否則展開後 DataTable 為空。
+  # （required 欄位進 params 清單；情境無關預設改用 { k: 預設 }）
+  # ---------------------------------------------------------------------------
+  # - name: <唯一標籤>
+  #   format: '<對上 data_table custom 的業務句>'
+  #   params: [ <欄位1>, <欄位2>, … ]            # ＝ isa.yml 的 datatable_parameters keys
+  #   isa_steps:
+  #     - instruction: '<對上 isa.yml 的 data_table 指令句>'
+  #       table:
+  #         <欄位1>: '{{<欄位1>}}'
+  #         <欄位2>: '{{<欄位2>}}'
