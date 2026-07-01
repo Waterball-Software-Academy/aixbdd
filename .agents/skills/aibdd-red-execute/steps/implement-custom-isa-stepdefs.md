@@ -33,7 +33,14 @@ READ `${STEP_DEFINITIONS_RUNTIME_REF}` 取得 step def 存放 glob。對每條 c
 ## 3. 逐條實作待實作的 custom StepDefinition
 
 先 READ `${STEP_DEFINITIONS_RUNTIME_REF}`、`${FIXTURES_RUNTIME_REF}` 理解共通寫法（注入、HTTP 互動、
-共用 helper、禁止事項）。**參照範本的優先序**：
+共用 helper、禁止事項）。
+
+**IF `${INSTALL_SPECTRUM}` 為 true** → READ
+`.claude/skills/aibdd-core/assets/boundaries/${PRESET_KIND}/variants/${STARTER_VARIANT}.spectrum-custom-libs.md`
+（該 variant 檔存在才讀、不存在 SKIP）——已安裝框架時 custom 可用的框架 library（符號解析／VAR 存取／
+模擬時間／builtin 委派）與其使用規則；實作時**優先使用這些介面**，勿自己 parse 符號或繞過 time control。
+
+**參照範本的優先序**：
 
 1. **既有 custom step def**（grep step glob 找形狀最近者）—— 首選範本。
 2. 該 custom 若屬「外部資源」類 → 參照 boundary `handlers/external-stub.md`。

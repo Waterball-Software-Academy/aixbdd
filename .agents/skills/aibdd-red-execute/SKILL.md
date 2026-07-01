@@ -33,7 +33,6 @@ metadata:
    SPECS_ROOT_DIR=${SPECS_ROOT_DIR}
    CONTRACTS_DIR=${CONTRACTS_DIR}
    DATA_DIR=${DATA_DIR}
-   BOUNDARY_SHARED_DSL=${BOUNDARY_SHARED_DSL}
    PRESET_KIND=${PRESET_KIND}
    STARTER_VARIANT=${STARTER_VARIANT}
    ACCEPTANCE_RUNNER_RUNTIME_REF=${ACCEPTANCE_RUNNER_RUNTIME_REF}
@@ -73,6 +72,14 @@ metadata:
    7b. **僅當 `${INSTALL_SPECTRUM}` 為 false（未安裝框架）才額外執行**：builtin instruction 的 step def 不會由框架提供，須**額外**依 `instruction_type` 走固定 codegen 模版生成。`${INSTALL_SPECTRUM}` 為 true 時 builtin 由框架 BuiltinIsaPlugin 提供，本子步驟 SKIP。
    （此 builtin codegen 步驟尚未改造、暫缺；現行 `steps/implement-all-dsl-steps-in-feature-file.md` 為舊 handler 模型，待後續重做為固定 codegen 模版。）
 
-8. EXECUTE `steps/red-basic-double-check.md` 來檢查測試品質。
+8. un-ignore 本輪 RED 範疇（**生成 StepDefinition 後、跑 cucumber 前；交使用者決定**）：歸檔後的 feature 預設帶 `@ignore`（cucumber 會濾掉、不跑），用來控制範疇。以 `$SCOPE_FEATURE_FILES` 為選項 DELEGATE `/clarify-loop`（多選）讓使用者挑「這輪要轉紅、下一階段 green 優先實作」的 feature file——**此選擇即本輪 RED 範疇，直接決定 green 先做哪部分**。對選中者 RUN 拿掉 `@ignore`（未選中者維持 @ignore、不進本輪 RED）：
 
-9. READ `references/handoff-schemas.md` and REPORT - 遵照其格式定義來 report `behavior_test_report` 給呼叫者或是遵照上游所指定的 report 方式。
+   ```bash
+   python3 .claude/skills/aibdd-red-execute/scripts/cli/unignore.py --features <選中的 runtime feature 路徑...>
+   ```
+
+   runtime feature 路徑：`${INSTALL_SPECTRUM}` 為 true（框架/preprocess）時為 `src/test/resources/dsl-features/<package>/features/<feature>.feature`（拿掉後 step 9 的 `mvn test` 會重新 preprocess 出不帶 @ignore 的展開檔）；未安裝框架時為歸檔後 runner 樹下的 `.feature`。
+
+9. EXECUTE `steps/red-basic-double-check.md` 來檢查測試品質。
+
+10. READ `references/handoff-schemas.md` and REPORT - 遵照其格式定義來 report `behavior_test_report` 給呼叫者或是遵照上游所指定的 report 方式。
