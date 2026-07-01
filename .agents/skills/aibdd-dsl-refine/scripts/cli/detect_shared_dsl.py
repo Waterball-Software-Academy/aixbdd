@@ -39,23 +39,31 @@ def _fp_pairs(pkg: Path) -> "tuple[set, set]":
 
 
 def detect(pkg: Path) -> "tuple[list, list]":
-    """回傳 (name_dups, format_dups)。各為 [{...,'features':[...]}, ...]，跨 ≥2 feature 且不在 {FP}/dsl.yml。"""
+    """回傳 (name_dups, format_dups)。name 唯一範圍＝整條祖先鏈（{FP}/dsl.yml ＋ 全部 feature dsl.yml
+    合併為同一 scope）：跨 feature 同名、feature 與 FP 層同名（無 shadow）、同檔重複，皆為阻斷級。"""
     fp_names, fp_formats = _fp_pairs(pkg)
     by_name: "dict[str, dict]" = {}
     by_format: "dict[str, dict]" = {}
     for fd in sorted(pkg.glob("features/*.dsl.yml")):
         for name, fmt in all_step_formats(fd.read_text(encoding="utf-8")):
-            if name not in fp_names:  # name 維度（dsl.yml 規則：祖先鏈內唯一）
-                slot = by_name.setdefault(name, {"name": name, "features": [], "formats": []})
-                if fd.name not in slot["features"]:
-                    slot["features"].append(fd.name)
-                if fmt not in slot["formats"]:
-                    slot["formats"].append(fmt)
+            # name 維度：不排除 fp_names——feature 與 FP 同名即祖先鏈衝突（無 shadow，展開必炸）
+            slot = by_name.setdefault(name, {"name": name, "features": [], "formats": [], "count": 0})
+            slot["count"] += 1  # 含同檔重複
+            if fd.name not in slot["features"]:
+                slot["features"].append(fd.name)
+            if fmt not in slot["formats"]:
+                slot["formats"].append(fmt)
             if fmt not in fp_formats:  # format 維度（收斂）
                 fslot = by_format.setdefault(fmt, {"format": fmt, "dsl_step": name, "features": []})
                 if fd.name not in fslot["features"]:
                     fslot["features"].append(fd.name)
-    name_dups = [s for s in by_name.values() if len(s["features"]) >= 2]
+    name_dups = []
+    for s in by_name.values():
+        s["fp_conflict"] = s["name"] in fp_names          # 與 FP 層同名（祖先鏈衝突）
+        cross_feature = len(s["features"]) >= 2           # 跨 feature 同名
+        same_file_dup = s["count"] > len(s["features"])   # 同檔出現 ≥2 次
+        if s["fp_conflict"] or cross_feature or same_file_dup:
+            name_dups.append(s)
     # format_dups 只列「name 維度沒抓到」的（同 format 但 name 不同 → ambiguous），避免與上面重複刷屏
     dup_names = {s["name"] for s in name_dups}
     format_dups = [
@@ -87,11 +95,16 @@ def main() -> int:
             continue
         found = True
         if name_dups:
-            print(f"🔴 FP {pkg.name}：{len(name_dups)} 條 name 跨 feature 重複（阻斷級，**必須**上移 → {pkg.name}/dsl.yml）")
+            print(f"🔴 FP {pkg.name}：{len(name_dups)} 條 name 於祖先鏈內重複（阻斷級，展開必炸；共用→上移 {pkg.name}/dsl.yml、語意不同→改名、殘留副本→刪）")
             for d in name_dups:
-                amb = "  ⚠ 同名不同 format（請先對齊）" if len(d["formats"]) > 1 else ""
-                print(f"  - {d['name']}{amb}")
-                print(f"      重複於：{', '.join(d['features'])}")
+                tags = []
+                if d.get("fp_conflict"):
+                    tags.append("⚠ 與 FP 層 dsl.yml 同名（無 shadow）")
+                if len(d["formats"]) > 1:
+                    tags.append("⚠ 同名不同 format（語意不同請改名）")
+                suffix = ("  " + "；".join(tags)) if tags else ""
+                print(f"  - {d['name']}{suffix}")
+                print(f"      出現於：{', '.join(d['features'])}")
         if format_dups:
             print(f"FP {pkg.name}：另有 {len(format_dups)} 條 format 跨 feature 重複（建議上移收斂）")
             for d in format_dups:
