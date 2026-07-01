@@ -1,4 +1,4 @@
-Feature: build one entity_to_table_mapping.yml per schema-bearing folder
+Feature: build entity_to_table_mapping.yml per subfolder from schema files
 
   Rule: 同一資料夾的多個 DDL 檔合成同一份 mapping
     Example: primary folder with two PostgreSQL DDL files
