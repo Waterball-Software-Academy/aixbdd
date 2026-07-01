@@ -1,7 +1,7 @@
 Feature: build entity_to_table_mapping.yml per subfolder from schema files
 
-  Rule: 同一資料夾的多個 DDL 檔合成同一份 mapping
-    Example: primary folder with two PostgreSQL DDL files
+  Rule: 同一子資料夾的多個 schema 檔合併為一份 entity_to_table_mapping.yml
+    Example: two .pg.sql files in primary/ merge into primary/entity_to_table_mapping.yml
       Given a temporary data directory
       And a schema file "primary/account.pg.sql" with content:
         """
@@ -25,8 +25,8 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           - rooms: rooms
         """
 
-  Rule: 不同資料夾可使用不同 DDL 方言
-    Example: primary uses PostgreSQL and secondary uses MySQL
+  Rule: 各子資料夾可各自使用不同 schema 檔類型並各產 entity_to_table_mapping.yml
+    Example: primary/ uses .pg.sql and secondary/ uses .mysql.sql, each produces its own entity_to_table_mapping.yml
       Given a temporary data directory
       And a schema file "primary/account.pg.sql" with content:
         """
@@ -56,8 +56,8 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           - players: players
         """
 
-  Rule: 外層 DATA_DIR 直接含 schema 檔時外層自己也產出 mapping
-    Example: root-level DDL file produces a root mapping alongside a subfolder mapping
+  Rule: data 目錄根層有直接放的 schema 檔時，根層也產出 entity_to_table_mapping.yml
+    Example: game.pg.sql at data root and account.pg.sql in primary/ produce two entity_to_table_mapping.yml files
       Given a temporary data directory
       And a schema file "game.pg.sql" with content:
         """
@@ -86,8 +86,8 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           - accounts: accounts
         """
 
-  Rule: 根目錄沒有直屬 schema 檔時不產出根 mapping
-    Example: only a subfolder carries schema files
+  Rule: data 目錄根層沒有直接放的 schema 檔時，不產出根層 entity_to_table_mapping.yml
+    Example: schema files only under primary/, no entity_to_table_mapping.yml at data root
       Given a temporary data directory
       And a schema file "primary/account.pg.sql" with content:
         """
@@ -105,8 +105,8 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
         """
       And no mapping file should be generated at the data directory root
 
-  Rule: 不同資料夾的同名 table 可並存
-    Example: same table name in primary and secondary folders is allowed
+  Rule: 不同子資料夾的同名 table 可各自納入各自的 entity_to_table_mapping.yml
+    Example: users table in both primary/ and secondary/ maps into separate entity_to_table_mapping.yml files
       Given a temporary data directory
       And a schema file "primary/users.pg.sql" with content:
         """
@@ -136,8 +136,8 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           - users: users
         """
 
-  Rule: 同一資料夾內跨檔重複 table 仍被拒絕
-    Example: duplicate table within a single subfolder
+  Rule: 同一子資料夾內多個 schema 檔重複定義同一 table 應被拒絕
+    Example: duplicate accounts table across primary/a.pg.sql and primary/b.pg.sql fails with exit code 3
       Given a temporary data directory
       And a schema file "primary/a.pg.sql" with content:
         """
