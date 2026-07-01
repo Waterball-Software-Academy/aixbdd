@@ -123,13 +123,12 @@ def build_variables_python(args_data: dict, project_name: str) -> dict:
 
 
 def _java_spectrum_blocks(resolved: dict) -> dict:
-    """pom.xml.tmpl overlay fills for aibdd-spectrum (SpecFormula).
+    """aibdd-spectrum (SpecFormula) overlay fills.
 
-    When INSTALL_SPECTRUM is truthy, return the four placeholder fills
-    (property / dependencies / testResources / dsl plugin); otherwise all four
-    are empty strings so the base pom renders byte-identical. This is the only
-    code path that consumes INSTALL_SPECTRUM, so non-java variants always keep a
-    clean pom even when the flag happens to be set.
+    When INSTALL_SPECTRUM is truthy, return the five SPECFORMULA_* placeholder
+    fills; otherwise all are empty strings so the base skeleton renders
+    byte-identical. This is the only code path that consumes INSTALL_SPECTRUM, so
+    non-java variants always keep a clean pom even when the flag happens to be set.
 
     The injected ``${...}`` tokens are Maven property references, not Python
     Template vars: they live in substitution *values*, which safe_substitute
@@ -140,6 +139,7 @@ def _java_spectrum_blocks(resolved: dict) -> dict:
         "SPECFORMULA_DEPENDENCIES",
         "SPECFORMULA_TEST_RESOURCES",
         "SPECFORMULA_PLUGINS",
+        "SPECFORMULA_SPRINGBOOTTEST_PROPS",
     )
     if not _is_truthy(resolved.get("INSTALL_SPECTRUM")):
         return {k: "" for k in keys}
@@ -195,6 +195,9 @@ def _java_spectrum_blocks(resolved: dict) -> dict:
             "\n\t\t\t\t\t<sourceDirectory>${project.basedir}/src/test/resources/dsl-features</sourceDirectory>"
             "\n\t\t\t\t</configuration>"
             "\n\t\t\t</plugin>"
+        ),
+        "SPECFORMULA_SPRINGBOOTTEST_PROPS": (
+            '(properties = "spring.flyway.enabled=false")'
         ),
     }
 
