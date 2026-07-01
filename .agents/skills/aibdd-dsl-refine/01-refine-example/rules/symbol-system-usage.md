@@ -15,6 +15,20 @@ dsl.yml 的 table 值同時夾雜兩種記號，展開時機不同：
 
 所以 `'>{{alias}}.id': '<userId'`：`{{alias}}` 先被換成 Alice，留下 ISA 的 `>Alice.id / <userId` 捕獲對。
 
+## params 必涵蓋「feature 句帶的 DataTable 欄位」（否則展開報未知參數）
+
+feature 的 GWT 句底下若掛一張 **DataTable**（PM 提供的輸入），該句比對到的 dsl_step 的 `params`
+**必須宣告表頭的每一個欄位**；少宣告即展開時 `DSL_EXPAND_PARAM_UNKNOWN`（PM 給了 params 沒宣告的 key）。
+
+- **不分 builtin／custom** —— 只要 feature 句掛了 DataTable，其 dsl_step 就要宣告那些欄位（不是只有 custom data_table 要）。
+- 宣告方式：required 且無預設 → `params: [欄位1, 欄位2, …]`；情境無關可給預設 → `{ 欄位: 預設 }`。
+  然後 isa_steps 的 table 以 `{{欄位}}` 內插這些值。
+- 例：`Then 副理關審核紀錄如下：` 底下掛 `審核人｜結果｜審核建議｜核准額度｜目前層級`
+  → 該 dsl_step 必須 `params: [審核人, 結果, 審核建議, 核准額度, 目前層級]`，否則展開報 `審核人` 未知。
+
+（custom 指令若在 isa.yml 宣告了 `datatable_parameters`，另見 custom-isa-placement.md 的鏡射規則；
+二者一致：dsl_step 的 params ＝ feature DataTable 欄位 ∪ 該指令 datatable_parameters。）
+
 ## 三套 ISA 符號（符號系統 SSOT）
 
 | 系統 | 用途 | 代表語法 |

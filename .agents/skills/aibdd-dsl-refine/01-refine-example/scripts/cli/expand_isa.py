@@ -20,9 +20,46 @@ _SCRIPTS_DIR = _CLI_DIR.parent
 if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
-from lib.expand import STEP_RE, expand_example, lint_datatable  # noqa: E402
+from lib.expand import STEP_RE, expand_example, format_matcher, lint_datatable  # noqa: E402
 
 _EXAMPLE_RE = re.compile(r"^\s*(?:Example|Scenario)(?:\s+Outline)?:\s*(.*?)\s*$")
+_TABLE_ROW_RE = re.compile(r"^\s*\|(.+)\|\s*$")
+
+
+def iter_steps_with_tables(feature_text: str):
+    """yield (keyword, text, header_columns 或 None) —— header 為該 step 下 DataTable 的表頭欄位。"""
+    out = []
+    cur = None
+    for line in feature_text.splitlines():
+        m = STEP_RE.match(line)
+        if m:
+            cur = [m.group(1), m.group(2), None]
+            out.append(cur)
+            continue
+        t = _TABLE_ROW_RE.match(line)
+        if t and cur is not None and cur[2] is None:  # 第一列 = 表頭
+            cur[2] = [c.strip() for c in t.group(1).split("|")]
+    return [(kw, text, hdr) for kw, text, hdr in out]
+
+
+def lint_feature_datatable_params(feature_text: str, dsl_steps) -> "list[str]":
+    """feature 句掛了 DataTable 但比對到的 dsl_step 的 params 沒宣告表頭欄位 → 展開會 DSL_EXPAND_PARAM_UNKNOWN。"""
+    matchers = [(format_matcher(d.get("format", "") or ""), d) for d in dsl_steps or []]
+    warns: "list[str]" = []
+    for _kw, text, headers in iter_steps_with_tables(feature_text):
+        if not headers:
+            continue
+        step = next((d for rx, d in matchers if rx and rx.match(text)), None)
+        if step is None:  # 無對應 dsl_step（pass-through）→ 非本 lint 範圍
+            continue
+        p = step.get("params")
+        declared = set(p) if isinstance(p, list) else set(p.keys()) if isinstance(p, dict) else set()
+        missing = [h for h in headers if h not in declared]
+        if missing:
+            warns.append(
+                f"feature 句「{text}」掛 DataTable，但 dsl_step「{step.get('name')}」params 未宣告：{', '.join(missing)}"
+            )
+    return warns
 
 
 def iter_examples_kw(feature_text: str):
@@ -99,6 +136,8 @@ def main() -> int:
 
     # lint：custom data_table 指令的 datatable_parameters 必須鏡射進 dsl_step 的 params/table
     warns = lint_datatable(dsl_steps, instructions)
+    # lint：feature 句掛 DataTable 但 dsl_step params 未宣告表頭欄位（會 DSL_EXPAND_PARAM_UNKNOWN）
+    warns += lint_feature_datatable_params(feature_path.read_text(encoding="utf-8"), dsl_steps)
     if warns:
         print("\n⚠ datatable lint：", file=sys.stderr)
         for w in warns:
