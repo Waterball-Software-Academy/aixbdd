@@ -486,7 +486,7 @@ template 檔名規則：`__` 表示路徑分隔符 `/`；filename 中的 `BASE_P
 
 當 `arguments.yml` 的 `INSTALL_SPECTRUM` 為 `true`（kickoff Q6 選 yes）時，generator 在 java-e2e 基底骨架上疊加 aibdd-spectrum（SpecFormula）安裝；為 `false`／缺省／未替換佔位時，pom 與基底完全相同（byte-identical）。**僅 java-e2e 消費此旗標**——其他 stack 即使選 yes 也不受影響，保持乾淨 pom。
 
-疊加內容由 `pom.xml.tmpl` 的 `${SPECFORMULA_*}` 佔位填入，版本預設 `0.0.5`（可由 `arguments.yml` 的 `SPECFORMULA_VERSION` 覆寫），全部自 Maven Central 取得，**不需 local install**：
+疊加內容由 `pom.xml.tmpl` 的 `${SPECFORMULA_*}` 佔位填入，版本預設 `0.0.6`（可由 `arguments.yml` 的 `SPECFORMULA_VERSION` 覆寫），全部自 Maven Central 取得，**不需 local install**：
 
 - properties：`<specformula.version>`
 - dependencies（test scope）：`ai.specformula:specformula-cucumber`、`specformula-testcontainer`、`specformula-dsl`

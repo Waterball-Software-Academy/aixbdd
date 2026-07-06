@@ -144,7 +144,7 @@ def _java_spectrum_blocks(resolved: dict) -> dict:
     if not _is_truthy(resolved.get("INSTALL_SPECTRUM")):
         return {k: "" for k in keys}
 
-    version = str(resolved.get("SPECFORMULA_VERSION", "0.0.5"))
+    version = str(resolved.get("SPECFORMULA_VERSION", "0.0.6"))
 
     def dep(artifact: str) -> str:
         return (
