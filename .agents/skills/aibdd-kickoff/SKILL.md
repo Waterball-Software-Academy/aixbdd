@@ -1,5 +1,5 @@
 ---
-description: 專案初始化引導；支援 python_e2e / java_e2e / nextjs_playwright 三種 stack，收集 stack / 規格語言 / service 名 / codebase layout / 是否安裝 aibdd-spectrum，產出 arguments.yml、boundary.yml、component-diagram.class.mmd、isa.yml 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Unit Test only、Mobile，或其他尚未支援的 stack。
+description: 專案初始化引導；支援 python_e2e / java_e2e / nextjs_playwright 三種 stack，收集 stack / 規格語言 / service 名 / 是否安裝 aibdd-spectrum，產出 arguments.yml、boundary.yml、component-diagram.class.mmd、isa.yml 與 boundary skeleton。TRIGGER when 使用者說 kickoff、初始化專案、建 arguments.yml、新專案設定。SKIP when 需要多 TLB、Unit Test only、Mobile，或其他尚未支援的 stack。
 metadata:
   skill-type: planner
   source: project-level
@@ -33,13 +33,12 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
 1. **(think)** 非互動模式：直接採 default 決策（stack=python_e2e、規格語言 zh-hant、service 名 backend、放 repo root；headless 要別的 stack 由 caller payload 帶 `stack:` 覆寫），跳過 File First，直接進 Phase 3。
 2. **(delegate)** 互動模式且 `KICKOFF_PLAN.md` 已存在：問 user 要接續、重做、還是取消，經 /clarify 出題；取消就停。
    - delegate to SKILL /clarify
-3. **(write)** 要新建問卷時：依 `assets/questions/` 第一輪四題與外殼 `assets/kickoff-plan.template.md`，渲染出 `KICKOFF_PLAN.md`（四題、答案欄留空；Q5／Q6 為條件式第二輪，於下方對應步驟才渲染）。
+3. **(write)** 要新建問卷時：依 `assets/questions/` 第一輪三題與外殼 `assets/kickoff-plan.template.md`，渲染出 `KICKOFF_PLAN.md`（三題、答案欄留空；Q5／Q6 為條件式第二輪，於下方對應步驟才渲染）。
    - 請嚴格遵守 `assets/kickoff-plan.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q1-tech-stack.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q2-project-spec-language.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q3-backend-service-name.template.md` 來執行此步驟。
-   - 請嚴格遵守 `assets/questions/q4-codebase-layout.template.md` 來執行此步驟。
-4. **(delegate)** 一次問完第一輪四題（stack／規格語言／service 名／codebase layout），經 /clarify；回答格式見各 question template 的 reply token 與外殼的 Batch Reply Format。
+4. **(delegate)** 一次問完第一輪三題（stack／規格語言／service 名），經 /clarify；回答格式見各 question template 的 reply token 與外殼的 Batch Reply Format。
    - 請嚴格遵守 `assets/kickoff-plan.template.md` 來執行此步驟。
    - delegate to SKILL /clarify
 5. **(write)** 把答案回寫 `KICKOFF_PLAN.md`、每題標 answered。任何一題模糊、重複或缺漏，就標 unresolved、告知 user 並停止——不要猜值硬填。
