@@ -33,7 +33,7 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
 1. **(think)** 非互動模式：直接採 default 決策（stack=python_e2e、規格語言 zh-hant、service 名 backend、放 repo root；headless 要別的 stack 由 caller payload 帶 `stack:` 覆寫），跳過 File First，直接進 Phase 3。
 2. **(delegate)** 互動模式且 `KICKOFF_PLAN.md` 已存在：問 user 要接續、重做、還是取消，經 /clarify 出題；取消就停。
    - delegate to SKILL /clarify
-3. **(write)** 要新建問卷時：依 `assets/questions/` 第一輪三題與外殼 `assets/kickoff-plan.template.md`，渲染出 `KICKOFF_PLAN.md`（三題、答案欄留空；Q5／Q6 為條件式第二輪，於下方對應步驟才渲染）。
+3. **(write)** 要新建問卷時：依 `assets/questions/` 第一輪三題與外殼 `assets/kickoff-plan.template.md`，渲染出 `KICKOFF_PLAN.md`（三題、答案欄留空；Q4／Q5 為條件式第二輪，於下方對應步驟才渲染）。
    - 請嚴格遵守 `assets/kickoff-plan.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q1-tech-stack.template.md` 來執行此步驟。
    - 請嚴格遵守 `assets/questions/q2-project-spec-language.template.md` 來執行此步驟。
@@ -44,10 +44,10 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
 5. **(write)** 把答案回寫 `KICKOFF_PLAN.md`、每題標 answered。任何一題模糊、重複或缺漏，就標 unresolved、告知 user 並停止——不要猜值硬填。
    - 請嚴格遵守 `rules/answer-resolution-gate.md` 來執行此步驟。
 6. **(delegate)** 第二輪條件式提問——依答案**逐一檢查兩個檢查點**，把適用的題以一次 `/clarify` 問完回寫：
-   - 檢查點 1（先檢查 `type`）：`type: web-service` → 納入 Q5 data schema 格式，渲染 `{{Q5_RECORD}}`；否則跳過 Q5。
-     - 請嚴格遵守 `assets/questions/q5-data-schema-format.template.md` 來執行此步驟。
-   - 檢查點 2（再檢查 `stack`）：`stack: java_e2e` → 納入 Q6 是否安裝 aibdd-spectrum，渲染 `{{Q6_RECORD}}`；否則跳過 Q6。
-     - 請嚴格遵守 `assets/questions/q6-install-spectrum.template.md` 來執行此步驟。
+   - 檢查點 1（先檢查 `type`）：`type: web-service` → 納入 Q4 data schema 格式，渲染 `{{Q4_RECORD}}`；否則跳過 Q4。
+     - 請嚴格遵守 `assets/questions/q4-data-schema-format.template.md` 來執行此步驟。
+   - 檢查點 2（再檢查 `stack`）：`stack: java_e2e` → 納入 Q5 是否安裝 aibdd-spectrum，渲染 `{{Q5_RECORD}}`；否則跳過 Q5。
+     - 請嚴格遵守 `assets/questions/q5-install-spectrum.template.md` 來執行此步驟。
    - 兩檢查點皆不符 → 整步跳過。
    - 請嚴格遵守 `rules/answer-resolution-gate.md` 來執行此步驟。
    - delegate to SKILL /clarify
@@ -70,7 +70,7 @@ Initialize an AIBDD project：依 stack 收集配置、產生單一 top-level bo
    - 請嚴格遵守 `rules/mermaid-annotation-charset.md` 來執行此步驟。
 3. **(write)** java_e2e：填好 Java base package。
    - 請嚴格遵守 `rules/java-base-package.md` 來執行此步驟。
-4. **(write)** java_e2e：依 Q6 `install_spectrum` 決策，把 `arguments.yml` 的 `INSTALL_SPECTRUM`（佔位 `${KICKOFF_INSTALL_SPECTRUM}`）回填為 `true`（要裝）或 `false`（不裝）；不可留下未替換的佔位。其他 stack 的 tail 無此鍵，略過——即使 Q6 答 yes 也保持乾淨 pom。
+4. **(write)** java_e2e：依 Q5 `install_spectrum` 決策，把 `arguments.yml` 的 `INSTALL_SPECTRUM`（佔位 `${KICKOFF_INSTALL_SPECTRUM}`）回填為 `true`（要裝）或 `false`（不裝）；不可留下未替換的佔位。其他 stack 的 tail 無此鍵，略過——即使 Q5 答 yes 也保持乾淨 pom。
    - 下游 `/aibdd-auto-starter` 僅在此值為 `true` 且 variant 為 `java-e2e` 時，於 pom.xml 疊加 specformula 依賴與 specformula-dsl plugin。
 5. **(write)** 規格語言不是 zh-hant 時：切換語系設定。
    - 請嚴格遵守 `rules/language-single-source.md` 來執行此步驟。
