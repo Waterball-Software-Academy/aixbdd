@@ -25,3 +25,9 @@ __pycache__/
 # regenerated on each eval_reasoning_*.py run).
 .agents/skills/**/.quality/
 .claude/skills/**/.quality/
+
+# Skill eval fixtures (golden benchmarks). Each unit embeds a full reproducible
+# toolchain + project copy per before/after (thousands of files, ~MBs), so evals
+# are treated as local experiment/iteration artifacts and not version-controlled.
+.agents/skills/**/eval/
+.claude/skills/**/eval/
