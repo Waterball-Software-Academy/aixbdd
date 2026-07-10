@@ -43,15 +43,29 @@ def mirror_file(src: Path, dst: Path) -> str:
     return "source missing (nothing to remove)"
 
 
+def rename_to_dsl_feature(dsl_features_root: Path) -> int:
+    """specformula-dsl 的 preprocess 只展開 `*.dsl.feature`；specs 端以 `.feature` 命名，
+    mirror 後在衍生區改名 `<name>.feature` → `<name>.dsl.feature`。回傳改名數。"""
+    renamed = 0
+    for feat in sorted(dsl_features_root.rglob("*.feature")):
+        if feat.name.endswith(".dsl.feature"):
+            continue
+        feat.rename(feat.with_name(feat.name[: -len(".feature")] + ".dsl.feature"))
+        renamed += 1
+    return renamed
+
+
 def drop_unrefined_features(dsl_features_root: Path) -> int:
-    """A2：還沒完成 dsl-refine 的 feature 不搬 —— 移除 dsl-features 下「無同名 `.dsl.yml`」的 `.feature`。
+    """A2：還沒完成 dsl-refine 的 feature 不搬 —— 移除 dsl-features 下「無同名 `.dsl.yml`」的
+    `.dsl.feature`。
 
     （specs 不動；只清衍生的 dsl-features。有 `.dsl.yml` 者保留，內部仍未定義的 dsl step 交給
     preprocess pass-through 忽略。）回傳移除數。
     """
     removed = 0
-    for feat in dsl_features_root.rglob("*.feature"):
-        if not feat.with_suffix(".dsl.yml").is_file():
+    for feat in dsl_features_root.rglob("*.dsl.feature"):
+        pair = feat.with_name(feat.name[: -len(".dsl.feature")] + ".dsl.yml")
+        if not pair.is_file():
             feat.unlink()
             removed += 1
     return removed
@@ -95,9 +109,12 @@ def main() -> int:
     print(f"歸檔（mirror，clean-then-copy）：{specs} → {res}")
     for label, fn in steps:
         print(f"  {label:28s} {fn()}")
+    # preprocess 只認 *.dsl.feature：衍生區改名
+    renamed = rename_to_dsl_feature(dsl_features)
+    print(f"  {'feature → dsl.feature 改名':28s} {renamed} 個")
     # A2：還沒完成 dsl-refine（無 .dsl.yml）的 feature 不搬
     dropped = drop_unrefined_features(dsl_features)
-    print(f"  {'A2 略過未 refine 的 feature':28s} 移除 {dropped} 個無 .dsl.yml 的 .feature")
+    print(f"  {'A2 略過未 refine 的 feature':28s} 移除 {dropped} 個無 .dsl.yml 的 .dsl.feature")
     print("完成。resources 為衍生產物，禁手改；下次歸檔重跑本腳本即可。")
     return 0
 
