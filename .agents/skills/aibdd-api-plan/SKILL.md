@@ -21,7 +21,7 @@ metadata:
 
 ## PRINCIPLE: 不重畫 Discovery 真相
 
-Discovery 已 accepted 的 `${FEATURE_SPECS_DIR}/**`、`${ACTIVITIES_DIR}/**`、`${PLAN_REPORTS_DIR}/function-packaging.md`、`${PLAN_SPEC}` 需求描述全文為唯讀輸入；本 skill 不得改寫任何 feature／activity 內容、不得改 atomic rule 文字、不得新增 Scenario／Background／Examples，只能 append `${PLAN_SPEC}` 的澄清區。`${IMPACT_MATRIX_YML}` 僅能經 impact matrix CLI 維護本 skill 推論出的 contracts impact，不得手改 YAML 本體。若發現上游真相不足以推導 operation contract，必須當步 DELEGATE `/clarify-loop` 釐清，禁止補洞。
+Discovery 已 accepted 的 `${FEATURE_SPECS_DIR}/**`、`${ACTIVITIES_DIR}/**`、`${PLAN_REPORTS_DIR}/function-packaging.md`、`${PLAN_SPEC}` 需求描述全文為唯讀輸入；本 skill 不得改寫任何 feature／activity 內容、不得改 atomic rule 文字、不得新增 Scenario／Background／Examples，只能 append `${PLAN_SPEC}` 的澄清區。`${IMPACT_MATRIX_YML}` 僅能經 impact matrix CLI 維護本 skill 推論出的 contracts impact，不得手改 YAML 本體。若發現上游真相不足以推導 operation contract，必須當步 DELEGATE `/clarify` 釐清，禁止補洞。
 
 ## PRINCIPLE: 委派 specifier 落地 contract
 
@@ -30,7 +30,7 @@ Boundary profile 宣告之 `operation_contract_specifier.skill` 是寫入 `${CON
 ## PRINCIPLE: 嚴格依序執行
 
 - 依序執行 `# SOP` 下的編號 step；每做一步，在訊息中明示該步編號。
-- 每個 step 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify-loop` 等待回覆、以及最後一步的結尾報告。
+- 每個 step 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify` 等待回覆、以及最後一步的結尾報告。
 
 ## PRINCIPLE: 限縮推理
 
@@ -77,7 +77,7 @@ Boundary profile 宣告之 `operation_contract_specifier.skill` 是寫入 `${CON
    EOF
    ```
 
-2. 解析本批次 plan package: 對話歷史已指名具體 `NNN-<slug>`（例：稍早解析過 plan package、使用者點名 `${PLAN_PACKAGES_DIR}/NNN-<slug>`、或「繼續做 NNN 那個 package」這類指涉），且 ASSERT `${PLAN_PACKAGES_DIR}/NNN-<slug>/` 存在於 `CWD`，則設 `$PLAN_PACKAGE_SLUG` 為該 `NNN-<slug>`，否則對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify-loop）要做哪一個 plan package、設 `$PLAN_PACKAGE_SLUG` 為其 slug，STOP 待使用者回答，候選僅一個甚至為空也必須釐清；若使用者指名新建或不存在的 plan package，則 STOP 並提示本 skill 必須基於既有 plan package 執行。
+2. 解析本批次 plan package: 對話歷史已指名具體 `NNN-<slug>`（例：稍早解析過 plan package、使用者點名 `${PLAN_PACKAGES_DIR}/NNN-<slug>`、或「繼續做 NNN 那個 package」這類指涉），且 ASSERT `${PLAN_PACKAGES_DIR}/NNN-<slug>/` 存在於 `CWD`，則設 `$PLAN_PACKAGE_SLUG` 為該 `NNN-<slug>`，否則對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify）要做哪一個 plan package、設 `$PLAN_PACKAGE_SLUG` 為其 slug，STOP 待使用者回答，候選僅一個甚至為空也必須釐清；若使用者指名新建或不存在的 plan package，則 STOP 並提示本 skill 必須基於既有 plan package 執行。
 
 3. 查 worklist: EXECUTE command 以 `read --owner aibdd-api-plan --impact-status pending` 讀出 `${IMPACT_MATRIX_YML}` 屬本 owner 的 pending impact 作為 `$WORKLIST` 並對使用者輸出，CLI 用法詳見 `aibdd-core::references/impact-matrix/cli-usage.md`；`$WORKLIST` 各 impact 的 quotes 為本批次本 owner 要落成 operation contract 的需求句，其中 spec 為空的 impact 為待推論並 add-spec 全新 contract 的工作、帶 inconsistent contract spec 的 impact 為待重新對齊既有 contract 檔。
 
@@ -97,13 +97,13 @@ Boundary profile 宣告之 `operation_contract_specifier.skill` 是寫入 `${CON
 
 6. 推論並收斂 operation contract
 
-   6.1 參考 `$DISCOVERY_TRUTH` 依 `$QUOTE_SEGMENTS` REASONING operation contract，若 segment 內有對外回傳欄位／請求參數／狀態列舉須逐項納入契約、不得概括，切出良好模組化、精準切分的 target 作為 `$CONTRACT_TARGETS`，每筆為 `{ target_path, scope, impact_id }`；`target_path` 為相對 `${CONTRACTS_DIR}` 的 flat 檔案路徑，OpenAPI 檔副檔名一律使用 `*.api.yml`（例：單檔 `main.api.yml`、per-resource `<resource>.api.yml`；不得含 `<<NN-functional-module>>` 借位子層，見 `aibdd-core::references/ssot/spec-package-paths.md`），`impact_id` 為驅動該 target 的 `$WORKLIST` impact；本步只推理不落地。
+   6.1 參考 `$DISCOVERY_TRUTH` 依 `$QUOTE_SEGMENTS` 並嚴格遵照 `aibdd-api-plan/rules/operation-contract-rule.md` 全部約束 REASONING operation contract，切出精準切分的 target 作為 `$CONTRACT_TARGETS`，每筆為 `{ target_path, scope, impact_id }`，`impact_id` 為驅動該 target 的 `$WORKLIST` impact；推論中一旦某項該規則的約束無法從真相滿足（切檔視角、設計取捨、operation／state 歸屬、本輪範疇等取決於使用者意圖者）蒐集成 `$ASK_BATCH`；本步只推理不落地。
 
-   6.2 對 `$CONTRACT_TARGETS` 參考 `aibdd-api-plan/reasoning/derive-findings.md` 的分析切角 REASONING 出 `$NEED_TO_FIX` 與 `$NEED_TO_CLARIFY`。
+   6.2 若 `$ASK_BATCH` 非空 則一次性 DELEGATE `/clarify` 批次問清，附各項來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-api-plan` 的澄清區塊，並依結論處置：判定屬 persistent state 者本 skill 不建 target，EXECUTE command `read --id <impact_id>` 取回該 impact 後 `write --id <impact_id> --owner aibdd-data-plan` 重新提供其原 quotes 與 rationale 把 owner 改派給 data plan；判定本輪不納入者更新該 impact 的 quote／rationale 標記本輪緩做並保留其 pending；再依結論回 6.1 重推，重複至 `$ASK_BATCH` 清空。
 
-   6.3 若 `$NEED_TO_FIX` 非空，則重推對應 `$CONTRACT_TARGETS`，重複至 `$NEED_TO_FIX` 清空。
+   6.3 對收斂後的 `$CONTRACT_TARGETS` DELEGATE `/analyze-and-clarify` 稽核，交辦上下文說清楚：稽核對象為 plan package `$PLAN_PACKAGE_SLUG` 需求批次 `$BATCH_NO` 的推論結果；推論目的為依 `$QUOTE_SEGMENTS` 推論產出 operation contract，且每個本 owner pending impact 的對外承諾都要有 target 承接；稽核基準為 `aibdd-api-plan/rules/operation-contract-rule.md` 與 `aibdd-core::references/ssot/spec-package-paths.md`；待稽核結果為 `$CONTRACT_TARGETS` 完整內容（附內容本身，非路徑）。
 
-   6.4 若 `$NEED_TO_CLARIFY` 非空 則對其每個項目 DELEGATE `/clarify-loop` 釐清、附其來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-api-plan` 的澄清區塊，再依結論回到 6.1 重新推論對應 `$CONTRACT_TARGETS`，重複至 `$NEED_TO_CLARIFY` 清空。
+   6.4 依 `/analyze-and-clarify` 回報的 violations 處置：`fixable` 就地重推對應 `$CONTRACT_TARGETS`；`to-clarify` 併入 `$ASK_BATCH` 回 6.2 批次問清、記澄清區後重推；本輪 violations 尚有 `to-clarify` 未獲使用者回答前不得重新 DELEGATE `/analyze-and-clarify`，待全數處置完畢才回 6.3 重新稽核，重複至 violations 回空。
 
 7. 委派 specifier 落地 contracts: 對 `$CONTRACT_TARGETS` 每個 target DELEGATE `/${SPECIFIER.skill}`，帶入該 target 作為 caller payload，遵循該 skill 自身的輸入／輸出形狀與禁令；specifier 依其認定之 `format` 寫入 `${CONTRACTS_DIR}` 下的 `target.target_path`，一個 target 一次 DELEGATE。
 

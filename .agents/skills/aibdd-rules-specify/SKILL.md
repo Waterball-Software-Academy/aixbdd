@@ -22,7 +22,7 @@ metadata:
 ## PRINCIPLE: 嚴格依序執行
 
 - 依序執行 `# SOP` 下的編號 step；每做一步，在訊息中明示該步編號。
-- 每個 step 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify-loop` 等待回覆、以及最後一步的結尾報告。
+- 每個 step 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify` 等待回覆、以及最後一步的結尾報告。
 
 ## PRINCIPLE: 限縮推理
 
@@ -68,7 +68,7 @@ metadata:
    EOF
    ```
 
-2. 解析本批次 plan package: 對話歷史已指名具體 `NNN-<slug>`（例：flows-specify 剛處理完那個 package、使用者點名 `${PLAN_PACKAGES_DIR}/NNN-<slug>`、或「繼續做 NNN 那個 package」這類指涉），且 ASSERT `${PLAN_PACKAGES_DIR}/NNN-<slug>/` 存在於 `CWD`，則設 `$PLAN_PACKAGE_SLUG` 為該 `NNN-<slug>`，否則對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify-loop）要做哪一個 plan package、設 `$PLAN_PACKAGE_SLUG` 為其 slug，STOP 待使用者回答，候選僅一個甚至為空也必須釐清。
+2. 解析本批次 plan package: 對話歷史已指名具體 `NNN-<slug>`（例：flows-specify 剛處理完那個 package、使用者點名 `${PLAN_PACKAGES_DIR}/NNN-<slug>`、或「繼續做 NNN 那個 package」這類指涉），且 ASSERT `${PLAN_PACKAGES_DIR}/NNN-<slug>/` 存在於 `CWD`，則設 `$PLAN_PACKAGE_SLUG` 為該 `NNN-<slug>`，否則對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify）要做哪一個 plan package、設 `$PLAN_PACKAGE_SLUG` 為其 slug，STOP 待使用者回答，候選僅一個甚至為空也必須釐清。
 
 3. 查 worklist: EXECUTE command 以 `read --owner aibdd-rules-specify --impact-status pending` 讀出 `${IMPACT_MATRIX_YML}` 屬本 owner 的 pending impact 作為 `$WORKLIST` 並對使用者輸出，CLI 用法詳見 `aibdd-core::references/impact-matrix/cli-usage.md`；`$WORKLIST` 各 impact 的 quotes 為本批次本 owner 要落成 atomic rule 的需求句，其中 spec 為空的 impact 為待配對既有 `.feature` 的全新 rule 工作、帶 inconsistent `.feature` spec 的 impact 為待重新對齊 rule 的既有 `.feature`。
 
@@ -84,17 +84,17 @@ metadata:
 
    6.1 SEARCH `$PLAN_SCOPE` 各 function package 之 `${FEATURE_SPECS_DIR}` 下現存的 `.feature`，依各檔 `Feature:` 業務意圖與 `$WORKLIST_QUOTES` REASONING 配對，設 `$RULE_TARGETS` 為每個被本批次 quotes 命中且仍存在的 `.feature`，每筆為 `{ feature_path, impact_id, quotes }`，其 `quotes` 為命中該檔的需求句子集；對映不到任一現存 `.feature` 的 quotes 蒐集成 `$SOURCE_GAPS`。
 
-   6.2 若 `$SOURCE_GAPS` 非空 則對其每個 gap DELEGATE `/clarify-loop` 釐清、附其來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-rules-specify` 的澄清區塊，再依結論重新配對 `$RULE_TARGETS`，重複至 `$SOURCE_GAPS` 清空。
+   6.2 若 `$SOURCE_GAPS` 非空 則一次性 DELEGATE `/clarify` 批次問清全部、附各項來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-rules-specify` 的澄清區塊，再依結論重新配對 `$RULE_TARGETS`，重複至 `$SOURCE_GAPS` 清空。
 
 7. 列舉 atomic rules
 
-   7.1 對 `$RULE_TARGETS` 每個 target 參考 `aibdd-rules-specify/rules/atomic-rule-granularity.md`，依該 target 的 `quotes` 對應的 `$QUOTE_SEGMENTS` REASONING 該 `.feature` 的 atomic rules 作為該 target 的 `$RULES`；上下文內若有表格／分級／允許值／回應欄位清單，須逐列展開成獨立 rule 或掛在 rule 下的補充行，不得概括成單條高階 rule；列舉完後須確認該 target 每個 segment 都已被 `$RULES` 完整涵蓋，未涵蓋者補列；每條須遵守該檔的顆粒度、4 種類型前綴、原子化與禁止自生規則，且可指回其來源 spec 原文；本步只推理不寫檔。
+   7.1 對 `$RULE_TARGETS` 每個 target 嚴格遵照 `aibdd-rules-specify/rules/atomic-rule-granularity.md` 全部約束，依該 target 的 `quotes` 對應的 `$QUOTE_SEGMENTS` REASONING 該 `.feature` 的 atomic rules 作為該 target 的 `$RULES`，並確認該 target 每個 segment 都已被 `$RULES` 完整涵蓋；推論中一旦缺少定案所需的重要資訊（含該規則檔規定必問的同一 `.feature` 混多 operation、以及主詞／條件／語氣從 `$QUOTE_SEGMENTS` 推不出者）蒐集成 `$ASK_BATCH`；本步只推理不寫檔。
 
-   7.2 對各 target 的 `$RULES` 參考 `aibdd-rules-specify/reasoning/derive-findings.md` REASONING 出 `$NEED_TO_FIX` 與 `$NEED_TO_CLARIFY`。
+   7.2 若 `$ASK_BATCH` 非空 則一次性 DELEGATE `/clarify` 批次問清，附各項來源 quote 與對應 `.feature` 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-rules-specify` 的澄清區塊，再依結論回 7.1 重新推論對應 `$RULES`，重複至 `$ASK_BATCH` 清空。
 
-   7.3 若 `$NEED_TO_FIX` 非空，則參考 `aibdd-rules-specify/rules/atomic-rule-granularity.md` 重新推論對應 target 的 `$RULES`，重複至 `$NEED_TO_FIX` 清空。
+   7.3 對收斂後各 target 的 `$RULES` DELEGATE `/analyze-and-clarify` 稽核，交辦上下文說清楚：稽核對象為 plan package `$PLAN_PACKAGE_SLUG` 需求批次 `$BATCH_NO` 的推論結果；推論目的為依各 target 的 `$QUOTE_SEGMENTS` 列舉該 `.feature` 的 atomic rules，且每個 segment 都要被 `$RULES` 完整涵蓋；稽核基準為 `aibdd-rules-specify/rules/atomic-rule-granularity.md`；待稽核結果為連同所屬 target 的 `$RULES` 完整內容（附內容本身，非路徑）。
 
-   7.4 若 `$NEED_TO_CLARIFY` 非空 則對其每個項目 DELEGATE `/clarify-loop` 釐清、附其來源 quote 與對應 `.feature` 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-rules-specify` 的澄清區塊，再依結論回到 7.1 重新推論對應 `$RULES`，重複至 `$NEED_TO_CLARIFY` 清空。
+   7.4 依 `/analyze-and-clarify` 回報的 violations 處置：`fixable` 就地重推對應 `$RULES`；`to-clarify` 併入 `$ASK_BATCH` 回 7.2 批次問清、記澄清區後重推；本輪 violations 尚有 `to-clarify` 未獲使用者回答前不得重新 DELEGATE `/analyze-and-clarify`，待全數處置完畢才回 7.3 重新稽核，重複至 violations 回空。
 
 8. WRITE rules: 對 `$RULE_TARGETS` 每個 target 參考 `aibdd-rules-specify/assets/templates/atomic-rule-format.template.feature` 把收斂後的 `$RULES` 依模板縮排與區塊結構 UPDATE 進其 `feature_path`；保留既有檔頭（`#` 註解列、`@ignore`、`Feature:` 標題），不得新增 `Background`／`Scenario`／`Examples`／表格或 Step，同一檔內既存的同一 `Rule:` 主句不重複寫入。
 

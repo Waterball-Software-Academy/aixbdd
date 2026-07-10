@@ -36,7 +36,7 @@ metadata:
 ## PRINCIPLE: 嚴格依序執行
 
 - 依序執行 `# SOP` 下的編號 step；每做一步，在訊息中明示該步編號。
-- 每個 step 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify-loop` 等待回覆、以及最後一步的結尾報告。
+- 每個 step 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify` 等待回覆、以及最後一步的結尾報告。
 
 ## PRINCIPLE: 限縮推理
 
@@ -99,9 +99,9 @@ metadata:
 
    2.2 需求敘事明確指名要開新 plan package（例：「開新的 plan」「建立新 package」「這是新需求，開新包」這類明示字句）則設 `$MODE` 為 `NEW`；僅限明示指名新建，從敘事推測「看起來像新功能」不算。
 
-   2.3 其餘情況不得自行判定: 對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify-loop）是要更新哪一個 plan package（設 `$PLAN_PACKAGE_SLUG` 為該 slug、`$MODE` 為 `RECONCILE`）還是開新 plan package（設 `$MODE` 為 `NEW`），STOP 待使用者回答，候選僅一個甚至為空也必須釐清。
+   2.3 其餘情況不得自行判定: 對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify）是要更新哪一個 plan package（設 `$PLAN_PACKAGE_SLUG` 為該 slug、`$MODE` 為 `RECONCILE`）還是開新 plan package（設 `$MODE` 為 `NEW`），STOP 待使用者回答，候選僅一個甚至為空也必須釐清。
 
-3. 確認本批次需求: ASSERT 使用者已提供需求描述並設為 `$RAW_IDEA`，若無則直接向使用者提問本批次需求（不使用 /clarify-loop），STOP 待使用者回答。
+3. 確認本批次需求: ASSERT 使用者已提供需求描述並設為 `$RAW_IDEA`，若無則直接向使用者提問本批次需求（不使用 /clarify），STOP 待使用者回答。
 
 4. 建立 plan package folder: 若 `$MODE` 為 `NEW` 則依 `$RAW_IDEA` 與 slug 命名規則 PRINCIPLE 命名 `$PLAN_PACKAGE_SLUG`（`NNN-<slug>`）並 CREATE `${PLAN_PACKAGES_DIR}/$PLAN_PACKAGE_SLUG/`。
 
@@ -149,7 +149,7 @@ metadata:
 
     12.3 `aibdd-spec-by-example` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${FEATURE_SPECS_DIR}` 下既有 `.feature` 的 Scenario／Examples REASONING 本階段被牽動的 finding，包含但不限於 example 具體值、邊界值、step 寫法，加入 `$STAGE_FINDINGS`。
 
-    12.4 `aibdd-api-plan` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${CONTRACTS_DIR}` 下契約檔 REASONING 本階段被牽動的 finding，包含但不限於 operation contract、對外 operation／路由／欄位，加入 `$STAGE_FINDINGS`。
+    12.4 `aibdd-api-plan` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${CONTRACTS_DIR}` 下契約檔 REASONING 本階段被牽動的 finding，包含但不限於 operation contract、對外 operation／路由／欄位，加入 `$STAGE_FINDINGS`；段落分不清是對外互動承諾還是須穩定保存的系統狀態（operation／state 兩屬不明）者，一律先歸本階段收進 finding、不歸 `aibdd-data-plan`。
 
     12.5 `aibdd-data-plan` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${DATA_DIR}` 下 schema 檔 REASONING 本階段被牽動的 finding，包含但不限於 persistent data schema、entity／table／欄位，加入 `$STAGE_FINDINGS`。
 

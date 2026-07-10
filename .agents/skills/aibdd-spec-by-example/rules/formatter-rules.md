@@ -2,7 +2,7 @@
 
 - 每個 Example 必須符合 Gherkin 語法與本檔列出之版面慣例；禁止僅靠人眼判讀。
 - 檢核當讀草稿 Example 文字逐項比對；本檔只判讀不修補（修補屬草擬步驟職責）。
-- 違規項必須逐條併入 `$NEED_TO_FIX`；禁止只記「格式錯誤」籠統描述。
+- 違規項必須逐條指明；禁止只記「格式錯誤」籠統描述。
 - Cucumber 引號、`And` 縮排、step 內「」：不在本檔檢核；僅由 `aibdd-spec-by-example/rules/cucumber-literal-format.md` 負責。
 
 ## 必檢項目

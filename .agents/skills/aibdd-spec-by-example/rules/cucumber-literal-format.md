@@ -3,7 +3,7 @@
 - 本檔定義寫入 `.feature` 的 Example 字面格式，目標是 Cucumber／Behave 等 runner 能解析並對上 step definition 參數。
 - 業務語言語意依 `aibdd-spec-by-example/rules/business-language-judgments.md`；本檔只管字面怎麼寫。
 - 檢核時機：在草稿收斂步驟讀本檔對草稿 Example ASSERT；草擬產出形狀以各 pattern template `## Good` 為準。
-- 本資料夾檢核邊界（各管一塊、不重疊、不互補檢）：本檔只管 cucumber 可跑字面，包含 ASCII 引號、Data Table、`Given/When/Then/And` 縮排、佔位符引號、step 句型收斂；版面／類型前綴／空行由 `aibdd-spec-by-example/rules/formatter-rules.md` 管；各 pattern 必填元素由 `aibdd-spec-by-example/reasoning/derive-findings.md` 與各 pattern template 管。
+- 本資料夾檢核邊界（各管一塊、不重疊、不互補檢）：本檔只管 cucumber 可跑字面，包含 ASCII 引號、Data Table、`Given/When/Then/And` 縮排、佔位符引號、step 句型收斂；版面／類型前綴／空行由 `aibdd-spec-by-example/rules/formatter-rules.md` 管；各 pattern 必填元素由各 pattern template 與 `aibdd-spec-by-example/rules/five-elements-mapping.md` 管。
 
 ## 必守不變式
 
@@ -78,4 +78,4 @@ Rule: 前置（參數） - 結帳必須先選擇要結帳的訂單
 5. 檢查 Data Table cell 是否包含 ASCII 雙引號；若出現 `"..."`，標記為 datatable quoted cell 違規。
 6. 掃描非 Data Table 的 step 行是否出現未加引號的角括號佔位符（緊鄰業務動詞或標點的 `<...>`，如 `<業務狀態>`、`<$event 業務化通知>`、`<$aggregate>`）；缺引號者標記為 unquoted placeholder 違規。
 7. 掃描 step 行尾是否以全形括號補否定／狀態註記（如 `（沒被折抵）`、`（未改動）`）；出現者標記為 parenthetical negation 違規，要求改用 `維持 "<原狀態>"` 或 `沒被改動` 等既有不變斷言句型。
-8. 違規逐條併入 `$NEED_TO_FIX`；禁止只記「格式錯誤」。
+8. 違規逐條指明；禁止只記「格式錯誤」。

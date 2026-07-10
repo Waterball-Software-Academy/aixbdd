@@ -35,7 +35,7 @@ metadata:
 ## PRINCIPLE: 嚴格依序執行
 
 - 依序執行 `# SOP` 下的編號 step；每做一步，在訊息中明示該步編號。
-- 每個 step 或 DELEGATE 的 skill 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify-loop` 等待回覆、以及最後一步的結尾報告。
+- 每個 step 或 DELEGATE 的 skill 都不是停點，立即將對應待辦標為完成並續跑下一步，不得停下來等待使用者指示或詢問是否繼續；本 skill 合法的暫停點只有三種：明文 STOP、DELEGATE `/clarify` 等待回覆、以及最後一步的結尾報告。
 
 ## PRINCIPLE: 限縮推理
 
@@ -111,20 +111,20 @@ metadata:
 
    6.1 針對 `$QUOTE_SEGMENTS` 每段嚴格遵照 `aibdd-flows-specify/rules/apiwise-granularity.md` 的顆粒度定義 REASONING 萃取 RESTful-API-like 業務 action；請勿捕捉 segment 中不存在的元素，每個捕捉物都要明確指回其來源 spec 原文與來源 impact id。
 
-   6.2 將每個證據充足的 action 綁定至 `$PLAN_SCOPE` 中某個 `added` 或 `related` 的 package：既有待更新者沿用其來源 impact 既有 spec path 所屬 package，全新者依該 action 與各 package rationale REASONING 配對；derive 其 binds_feature path 為 `${FEATURE_SPECS_DIR}/<NN>-<action-slug>.feature`（`<NN>` 為 package 內兩位數序號，`<action-slug>` 依 slug 命名規則 PRINCIPLE 命名），本步只命名不建檔。
+   6.2 將每個證據充足的 action 綁定至 `$PLAN_SCOPE` 中某個 `added` 或 `related` 的 package：既有待更新者沿用其來源 impact 既有 spec path 所屬 package，全新者依該 action 與各 package rationale 並遵照 `aibdd-flows-specify/rules/feature-placement-rule.md` REASONING 配對，遇 package 歸屬不唯一者不自行拍板；derive 其 binds_feature path，路徑約束遵照 `aibdd-flows-specify/rules/feature-placement-rule.md`、`<action-slug>` 依 slug 命名規則 PRINCIPLE 命名，本步只命名不建檔。
 
    6.3 紀錄所有證據充足的 action 作為 `$ACTIONS`，每個含 `{ action, package, binds_feature, impact_id }`，其 `{ binds_feature, impact_id }` 成對聯集為 `$ACTION_FEATURES`；下列疑點蒐集成 `$ACTION_GAPS`（落入者不作節點、不予 binds_feature、不納入 `$ACTION_FEATURES`）：
      - 針對某 action 不確定其顆粒度是否正確。
      - 某句需求暗示了業務動作，但證據不足以判定 actor、觸發點或可驗收結果。
      - 某 action 無法明確歸屬到任一 `$PLAN_SCOPE` 的 package。
 
-   6.4 若 `$ACTION_GAPS` 非空 則對其每個 gap DELEGATE `/clarify-loop` 釐清、附其來源 quote 與候選 package 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論回到步驟 6.2 重新 REASONING，重複至 `$ACTION_GAPS` 清空。
+   6.4 若 `$ACTION_GAPS` 非空，則一次性 DELEGATE `/clarify` 批次問清全部、附各項來源 quote 與候選 package 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論回到步驟 6.2 重新 REASONING，重複至 `$ACTION_GAPS` 清空。
 
 7. 萃取 Actors
 
    7.1 針對 `$ACTIONS` 之每個 action 自 `$QUOTE_SEGMENTS` REASONING 其觸發者作為 `$ACTORS`，嚴格遵照 `aibdd-flows-specify/rules/activity-actor-granularity.md`；某 action 無法判定觸發 Actor 者蒐集成 `$ACTOR_GAPS`。
 
-   7.2 若 `$ACTOR_GAPS` 非空 則對其每個 gap DELEGATE `/clarify-loop` 釐清、附其 action 與來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論回到步驟 7.1 重新 REASONING，重複至 `$ACTOR_GAPS` 清空。
+   7.2 若 `$ACTOR_GAPS` 非空，則一次性 DELEGATE `/clarify` 批次問清全部、附各項 action 與來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論回到步驟 7.1 重新 REASONING，重複至 `$ACTOR_GAPS` 清空。
 
 8. 建構 `$UAT_FLOWS` 清單（一條 flow = 一張 activity，從 actor 可理解的進場到可驗收完整旅程）
 
@@ -145,9 +145,13 @@ metadata:
 
    9.2 針對 `$UAT_FLOWS` 每一條 flow，依 `activity-control-flow.md` REASONING 建模成完整有向圖，含 name／id／initial／finals[]／actors[]／nodes[]（Action｜Decision｜Fork｜Merge｜Join，Action 節點帶 display_id、@actor、description、binds_feature）；建模未盡之處蒐集成 `$GRAPH_GAPS`。
 
-   9.3 若 `$GRAPH_GAPS` 非空 則對其每個 gap DELEGATE `/clarify-loop` 釐清、附其所屬 flow 與節點作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論回到步驟 9.2 重新 REASONING，重複至 `$GRAPH_GAPS` 清空。
+   9.3 若 `$GRAPH_GAPS` 非空，則一次性 DELEGATE `/clarify` 批次問清全部、附各項所屬 flow 與節點作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論回到步驟 9.2 重新 REASONING，重複至 `$GRAPH_GAPS` 清空。
 
    9.4 將每條 flow 之 name／id／initial／finals／actors／nodes 整體設為該 flow 之 `$ACTIVITY_ANALYSIS`。
+
+   9.5 對全部 `$ACTIVITY_ANALYSIS` DELEGATE `/analyze-and-clarify` 稽核，交辦上下文說清楚：稽核對象為 plan package `$PLAN_PACKAGE_SLUG` 需求批次 `$BATCH_NO` 的推論結果；推論目的為依 `$QUOTE_SEGMENTS` 萃取 api-wise action 與 actor 並建模成 UAT flow 控制流圖，每個證據充足的 action 都要被某條 flow 涵蓋且綁定合法 binds_feature、每條 flow 都要能自 initial 走到某 final；稽核基準為 `aibdd-flows-specify/rules/` 下的 `apiwise-granularity.md`、`activity-actor-granularity.md`、`activity-diagram-granularity.md`、`feature-placement-rule.md` 與 `aibdd-flows-specify/reasoning/activity-control-flow.md`；待稽核結果為含各 action 節點 binds_feature 的 `$ACTIVITY_ANALYSIS` 完整內容（附內容本身，非路徑）。
+
+   9.6 依 `/analyze-and-clarify` 回報的 violations 處置：`fixable` 就地重推對應建模；`to-clarify` 併入 `$GRAPH_GAPS` 回 9.3 批次問清、記澄清區後重建；本輪 violations 尚有 `to-clarify` 未獲使用者回答前不得重新 DELEGATE `/analyze-and-clarify`，待全數處置完畢才回 9.5 重新稽核，重複至 violations 回空。
 
 10. 產出 .activity: 針對 `$UAT_FLOWS` 每條 flow DELEGATE `/aibdd-form-activity`，交付該 flow 之 `$ACTIVITY_ANALYSIS` 並落檔 target_path 定為其 package 的 `${ACTIVITIES_DIR}/<activity_relpath>`，既有檔需更新且建模有實質變更時帶 overwrite；所須輸入與 `.activity` 格式參照 `aibdd-form-activity/references/role-and-contract.md`；form activity 落檔不是停點，ok 為 false 則修正後重新建模。
 
@@ -179,7 +183,7 @@ metadata:
 
     14.4 一致性確認：每個 `.activity` action 節點之 binds_feature 都須對應到本步建立或既存之 `.feature`；某 binds_feature path 非法或無法建立者蒐集成 `$FEATURE_GAPS`。
 
-    14.5 若 `$FEATURE_GAPS` 非空 則對其每個 gap DELEGATE `/clarify-loop` 釐清、附其對應 action 與預期 feature 路徑作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論修正 binds_feature 並重寫對應 `.feature`，若結論改動了某既有 `.activity` action 節點之 binds_feature 則連動更新該 `.activity`，重複至 `$FEATURE_GAPS` 清空。
+    14.5 若 `$FEATURE_GAPS` 非空，則一次性 DELEGATE `/clarify` 批次問清全部、附各項對應 action 與預期 feature 路徑作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論修正 binds_feature 並重寫對應 `.feature`，若結論改動了某既有 `.activity` action 節點之 binds_feature 則連動更新該 `.activity`，重複至 `$FEATURE_GAPS` 清空。
 
 15. 盤點並刪除孤兒 .feature
 
@@ -187,7 +191,7 @@ metadata:
 
     15.2 對 `$OBSOLETE_FEATURES` 每個先 ASSERT 已無任何 `.activity` action 節點 binds_feature 指向，仍被綁定者不刪、蒐集成 `$ORPHAN_GAPS`，確認無指向後 DELETE，實際刪除者記為 `$DELETED_FEATURES`。
 
-    15.3 若 `$ORPHAN_GAPS` 非空 則對其每個 gap DELEGATE `/clarify-loop` 釐清、附其 `.feature` 與既有綁定作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論重新判定各目標刪除與否、補刪確認淘汰者，重複至 `$ORPHAN_GAPS` 清空。
+    15.3 若 `$ORPHAN_GAPS` 非空，則一次性 DELEGATE `/clarify` 批次問清全部、附各項 `.feature` 與既有綁定作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-flows-specify` 的澄清區塊，再依結論重新判定各目標刪除與否、補刪確認淘汰者，重複至 `$ORPHAN_GAPS` 清空。
 
 16. 回寫 .feature impact
 
