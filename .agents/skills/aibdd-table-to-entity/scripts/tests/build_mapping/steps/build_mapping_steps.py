@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import subprocess
 from pathlib import Path
@@ -17,7 +18,7 @@ def _normalize_text(text: str) -> str:
     return "\n".join(lines)
 
 
-def _run(args: list[str], *, drop_data_dir_env: bool = False):
+def _run(args: list[str], *, drop_data_dir_env: bool = False, stdin: str | None = None):
     env = dict(os.environ)
     if drop_data_dir_env:
         env.pop("DATA_DIR", None)
@@ -25,6 +26,7 @@ def _run(args: list[str], *, drop_data_dir_env: bool = False):
         ["uv", "run", str(_CLI), *args],
         text=True,
         capture_output=True,
+        input=stdin,
         env=env,
     )
 
@@ -42,9 +44,28 @@ def step_schema_file(context, filename: str):
     target.write_text(context.text, encoding="utf-8")
 
 
+@given('an existing mapping "{relpath}" with content:')
+def step_existing_mapping(context, relpath: str):
+    target = context.data_dir / relpath
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(context.text, encoding="utf-8")
+
+
 @when("build_mapping CLI is run against the data directory")
 def step_run_against_data_dir(context):
     context.last_result = _run([str(context.data_dir)])
+
+
+@when("build_mapping plan is run against the data directory")
+def step_run_plan(context):
+    context.last_result = _run(["plan", str(context.data_dir)])
+
+
+@when("build_mapping apply is run against the data directory with naming:")
+def step_run_apply(context):
+    context.last_result = _run(
+        ["apply", str(context.data_dir)], stdin=context.text
+    )
 
 
 @when("build_mapping CLI is run against a missing data directory")
@@ -105,6 +126,28 @@ def step_stderr_contains(context, fragment: str):
 def step_stdout_contains(context, fragment: str):
     assert fragment in context.last_result.stdout, (
         f"stdout missing {fragment!r}\nstdout: {context.last_result.stdout}"
+    )
+
+
+@then('the plan for folder "{folder}" should list new tables {tables}')
+def step_plan_new_tables(context, folder: str, tables: str):
+    plan = json.loads(context.last_result.stdout)
+    entry = next((f for f in plan["folders"] if f["folder"] == folder), None)
+    assert entry is not None, f"folder {folder!r} not in plan: {plan}"
+    expected = json.loads(tables)
+    assert entry["new_tables"] == expected, (
+        f"new_tables for {folder}: expected {expected}, got {entry['new_tables']}"
+    )
+
+
+@then('the plan for folder "{folder}" should preserve existing {mapping}')
+def step_plan_existing(context, folder: str, mapping: str):
+    plan = json.loads(context.last_result.stdout)
+    entry = next((f for f in plan["folders"] if f["folder"] == folder), None)
+    assert entry is not None, f"folder {folder!r} not in plan: {plan}"
+    expected = json.loads(mapping)
+    assert entry["existing"] == expected, (
+        f"existing for {folder}: expected {expected}, got {entry['existing']}"
     )
 
 
