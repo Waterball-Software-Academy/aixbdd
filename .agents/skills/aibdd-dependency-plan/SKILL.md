@@ -33,7 +33,7 @@ Discovery 已 accepted 的 `${FEATURE_SPECS_DIR}/**`、`${ACTIVITIES_DIR}/**`、
 
 ## PRINCIPLE: registry 即配置 SSOT
 
-依賴的宣告只住在全專案唯一的 `${DEPENDENCIES_DIR}/dependencies.yml`（每依賴一個 entry），細節 truth 檔住 `${DEPENDENCIES_DIR}/<name>/`；下游讀 registry 取全清單、依 entry.truth.ref 下鑽細節、依 entry.kind 查 skill assets/kind-constants 取 kind 常數。surface 細節（operations／keyspaces／channels）由 truth 檔本身承載，不抄進 registry。registry 與 truth 檔內不得出現任何憑證（credential 不管理）。
+依賴的宣告只住在全專案唯一的 `${DEPENDENCIES_DIR}/dependencies.yml`（每依賴一個 entry），細節 truth 檔住 `${DEPENDENCIES_DIR}/<name>/`；下游讀 registry 取全清單、依 entry.truth.ref 下鑽細節、依 entry.kind 查 aibdd-core references/kind-constants 取 kind 常數。surface 細節（operations／keyspaces／channels）由 truth 檔本身承載，不抄進 registry。registry 與 truth 檔內不得出現任何憑證（credential 不管理）。
 
 ## PRINCIPLE: 嚴格依序執行
 
@@ -114,7 +114,7 @@ Discovery 已 accepted 的 `${FEATURE_SPECS_DIR}/**`、`${ACTIVITIES_DIR}/**`、
 
    7.1 truth 取得：先 SEARCH `${DEPENDENCIES_DIR}/<name>/` 有無使用者自放的 spec 檔（有則優先採用並標 `acquisition: user-provided`）；沒有才依該 kind rule 檔的取得分流進行（api kind 得 SEARCH 網路官方文件，取得後標 `acquisition: web-official` 且 `origin_url` 必填；store／channel 依 rule 檔判定 native 或 authored）。truth 缺位且 rule 檔判定不可自產者收進 `$ASK_BATCH`。
 
-   7.2 testability 與 wiring 判定：預設住 `assets/kind-constants/<kind>.yml`，entry 只在偏離時填 `testability_overrides`；依該 kind rule 檔判定 `sut_property_overrides`。truth 檔內容只可宣告真相支持的條目。
+   7.2 testability 與 wiring 判定：預設住 `.claude/skills/aibdd-core/references/kind-constants/<kind>.yml`，entry 只在偏離時填 `testability_overrides`；依該 kind rule 檔判定 `sut_property_overrides`。truth 檔內容只可宣告真相支持的條目。
 
    7.3 若 `$ASK_BATCH` 非空 則比照 6.2 一次性 DELEGATE `/clarify` 批次問清並記澄清區，依結論重推該依賴，重複至清空。
 

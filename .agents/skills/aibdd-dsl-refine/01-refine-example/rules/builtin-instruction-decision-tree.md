@@ -28,6 +28,12 @@
    - 要確認記錄已被刪除／不存在 → `entity_non_existence_validate`。
 5. 以上皆不符（外部資源 mock、非 HTTP 操作、把多步前置語意封裝成一句）→ 不是內建，
    走 custom，見 [custom-isa-placement.md](custom-isa-placement.md)。
+   其中**外部資源／外部依賴語意**（快取、外部 API stub、MQ、外部儲存等）不得直接自創句式：
+   先查主 SOP step 4 載入的 dependency registry——
+   - 有對應 entry → custom 契約依 entry.kind 的 kind-constants 句式模版填空
+     （見 custom-isa-placement.md「外部依賴 custom」節）；
+   - 無對應 entry（或無 registry）→ 缺上游真相，不得憑空發明契約，依 [DISCUSS]
+     帶完整 Example 澄清並指回 `/aibdd-dependency-plan` 先盤點登記。
 
 判 custom 前先過 [builtin-composition-patterns.md](builtin-composition-patterns.md)：
 一句常拆多條有序 isa_step，有模式可組合表達的不做 custom。

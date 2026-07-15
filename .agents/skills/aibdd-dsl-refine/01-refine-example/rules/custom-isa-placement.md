@@ -3,6 +3,29 @@
 某條 isa_step 對不上任何內建型別（見 [builtin-instruction-decision-tree.md](builtin-instruction-decision-tree.md)
 決策流程第 5 點：外部資源 mock、非 HTTP 操作、把多步前置語意封裝成一句）時，走 custom。
 本檔規範「先找、找不到才宣告、宣告寫哪層、宣告寫到什麼程度」。
+**外部資源／外部依賴語意的 custom 另受「外部依賴 custom」節約束：句式出自 registry＋kind-constants 模版填空，不自創。**
+
+## 外部依賴 custom：模版填空，不自創
+
+feature 句觸及外部依賴（快取／外部 API／MQ／外部儲存／websocket／gRPC／身分服務等，
+非 SUT 主 DB 與第一方 HTTP API）時：
+
+1. 查主 SOP step 4 載入的 dependency registry（`dependencies.yml`）找對應 entry。
+   **無 entry（或無 registry）→ 缺上游真相，不得憑空發明契約**：依 [DISCUSS] 帶完整
+   Example 澄清，選項須含「先執行 `/aibdd-dependency-plan` 盤點登記後再回來 refine」；
+   使用者選緩做 → 該 example 擱置（不落半成品 dsl_step、不標 `# done`）。
+2. 有 entry → READ entry.truth.ref 指向的 truth 檔（openapi／proto／convention.md 等）
+   與 `.claude/skills/aibdd-core/references/kind-constants/<entry.kind>.yml` 的
+   `isa_step_templates`，**契約逐欄取自模版**：
+   - `format`＝該面向 `format_template` 原文（regex 具名參數如 store／target 保留為參數）；
+   - `handler`／`data_format`／`datatable_parameters` 原樣取模版；
+   - `intent`＝該面向 `intent_projection` 投影（代入 entry.name 等槽位；維持 WHAT-only）；
+   - dsl_step 引用時的槽位值受 entry 與 truth 檔約束（如 store 的 target 依 truth 檔
+     keyspace pattern、payload 依 value schema；不得斷言約定檔未宣告的欄位）。
+3. 同一 kind 的模版契約可跨依賴共用（format 的具名參數承載依賴名）；先找既有宣告再建，
+   放置層級依下方「找不到才宣告：放哪層」。
+4. 本檔下方「外部徵信」等範例僅示範 format 語法與 intent 寫法；實際遇到外部依賴時
+   一律先過本節 registry 分流，不得以範例存在為由略過。
 
 ## 先找：由內往外到 specs
 

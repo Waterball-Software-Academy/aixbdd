@@ -1,6 +1,6 @@
 # kind: grpc — truth 取得、testability、entry 填寫規定
 
-適用 SOP step 7 對 kind 為 grpc 的依賴。entry 樣板：assets/dependencies.template.yml（grpc 條目）；kind 常數：assets/kind-constants/grpc.yml。
+適用 SOP step 7 對 kind 為 grpc 的依賴。entry 樣板：assets/dependencies.template.yml（grpc 條目）；kind 常數：.claude/skills/aibdd-core/references/kind-constants/grpc.yml。
 
 ## 測試範圍（先於一切）
 

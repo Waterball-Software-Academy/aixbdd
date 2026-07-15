@@ -1,6 +1,6 @@
 # kind: channel — truth 取得、testability、entry 填寫規定
 
-適用 SOP step 7 對 kind 為 channel 的依賴。entry 樣板：assets/dependencies.template.yml（channel 條目）；kind 常數：assets/kind-constants/channel.yml。
+適用 SOP step 7 對 kind 為 channel 的依賴。entry 樣板：assets/dependencies.template.yml（channel 條目）；kind 常數：.claude/skills/aibdd-core/references/kind-constants/channel.yml。
 
 ## 測試範圍（先於一切）
 
@@ -26,7 +26,7 @@
 
 1. double 恆為 real-product；per-broker container 預設與 prehandling 骨架
    （含 topic 預建、test consumer 註冊兩條固定註記）住
-   assets/kind-constants/channel.yml，entry 依 broker 查表不重抄，
+   .claude/skills/aibdd-core/references/kind-constants/channel.yml，entry 依 broker 查表不重抄，
    偏離才填 testability_overrides。custom step 模版（C 發訊／E 收訊斷言）
    同樣內建於 kind-constants，registry 不收句式素材。
 2. Spring Boot Kafka／RabbitMQ 皆支援 `@ServiceConnection`，

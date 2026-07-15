@@ -80,6 +80,7 @@ metadata:
    - isa instruction 目錄：READ `${BOUNDARY_ISA}` 與 `${TRUTH_BOUNDARY_PACKAGES_DIR}/*/*.isa.yml`（每條 name／format／instruction_type／data_format／custom 契約）。
    - operation contracts：READ `${CONTRACTS_DIR}/**`（summary／path／query／header／required）。
    - data schema：READ `${DATA_DIR}/**`（DDL／`.dbml` 與 `entity_to_table_mapping.yml`；表／欄位／NOT NULL／PK）。
+   - dependency registry：READ 外部依賴 registry `<deps>/dependencies.yml`（`<deps>`＝arguments.yml 的 `DEPENDENCIES_DIR`，缺鍵則預設 `${TRUTH_BOUNDARY_ROOT}/dependencies`）；檔不存在＝本專案無外部依賴，照常續行。存在則記住每個 entry 的 name／kind／truth.ref——推導觸及某依賴時再下鑽其 truth 檔與 `.claude/skills/aibdd-core/references/kind-constants/<kind>.yml`（custom 句式模版），見 `01-refine-example/rules/custom-isa-placement.md`「外部依賴 custom」節。
    - 本步只 READ。
 
 5. BUILD worklist——RUN 下列腳本掃出「含未完成定義 dsl step」的 FP/feature/example，產出 `DSL_REFINE_PLAN.yml`（專案根；先刪舊檔再產，read-only 對 specs）。語意見 `rules/refine-worklist-query.md`。

@@ -1,6 +1,6 @@
 # kind: identity — truth 取得、testability、entry 填寫規定
 
-適用 SOP step 7 對 kind 為 identity 的依賴（SSO／IdP：Keycloak 等）。entry 樣板：assets/dependencies.template.yml（identity 條目）；kind 常數：assets/kind-constants/identity.yml。
+適用 SOP step 7 對 kind 為 identity 的依賴（SSO／IdP：Keycloak 等）。entry 樣板：assets/dependencies.template.yml（identity 條目）；kind 常數：.claude/skills/aibdd-core/references/kind-constants/identity.yml。
 
 ## 測試範圍與保真度天花板（先於一切）
 

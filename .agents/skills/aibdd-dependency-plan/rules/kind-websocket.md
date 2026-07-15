@@ -1,6 +1,6 @@
 # kind: websocket — truth 取得、testability、entry 填寫規定
 
-適用 SOP step 7 對 kind 為 websocket 的依賴。entry 樣板：assets/dependencies.template.yml（websocket 條目）；kind 常數：assets/kind-constants/websocket.yml。
+適用 SOP step 7 對 kind 為 websocket 的依賴。entry 樣板：assets/dependencies.template.yml（websocket 條目）；kind 常數：.claude/skills/aibdd-core/references/kind-constants/websocket.yml。
 
 ## 測試範圍（先於一切）
 

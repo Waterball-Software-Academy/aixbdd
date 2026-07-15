@@ -1,6 +1,6 @@
 # kind: store — truth 取得、testability、entry 填寫規定
 
-適用 SOP step 7 對 kind 為 store 的依賴。entry 樣板：assets/dependencies.template.yml（store 條目）；kind 常數：assets/kind-constants/store.yml。
+適用 SOP step 7 對 kind 為 store 的依賴。entry 樣板：assets/dependencies.template.yml（store 條目）；kind 常數：.claude/skills/aibdd-core/references/kind-constants/store.yml。
 
 ## 測試範圍（先於一切）
 
@@ -26,7 +26,7 @@
 ## testability 與 wiring
 
 1. double 恆為 real-product；per-engine container 預設（image／ports／
-   service_connection）住 assets/kind-constants/store.yml，entry 依 engine
+   service_connection）住 .claude/skills/aibdd-core/references/kind-constants/store.yml，entry 依 engine
    查表不重抄，偏離才填 testability_overrides。custom step 模版（A 預存／
    D 驗證）同樣內建於 kind-constants，registry 不收句式素材。
 2. `@ServiceConnection` 不支援的 engine（如 minio）`sut_property_overrides` 必填。

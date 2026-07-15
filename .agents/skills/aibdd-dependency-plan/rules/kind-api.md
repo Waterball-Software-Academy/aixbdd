@@ -1,6 +1,6 @@
 # kind: api — truth 取得、testability、entry 填寫規定
 
-適用 SOP step 7 對 kind 為 api 的依賴。entry 樣板：assets/dependencies.template.yml（api 條目）；kind 常數：assets/kind-constants/api.yml。
+適用 SOP step 7 對 kind 為 api 的依賴。entry 樣板：assets/dependencies.template.yml（api 條目）；kind 常數：.claude/skills/aibdd-core/references/kind-constants/api.yml。
 
 ## 測試範圍（先於一切）
 
@@ -8,7 +8,7 @@
    Then 驗證請求正確送達或特定條件下不該發送（互動驗證正反面）。
 2. SUT 自身行為的觸發與斷言不在此——那是 builtin api_call／response_validate 的事。
 3. 兩句式的 custom step 模版與行為契約屬 kind 級常數，內建於
-   assets/kind-constants/api.yml——registry 不收句式素材，下游依 kind 查表；
+   .claude/skills/aibdd-core/references/kind-constants/api.yml——registry 不收句式素材，下游依 kind 查表；
    不得為 api 依賴發明 kind-constants 以外的句型。
 
 ## truth 取得分流（依序嘗試，取得即停）
@@ -24,7 +24,7 @@
 ## testability 與 wiring
 
 1. testability 預設（generic-stub／WireMock 3.x／programmable true）住
-   assets/kind-constants/api.yml，entry 不重抄；僅當偏離預設（如該服務有
+   .claude/skills/aibdd-core/references/kind-constants/api.yml，entry 不重抄；僅當偏離預設（如該服務有
    官方模擬器 stripe-mock）才填 entry 的 testability_overrides。
 2. `sut_property_overrides` 必填：SUT 指向該服務 base URL 的 config key，
    紅燈前置據此把 SUT 改指 stub。找不到該 key 時收進 `$ASK_BATCH`。

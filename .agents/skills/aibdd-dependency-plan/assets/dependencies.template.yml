@@ -5,7 +5,7 @@
 # 於 specs/dependencies/<name>/。surface 細節不重抄——由 truth 檔本身承載
 # （openapi 即 operations、convention.md 即 keyspaces、asyncapi 即 channels）。
 # kind 級常數（handler、custom 句式模版、prehandling 骨架、testability 預設）
-# 內建於 skill assets/kind-constants/<kind>.yml，下游依 entry.kind 查表。
+# 內建於 aibdd-core references/kind-constants/<kind>.yml，下游依 entry.kind 查表。
 # =============================================================================
 dependencies:
 
