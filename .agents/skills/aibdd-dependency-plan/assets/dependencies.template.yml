@@ -52,3 +52,47 @@ dependencies:
     wiring:
       sut_property_overrides: []
     testability_overrides: {}
+
+  # ── kind: websocket 條目範例（第三方 feed 或第一方 ws endpoint）──
+  - name: {{NAME}}                    # 例：market-feed
+    kind: websocket
+    sut_role: {{client|server}}       # client＝SUT 訂閱外部 feed；server＝SUT 自帶 endpoint
+    summary: {{ONE_LINE}}
+    truth:
+      source: {{native|authored}}     # AsyncAPI ws binding 首選；否則 authored frames 約定
+      format: {{asyncapi|convention}}
+      ref: specs/dependencies/{{NAME}}/{{TRUTH_FILE}}
+      evidence: {{verified|derived|assumed}}
+    wiring:
+      sut_property_overrides:
+        - {{SUT_CONFIG_KEY|省略}}     # client 型必填（feed URL key）；server 型免列
+    testability_overrides: {}
+
+  # ── kind: grpc 條目範例（第三方 rpc）──
+  - name: {{NAME}}                    # 例：credit-check
+    kind: grpc
+    summary: {{ONE_LINE}}
+    truth:
+      acquisition: {{user-provided|web-official}}   # proto 原生機器可讀，取得即 verified
+      format: proto
+      ref: specs/dependencies/{{NAME}}/{{SERVICE}}.proto
+      origin_url: {{URL|null}}        # web-official 必填
+      evidence: {{verified|derived}}
+    wiring:
+      sut_property_overrides:
+        - {{SUT_CONFIG_KEY}}          # 例：grpc.client.{{NAME}}.address
+    testability_overrides: {}
+
+  # ── kind: identity 條目範例（SSO／IdP）──
+  - name: {{NAME}}                    # 例：corp-sso
+    kind: identity
+    summary: {{ONE_LINE}}
+    truth:
+      source: {{native|authored}}     # realm export／OIDC discovery 首選；否則身分約定檔
+      format: {{realm-export|oidc-discovery|convention}}
+      ref: specs/dependencies/{{NAME}}/{{TRUTH_FILE}}
+      evidence: {{verified|derived|assumed}}
+    wiring:
+      sut_property_overrides:
+        - {{SUT_CONFIG_KEY|省略}}     # double=real-product 時必填（issuer-uri key）；bypass 免列
+    testability_overrides: {}         # double 抉擇（real-product|generic-stub）記於此並附理由

@@ -15,7 +15,7 @@ dependency-taxonomy（研究 repo），此處為其可執行投影。
 3. 與 RDB 同構的 NoSQL（有固定 schema、可對映表）不入盤點——走 builtin
    entity_setup／entity_validate 的 source 擴充，歸 data-plan 範疇。
 
-## kind 判定（v1 值域：api／store／channel）
+## kind 判定（值域：api／store／channel／websocket／grpc／identity）
 
 1. api：SUT 以 HTTP 對外呼叫第三方服務（金流、簡訊商、徵信⋯）。
    其 webhook 回打屬同一依賴的 facet，不獨立成依賴；callback endpoint
@@ -24,12 +24,21 @@ dependency-taxonomy（研究 repo），此處為其可執行投影。
    NoSQL document store。判準：測試要對它做資料預存（前置）或資料驗證（斷言）。
 3. channel：SUT 消費或發布訊息的 MQ topic／queue——Kafka、RabbitMQ。
    判準：測試要發訊驅動 SUT（inbound）或驗證 SUT 有發送事件（outbound）。
-4. 落點速查（承 taxonomy 壓力測試）：SFTP／檔案交換→store；Elasticsearch→store；
+4. websocket：SUT 以 ws 協定訂閱外部 feed（sut_role: client）或自帶 ws
+   endpoint 供訂閱（sut_role: server）。判準：測試要腳本化推送 frame（B/C）
+   或斷言 frame（E）。
+5. grpc：SUT 以 gRPC 呼叫第三方 rpc。判準同 api 的契約測試兩句式；
+   斷言天花板見 kind-grpc.md。
+6. identity：SUT 依賴的 SSO／IdP（authN/authZ 來源）。判準：測試要 seed
+   身分（A）或 stub JWKS（B 特例）；redirect 流程面恆為範圍外。
+7. 落點速查（承 taxonomy 壓力測試）：SFTP／檔案交換→store；Elasticsearch→store；
    feature flag 遠端服務型→api、本地檔案型→store；HTTP 履約的 Email／SMS 商→api；
-   對外 webhook（SUT 打別人）→api 的驗證面。
-5. v1 值域外但已知歸屬：websocket、grpc、identity（SSO／IdP）——判定到即收進
-   `$ASK_BATCH` 問使用者本輪緩做或升級值域，不得硬塞進 v1 kind。
-6. 同一外部服務同時有多個 kind 面向（例：又有 HTTP API 又推 websocket）時，
+   對外 webhook（SUT 打別人）→api 的驗證面；LDAP／RBAC 前置→identity；
+   行情推播訂閱→websocket；第三方徵信 rpc→grpc。
+8. 值域外（不屬六 kind 的已知延期型態）：SMTP 協定收發觀測（GreenMail 類
+   信箱驗證，taxonomy 暫不立 kind）——判定到即收進 `$ASK_BATCH` 問使用者
+   本輪緩做或提案新 kind，不得硬塞。
+9. 同一外部服務同時有多個 kind 面向（例：又有 HTTP API 又推 websocket）時，
    每個 kind 面向各立一個 registry entry，name 加 facet 後綴區辨（如 foo-api、foo-feed）。
 
 ## 盤點品質規定

@@ -1,0 +1,79 @@
+# =============================================================================
+# kind constants — websocket（kind 級常數）
+# 槽位值取自 registry entry（含 sut_role）與其 truth 檔（frames）。
+# 範圍外恆定條款：連線重試／心跳／重連協定語意不入 Gherkin。
+# =============================================================================
+kind: websocket
+
+testability_defaults:
+  double: generic-stub                # WireMock 3 不支援 ws——不得選用
+  programmable: true
+  container_by_role:                  # 依 entry.sut_role 查表
+    client: { tool: MockWebServer, in_process: true }    # SUT 是 client：替身扮 feed
+    server: { tool: 測試側 ws client fixture, in_process: true }   # SUT 是 server：無 container
+
+handlers: [external-stub-ws, message-publish, interaction-verifier]
+
+isa_step_templates:
+  # B — client 型：Given feed 將推送 frame X（替身佈建腳本化推送）
+  - handler: external-stub-ws
+    keyword: Given
+    applies_when: entry.sut_role == client
+    format_template: ^feed "(?P<boundary>[^"]+)" 將推送 (?P<event>[^ ]+), with JSON:$
+    data_format: json
+    slots:
+      boundary: entry.name
+      event: truth 檔 frames[direction=in].event
+      payload: 依 payload 欄位填空
+    behavior:
+      reads: [registry entry（specs/dependencies/dependencies.yml）與其 truth 檔, context.memo]
+      effect: 替身連線建立後依腳本推送 frame
+      asserts: null
+      export_vars: null
+    intent_projection: "前置：{{name}} 將推送 {{event}} frame（WHAT）"
+  # C — server 型：When 測試 client 送 frame 給 SUT endpoint（與 channel inbound 同形）
+  - handler: message-publish
+    keyword: When
+    applies_when: entry.sut_role == server
+    format_template: ^ws 連線 "(?P<boundary>[^"]+)" 送出 (?P<event>[^ ]+), with JSON:$
+    data_format: json
+    slots:
+      boundary: entry.name
+      event: truth 檔 frames[direction=in].event
+      payload: 依 payload 欄位填空
+    behavior:
+      reads: [registry entry 與其 truth 檔（server 型 endpoint 資訊）, context.memo]
+      effect: 測試 client 對 SUT endpoint 發送 frame
+      asserts: null
+      export_vars: null
+    intent_projection: "觸發：經 ws 連線對 SUT 送出 {{event}}（WHAT）"
+  # E — 兩型共用：Then 觀測點最終收到 frame
+  - handler: interaction-verifier
+    keyword: Then
+    format_template: ^ws "(?P<boundary>[^"]+)" 最終應收到 (?P<event>[^ ]+) frame, with table:$
+    data_format: data_table
+    slots:
+      boundary: entry.name
+      event: truth 檔 frames[direction=out].event
+      matcher: 只可斷言 payload 宣告過的欄位
+      timeout: 必填
+    behavior:
+      reads: [替身／測試 client 的接收緩衝, context.memo]
+      effect: null
+      asserts: bounded-wait 內收到符合 matcher 的 frame
+      export_vars: null
+    intent_projection: "驗證：{{boundary}} 最終收到 {{event}} frame（eventually）"
+
+red_execute:
+  scope: client 型＝B＋E；server 型＝C＋frame 斷言；協定語意（重連/心跳）不測
+  prehandling_template: |
+    // client 型：MockWebServer（in-process，無 container）
+    static MockWebServer {{name}}Feed = new MockWebServer();   // enqueue ws upgrade + 腳本推送
+    @DynamicPropertySource static void props(DynamicPropertyRegistry r) {
+        r.add("{{sut_property}}", () -> {{name}}Feed.url("/").toString());
+    }
+    // server 型：無 prehandling（SUT 自帶 endpoint），僅需測試側 ws client fixture
+  stepdef_constants:
+    forbidden:
+      - 不得測連線重試／心跳等協定語意（範圍外）
+      - E 面不得無界等待

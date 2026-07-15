@@ -1,0 +1,79 @@
+# =============================================================================
+# kind constants — grpc（kind 級常數）
+# 槽位值取自 registry entry 與其 truth 檔（proto）。
+# 已知天花板：不得斷言 grpc-status／trailer；streaming 順序語意範圍外。
+# =============================================================================
+kind: grpc
+
+testability_defaults:
+  double: generic-stub                # grpcmock（stub 同形態）；需掛 proto descriptor
+  programmable: true
+  container:
+    tool: grpcmock
+    in_process: true                  # 可 in-process；獨立行程另配 image
+    descriptor_source: 由 truth 檔（proto）編譯產生
+
+handlers: [external-stub, interaction-verifier]
+
+isa_step_templates:
+  # B — 樁：Given rpc 回應 X（與 api kind 同形，operation 換 rpc）
+  - handler: external-stub
+    keyword: Given
+    format_template: ^外部服務 "(?P<boundary>[^"]+)" 對 (?P<rpc>[^ ]+) 回應, with JSON:$
+    data_format: json                 # payload 以 proto JSON mapping 表達
+    slots:
+      boundary: entry.name
+      rpc: truth 檔（proto）的 rpc 名
+      payload: 依 response message 填空（proto JSON mapping）
+    behavior:
+      reads: [registry entry（specs/dependencies/dependencies.yml）與其 truth 檔, context.memo]
+      effect: 替身佈建 match(rpc, request matcher)→respond(message) 規則
+      asserts: null
+      export_vars: { stubId: { type: String, description: 供 E 面對照 } }
+    intent_projection: "前置：以 stub 讓 {{name}} 的 {{rpc}} 回傳指定回應（WHAT）"
+  # E 正面 — Then rpc 應被呼叫 n 次（訊息欄位可斷言；grpc-status 不可）
+  - handler: interaction-verifier
+    keyword: Then
+    format_template: ^外部服務 "(?P<boundary>[^"]+)" 的 (?P<rpc>[^ ]+) 應被呼叫 (?P<times>\d+) 次$
+    data_format: null
+    slots:
+      boundary: entry.name
+      rpc: truth 檔的 rpc 名
+      times: 整數
+      timeout: 必填
+    behavior:
+      reads: [替身接收紀錄, context.memo]
+      effect: null
+      asserts: 收到符合 request matcher 的呼叫恰 times 次；不得斷言 grpc-status
+      export_vars: null
+    intent_projection: "驗證：{{name}} 的 {{rpc}} 曾被呼叫 {{times}} 次"
+  # E 反面 — Then 不應被呼叫
+  - handler: interaction-verifier
+    keyword: Then
+    format_template: ^外部服務 "(?P<boundary>[^"]+)" 的 (?P<rpc>[^ ]+) 不應被呼叫$
+    data_format: null
+    slots:
+      boundary: entry.name
+      rpc: truth 檔的 rpc 名
+      window: 觀察窗（住 config 預設）
+    behavior:
+      reads: [替身接收紀錄, context.memo]
+      effect: null
+      asserts: 觀察窗內對該 rpc 的呼叫數 == 0
+      export_vars: null
+    intent_projection: "驗證：此情境下 {{name}} 的 {{rpc}} 不應被呼叫"
+
+red_execute:
+  scope: 契約測試兩句式（B＋E 正反面）；grpc-status／trailer／streaming 順序不測
+  prehandling_template: |
+    // grpcmock in-process；proto descriptor 由 truth 檔編譯產生
+    static GrpcMock {{name}}Stub = GrpcMock.grpcMock().build();
+    @DynamicPropertySource static void props(DynamicPropertyRegistry r) {
+        r.add("{{sut_property}}", () -> "localhost:" + {{name}}Stub.getPort());
+    }
+  stepdef_constants:
+    codegen_input: truth 檔 proto → client stub／message builder（填空素材）
+    forbidden:
+      - 不得斷言 grpc-status／trailer
+      - streaming rpc 的順序語意不入 Gherkin（範圍外）
+      - E 正面不得無界等待

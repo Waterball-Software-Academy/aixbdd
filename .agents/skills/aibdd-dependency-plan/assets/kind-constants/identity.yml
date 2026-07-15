@@ -1,0 +1,60 @@
+# =============================================================================
+# kind constants — identity（kind 級常數）
+# 槽位值取自 registry entry 與其 truth 檔（realm export／身分約定）。
+# 保真度天花板（必讀）：bypass 替身測「SUT 的授權邏輯」，永不測「SSO 整合本身」；
+# SSO redirect 流程面範圍外（E2E 層）。
+# =============================================================================
+kind: identity
+
+testability_defaults:
+  double: generic-stub                # bypass 替身（快、受天花板限制）；per-dependency 可
+                                      # override 為 real-product（Keycloak container＋realm import）
+  programmable: true                  # 僅 JWKS stub／bypass 面向
+  container_real_product:             # override 為 real-product 時查此表
+    image: keycloak/keycloak:26.0
+    ports: [8080]
+    env: { KEYCLOAK_ADMIN: admin, KEYCLOAK_ADMIN_PASSWORD: admin }
+    realm_import: 由 truth 檔（realm-export.json）掛載
+
+handlers: [identity-builder, external-stub]
+
+isa_step_templates:
+  # A — seed 身分：Given 已存在身分（建 user／簽 token／備 claims）
+  - handler: identity-builder
+    keyword: Given
+    format_template: ^已存在身分 "(?P<alias>[^"]+)", with table:$
+    data_format: data_table
+    datatable_parameters:
+      roles:  { type: String, description: 逗號分隔角色, required: false }
+      claims: { type: String, description: 額外 claims JSON, required: false }
+    slots:
+      alias: truth 檔身分約定的 alias
+      roles/claims: 只可用 truth（realm export／約定）宣告過的角色與 claim
+    behavior:
+      reads: [registry entry（specs/dependencies/dependencies.yml）與其 truth 檔, context.memo]
+      effect: 就緒身分（real-product＝IdP 建 user＋取 token；bypass＝簽測試 token）
+      asserts: null
+      export_vars:
+        "{{alias}}.uid":   { type: String, description: 後續 api_call 的 UID 引用 }
+        "{{alias}}.token": { type: String, description: Authorization header 素材 }
+    intent_projection: "前置：身分 {{alias}}（含角色/claims）就緒，供後續以其名義操作（WHAT）"
+  # B 特例 — SUT 自驗 JWT：stub JWKS/introspection endpoint → 複用 api kind 的
+  # external-stub 契約句式（boundary＝entry.name），不另立句型
+
+red_execute:
+  scope: A（seed 身分）為主＋B（JWKS stub）特例；redirect flow／token 過期／
+         signature 驗證不測（天花板範圍外，補位為 BDD 外的真 IdP 整合測試）
+  prehandling_template: |
+    // double=real-product：Keycloak container＋realm import（truth 檔即 import 檔）
+    @Container static KeycloakContainer {{name}} =
+        new KeycloakContainer("keycloak/keycloak:26.0").withRealmImportFile("{{truth_file}}");
+    @DynamicPropertySource static void props(DynamicPropertyRegistry r) {
+        r.add("{{sut_property}}", () -> {{name}}.getAuthServerUrl() + "/realms/{{realm}}");
+    }
+    // double=generic-stub（bypass）：無 container；測試簽章器或 spring-security-test 原語
+  stepdef_constants:
+    token_source: real-product＝password/client-credentials grant；bypass＝測試簽章器
+    forbidden:
+      - 不得測 redirect flow／token 過期／signature 驗證（天花板範圍外）
+      - 不得在句中出現 IdP URL 等連線細節
+      - bypass 模式不得宣稱涵蓋 SSO 整合（handoff 須標注保真等級）

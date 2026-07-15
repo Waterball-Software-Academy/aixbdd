@@ -1,7 +1,7 @@
 ---
 name: aibdd-dependency-plan
 description: >
-  當 reconcile 校準 impact matrix 後、本 owner 名下有 pending impact 待落成 dependency registry entry 時觸發。以 `read --owner aibdd-dependency-plan --impact-status pending` 為 worklist，依 Discovery 真相（spec.md／feature truth）盤點測試會經過的外部依賴、判定 kind（v1 值域：api／store／channel）、取得或撰寫各依賴的 truth 檔（`${DEPENDENCIES_DIR}/<name>/`），並在全專案唯一的 `${DEPENDENCIES_DIR}/dependencies.yml` registry 登記 entry，最後回寫 impact matrix。
+  當 reconcile 校準 impact matrix 後、本 owner 名下有 pending impact 待落成 dependency registry entry 時觸發。以 `read --owner aibdd-dependency-plan --impact-status pending` 為 worklist，依 Discovery 真相（spec.md／feature truth）盤點測試會經過的外部依賴、判定 kind（值域：api／store／channel／websocket／grpc／identity）、取得或撰寫各依賴的 truth 檔（`${DEPENDENCIES_DIR}/<name>/`），並在全專案唯一的 `${DEPENDENCIES_DIR}/dependencies.yml` registry 登記 entry，最後回寫 impact matrix。
 metadata:
   user-invocable: true
   source: project-level
@@ -25,7 +25,7 @@ Discovery 已 accepted 的 `${FEATURE_SPECS_DIR}/**`、`${ACTIVITIES_DIR}/**`、
 
 ## PRINCIPLE: kind 值域封閉
 
-v1 值域只有 `api`／`store`／`channel` 三個 kind，判定依 `aibdd-dependency-plan/rules/scope-discriminant.md`。判定不出 kind、或明確落在 v1 值域外（websocket／grpc／identity 等）者，一律收進 `$ASK_BATCH` 向使用者釐清本輪要緩做還是升級值域；不得自創 kind、不得硬塞進最相近的 kind。
+值域為 `api`／`store`／`channel`／`websocket`／`grpc`／`identity` 六個 kind，判定依 `aibdd-dependency-plan/rules/scope-discriminant.md`。判定不出 kind（不屬六值域的新型態，如 SMTP 信箱觀測）或範圍內外難辨者，一律收進 `$ASK_BATCH` 向使用者釐清本輪要緩做還是提案新 kind；不得自創 kind、不得硬塞進最相近的 kind。
 
 ## PRINCIPLE: truth 不得發明
 
@@ -88,9 +88,9 @@ v1 值域只有 `api`／`store`／`channel` 三個 kind，判定依 `aibdd-depen
    EOF
    ```
 
-2. 解析本批次 plan package: 對話歷史已指名具體 `NNN-<slug>`（例：稍早解析過 plan package、使用者點名 `${PLAN_PACKAGES_DIR}/NNN-<slug>`、或「繼續做 NNN 那個 package」這類指涉），且 ASSERT `${PLAN_PACKAGES_DIR}/NNN-<slug>/` 存在於 `CWD`，則設 `$PLAN_PACKAGE_SLUG` 為該 `NNN-<slug>`，否則對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify）要做哪一個 plan package、設 `$PLAN_PACKAGE_SLUG` 為其 slug，STOP 待使用者回答，候選僅一個甚至為空也必須釐清；若使用者指名新建或不存在的 plan package，則 STOP 並提示本 skill 必須基於既有 plan package 執行。STOP 的唯一合法形式＝把詢問訊息輸出後結束本回合，下一則輸入即為使用者回覆；不得以「非互動環境／背景執行／無互動工具」為由跳過詢問自行假定（此類判斷一律錯誤——輸出訊息本身就是發問通道），亦不得改用本 skill 未宣告的訊息指令或通道（如 dp、通知工具）發問。
+2. 解析本批次 plan package: 對話歷史已指名具體 `NNN-<slug>`（例：稍早解析過 plan package、使用者點名 `${PLAN_PACKAGES_DIR}/NNN-<slug>`、或「繼續做 NNN 那個 package」這類指涉），且 ASSERT `${PLAN_PACKAGES_DIR}/NNN-<slug>/` 存在於 `CWD`，則設 `$PLAN_PACKAGE_SLUG` 為該 `NNN-<slug>`，否則對使用者輸出 `${PLAN_PACKAGES_DIR}/*/` 全部候選 folder 並直接詢問（不使用 /clarify）要做哪一個 plan package、設 `$PLAN_PACKAGE_SLUG` 為其 slug，STOP 待使用者回答，候選僅一個甚至為空也必須釐清；若使用者指名新建或不存在的 plan package，則 STOP 並提示本 skill 必須基於既有 plan package 執行。STOP 的唯一合法形式＝把詢問訊息輸出後結束本回合，下一則輸入即為使用者回覆；不得以「非互動環境／背景執行／無互動工具」為由跳過詢問自行假定（此類判斷一律錯誤——輸出訊息本身就是發問通道），亦不得改用本 skill 未宣告的訊息指令或通道（如 dp、通知工具）發問；「候選唯一」「候選與 pending impact 對應」皆不構成免問理由，不得視同已確認。
 
-3. 查 worklist: EXECUTE command 以 `read --owner aibdd-dependency-plan --impact-status pending` 讀出 `${IMPACT_MATRIX_YML}` 屬本 owner 的 pending impact 作為 `$WORKLIST` 並對使用者輸出，CLI 用法詳見 `aibdd-core::references/impact-matrix/cli-usage.md`；`$WORKLIST` 各 impact 的 quotes 為本批次本 owner 要落成 dependency registry entry 的需求句，其中 spec 為空的 impact 為待盤點並 add-spec 的全新工作、帶 inconsistent spec 的 impact 為待重新對齊既有 registry entry 或 truth 檔。
+3. 查 worklist: 進入本步前 ASSERT 對話中已存在使用者對 step 2 詢問的回覆訊息（`$PLAN_PACKAGE_SLUG` 必須出自該回覆，不得出自推斷）；ASSERT 不成立即回 step 2 補停點，禁止帶著未經回覆的 slug 繼續。EXECUTE command 以 `read --owner aibdd-dependency-plan --impact-status pending` 讀出 `${IMPACT_MATRIX_YML}` 屬本 owner 的 pending impact 作為 `$WORKLIST` 並對使用者輸出，CLI 用法詳見 `aibdd-core::references/impact-matrix/cli-usage.md`；`$WORKLIST` 各 impact 的 quotes 為本批次本 owner 要落成 dependency registry entry 的需求句，其中 spec 為空的 impact 為待盤點並 add-spec 的全新工作、帶 inconsistent spec 的 impact 為待重新對齊既有 registry entry 或 truth 檔。
 
 4. 載入 package 範疇: READ `${PLAN_REPORTS_DIR}/function-packaging.md` 取各 function package 的 flagged-reason（`added`／`related`）與 rationale 作為 `$PLAN_SCOPE`，作為待讀 feature truth 的範疇。
 
@@ -106,9 +106,9 @@ v1 值域只有 `api`／`store`／`channel` 三個 kind，判定依 `aibdd-depen
 
 6. 盤點依賴並判定 kind
 
-   6.1 依 `$QUOTE_SEGMENTS` 參照 `$DISCOVERY_TRUTH` 並嚴格遵照 `aibdd-dependency-plan/rules/scope-discriminant.md` 全部約束 REASONING 依賴盤點清單 `$DEP_INVENTORY`，每筆為 `{ name, kind, 測試互動面, quotes, impact_id, 對照的既有 profile（若有） }`：`name` 為全域唯一 ref（kebab-case）、`kind` 為 v1 值域之一、測試互動面為該依賴在 feature 中出現的模式（前置／觸發／驗證）。範圍外情境（判別式排除者）明列於盤點附註不入清單；判定不出 kind、v1 值域外、或範圍內外難辨者蒐集成 `$ASK_BATCH`；本步只推理不落地。
+   6.1 依 `$QUOTE_SEGMENTS` 參照 `$DISCOVERY_TRUTH` 並嚴格遵照 `aibdd-dependency-plan/rules/scope-discriminant.md` 全部約束 REASONING 依賴盤點清單 `$DEP_INVENTORY`，每筆為 `{ name, kind, 測試互動面, quotes, impact_id, 對照的既有 profile（若有） }`：`name` 為全域唯一 ref（kebab-case）、`kind` 為值域六 kind 之一、測試互動面為該依賴在 feature 中出現的模式（前置／觸發／驗證）。範圍外情境（判別式排除者）明列於盤點附註不入清單；判定不出 kind（不屬六值域的新型態）或範圍內外難辨者蒐集成 `$ASK_BATCH`；本步只推理不落地。
 
-   6.2 若 `$ASK_BATCH` 非空 則一次性 DELEGATE `/clarify` 批次問清，附各項來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-dependency-plan` 的澄清區塊，並依結論處置：判定屬第一方 REST endpoint 者改派 owner `aibdd-api-plan`、屬 persistent state 者改派 owner `aibdd-data-plan`（EXECUTE command `read --id <impact_id>` 取回該 impact 後 `write --id <impact_id> --owner <owner>` 重新提供其原 quotes 與 rationale）；判定本輪不納入者更新該 impact 的 quote／rationale 標記本輪緩做並保留其 pending；再依結論回 6.1 重推，重複至 `$ASK_BATCH` 清空。
+   6.2 若 `$ASK_BATCH` 非空 則一次性 DELEGATE `/clarify` 批次問清，附各項來源 quote 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-dependency-plan` 的澄清區塊，並依結論處置：判定屬第一方 REST endpoint 者改派 owner `aibdd-api-plan`、屬 persistent state 者改派 owner `aibdd-data-plan`（EXECUTE command `read --id <impact_id>` 取回該 impact 後 `write --id <impact_id> --owner <owner>` 重新提供其原 quotes 與 rationale）；判定本輪緩做（含不屬六值域的新型態）者更新該 impact 的 quote／rationale 標記緩做並保留其 pending；再依結論回 6.1 重推，重複至 `$ASK_BATCH` 清空。
 
 7. 逐依賴研究 truth 與 testability: 對 `$DEP_INVENTORY` 每筆依賴，嚴格遵照其 kind 對應的 `aibdd-dependency-plan/rules/kind-<kind>.md` 全部約束 REASONING 出 registry entry 草稿與 truth 檔草稿 `$ENTRY_DRAFTS`（entry 照 `aibdd-dependency-plan/assets/dependencies.template.yml` 對應 kind 條目的骨架填空；surface 細節由 truth 檔承載，不抄進 entry）：
 
