@@ -4,26 +4,30 @@
 # 槽位值取自 registry entry（specs/dependencies/dependencies.yml 的該依賴條目）與其 truth 檔。
 # =============================================================================
 testability_defaults:
-  double: generic-stub                # 該服務有官方模擬器時 entry 可覆寫 double 與 image
+  double: generic-stub                # 預設 in-process WireMock；有官方模擬器/需 prod-parity 時 entry 可覆寫 double
   programmable: true
-  container:
-    image: wiremock/wiremock:3.9.1
-    ports: [8080]
-    wait_strategy: http:/__admin/health
-    service_connection: false         # 走 DynamicPropertyRegistry 覆寫 entry.wiring.sut_property_overrides
+  deployment: in-process              # WireMock 嵌入式 server（測試 JVM 內起，免 Docker）
+  wire: dynamic-property-override     # DynamicPropertyRegistry 覆寫 entry.wiring.sut_property_overrides 指向 server.baseUrl()
+  # 具體語言配置見 variants/<variant>/test-doubles/wiremock.md；要改真 container 者由 entry 覆寫
 
 handlers: [external-stub, interaction-verifier]
 
 # custom 句式模版（框架 custom 契約 schema）。slots／filling 指引見 rules/kind-api.md；
 # 執行語意見下方 red_execute。dsl-refine 取 format＋intent＋data_format 模版填空宣告契約。
 isa_step_templates:
-  # B — Given 設定外部服務對某 operation 的預期回應（stub）
+  # B — Given 設定外部服務對某 operation 的預期回應（stub；成功/業務結果體，狀態預設 200）
   - name: 外部服務 stub 回應
     format: ^外部服務 "(?P<boundary>[^"]+)" 對 (?P<operation>[^ ]+) 回應, with JSON:$
     instruction_type: custom
     handler: external-stub
     data_format: json
-    intent: 前置（Given）：以 stub 讓 {{boundary}} 的 {{operation}} 回傳指定回應
+    intent: 前置（Given）：以 stub 讓 {{boundary}} 的 {{operation}} 回傳指定回應（含業務否決結果體，如 rejected）
+  # B — Given 設定外部服務對某 operation 回應 HTTP 錯誤狀態（模擬外部錯誤/故障；測 SUT 對外部失敗的韌性）
+  - name: 外部服務 stub 錯誤狀態
+    format: ^外部服務 "(?P<boundary>[^"]+)" 對 (?P<operation>[^ ]+) 回應狀態 (?P<status>\d+)$
+    instruction_type: custom
+    handler: external-stub
+    intent: 前置（Given）：以 stub 讓 {{boundary}} 的 {{operation}} 回傳 HTTP 狀態 {{status}}（模擬外部錯誤/故障）
   # E — Then 驗證 operation 被呼叫的次數
   - name: 外部服務應被呼叫次數
     format: ^外部服務 "(?P<boundary>[^"]+)" 的 (?P<operation>[^ ]+) 應被呼叫 (?P<times>\d+) 次$
@@ -48,14 +52,13 @@ red_execute:
   scope: 只實作兩類 mock——B 設定預期回應、E 驗證請求送達/未送達（契約測試規格）；
          SUT 業務行為的觸發與斷言交 builtin（api_call/response_validate）
   prehandling_template: |
-    // WireMock testcontainer；base URL 覆寫到 entry.wiring.sut_property_overrides
-    @Container static GenericContainer<?> {{name}}Stub =
-        new GenericContainer<>("{{container.image}}").withExposedPorts(8080);
-    @DynamicPropertySource static void props(DynamicPropertyRegistry r) {
-        r.add("{{sut_property}}", () -> "http://localhost:" + {{name}}Stub.getMappedPort(8080));
-    }
+    per api 依賴一個 in-process 替身 server（免 Docker），測試前置起、base URL 覆寫到
+    entry.wiring.sut_property_overrides，每情境 resetAll()。java-e2e 具體配置
+    （@TestConfiguration：WireMockServer(options().dynamicPort()) ＋ @DynamicPropertySource）
+    見 variants/<variant>/test-doubles/wiremock.md。
   stepdef_constants:
-    stub_client: WireMock admin API（__admin/mappings 佈建、__admin/requests 查收）
+    stub_client: in-process WireMock 的 Java DSL（stubFor 佈樁、verify／countRequestsMatching 查驗）；
+                 java-e2e handler 具體模版見 variants/<variant>/handlers/{external-stub,interaction-verifier}.md
     forbidden:
       - 不得真連外（Forbidden 承 external-stub handler）
       - 不得斷言 truth 未宣告的欄位

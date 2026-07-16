@@ -4,8 +4,9 @@
 
 ## 測試範圍（先於一切）
 
-1. api kind 的測試面為契約測試句式：Given 設定 api 預期回應（stub）、
-   Then 驗證請求正確送達或特定條件下不該發送（互動驗證正反面）；當 feature 明文要驗
+1. api kind 的測試面為契約測試句式：Given 設定 api 預期回應（stub，含成功／業務結果體，以及
+   HTTP 錯誤狀態「回應狀態 N」以模擬外部故障、測 SUT 韌性——外部業務否決如 rejected 用同一 stub 句式
+   換回應體、非新句式）、Then 驗證請求正確送達或特定條件下不該發送（互動驗證正反面）；當 feature 明文要驗
    「SUT 送給外部服務的 payload 內容」（如「送簽資料包含下列欄位」）時，Then 用
    payload-bearing 互動驗證變體（應被呼叫並送出, with table:）把送出欄位值以 DataTable 斷言，
    而非退回只驗次數的 count-only。

@@ -19,8 +19,10 @@
 
 對每條 custom，BIND 其契約欄位：`name`、`format`（regex，含具名群組）、**`intent`（測試意圖／行為，含
 Given/When/Then 角色——實作 body 的唯一依據）**、`data_format`（`data_table` / `json`，若有）、
-`datatable_parameters`（若有）、`export_vars`（若有）。`instruction_type` 非 custom（builtin）一律 SKIP。
+`datatable_parameters`（若有）、`export_vars`（若有）、**`handler`（若有）**。`instruction_type` 非 custom（builtin）一律 SKIP。
 若某 custom 缺 `intent` → 停下來回報 `stop_reason: custom_missing_intent`（dsl-refine 應補）。
+
+**`handler` 決定分派**：契約帶 `handler` 且對應 dependency registry（`specs/dependencies/dependencies.yml`）某 entry 者為**外部依賴 custom**——其實作**不靠 intent 自推**，而是依 `handler` 分派到對應的具體模版（見 step 3 優先序第 0 點）。`intent` 對這類 custom 只作 WHAT 對照，不作 body 的來源。無 `handler` 的一般 custom 才走 intent 驅動手寫。
 
 ## 2. 比對測試程式碼，篩出「缺 StepDefinition」的 custom —— 來源：測試碼
 
@@ -42,8 +44,24 @@ READ `${STEP_DEFINITIONS_RUNTIME_REF}` 取得 step def 存放 glob。對每條 c
 
 **參照範本的優先序**：
 
-1. **既有 custom step def**（grep step glob 找形狀最近者）—— 首選範本。
-2. 該 custom 若屬「外部資源」類 → 參照 boundary `handlers/external-stub.md`。
+0. **外部依賴 custom（契約帶 `handler`、對應 registry entry）→ 依 `handler` 分派到具體模版（首選且唯一來源，不退回 intent 自推）**：
+   READ `.claude/skills/aibdd-core/assets/boundaries/${PRESET_KIND}/variants/${STARTER_VARIANT}/handlers/<entry.kind>-<handler>.md`
+   （handler 模版依 kind 命名：同名 handler 在不同 kind 實作不同，如 external-stub 於 api 走 WireMock、於 grpc 走 grpcmock）
+   的具體 step def 模版，逐 slot 填空——matcher／欄位取自本 custom 契約與該 entry 的 truth 檔（如 api 的
+   operation → openapi truth 的 method/path、payload 欄位 → request/response schema，只可用 truth 宣告欄位）；
+   句式有多變體（次數／payload／反面等）者依模版內變體節選對應。模版指示需替身（in-process stub 或 container）者，READ 並確認
+   `variants/${STARTER_VARIANT}/test-doubles/<engine>.md` 的替身配置已由 prehandling（主 SOP step 5
+   RED_PREHANDLING_HOOK）佈建、缺則據其補上（`@Import` 進 CucumberSpringConfiguration、DynamicPropertyRegistry
+   覆寫 SUT 設定鍵、每情境 reset）。
+   **測試套件檢查（避免生成的 stepdef 編不過）**：該 handler／test-double 檔宣告的「需要的測試套件」，
+   先 CHECK 專案套件管理處（java-e2e＝專案根 `pom.xml` 的 `<dependencies>`；其他 stack 為各自 manifest）
+   是否已裝；缺者**自動補進（scope=test）**，並在 red handoff 記錄補了哪些座標；套件管理處不存在或格式無法識別
+   → 停下回報 `stop_reason: missing_package_manifest`，不臆造。此為 test-scope 相依（低風險、stepdef 直接需要），
+   與缺框架（如 specformula，需 plugin／預處理）不同——後者仍走停下回報、不自行補框架。
+   變體與 forbidden 一律承 kind-constants `<entry.kind>.yml` 的 `red_execute`。
+   *（`variants/${STARTER_VARIANT}/handlers/<entry.kind>-<handler>.md` 該檔存在才走本點；不存在則回退第 2 點語言中立契約。）*
+1. **既有 custom step def**（grep step glob 找形狀最近者）—— 無 `handler` 的一般 custom 首選範本。
+2. 該 custom 若屬「外部資源」類、但無對應 variant handler 具體模版 → 參照 boundary `handlers/<handler>.md`（語言中立契約，據 variant 機制手寫）。
 3. 其餘 builtin handler（state-builder / operation-invoke / response-verify …）**一律不參照**——那是框架已提供的
    builtin 形狀，custom 套它只會把 custom 又寫成 builtin 樣。
 
