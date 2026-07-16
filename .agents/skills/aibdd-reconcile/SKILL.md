@@ -83,6 +83,7 @@ metadata:
    CONTRACTS_DIR=${CONTRACTS_DIR}
    CURRENT_PLAN_PACKAGE=${CURRENT_PLAN_PACKAGE}
    DATA_DIR=${DATA_DIR}
+   DEPENDENCIES_DIR=${DEPENDENCIES_DIR}
    FEATURE_SPECS_DIR=${FEATURE_SPECS_DIR}
    IMPACT_MATRIX_YML=${IMPACT_MATRIX_YML}
    PLAN_PACKAGES_DIR=${PLAN_PACKAGES_DIR}
@@ -149,9 +150,11 @@ metadata:
 
     12.3 `aibdd-spec-by-example` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${FEATURE_SPECS_DIR}` 下既有 `.feature` 的 Scenario／Examples REASONING 本階段被牽動的 finding，包含但不限於 example 具體值、邊界值、step 寫法，加入 `$STAGE_FINDINGS`。
 
-    12.4 `aibdd-api-plan` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${CONTRACTS_DIR}` 下契約檔 REASONING 本階段被牽動的 finding，包含但不限於 operation contract、對外 operation／路由／欄位，加入 `$STAGE_FINDINGS`；段落分不清是對外互動承諾還是須穩定保存的系統狀態（operation／state 兩屬不明）者，一律先歸本階段收進 finding、不歸 `aibdd-data-plan`。
+    12.4 `aibdd-dependency-plan` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${DEPENDENCIES_DIR}/dependencies.yml` 既有 registry 與 `${FEATURE_SPECS_DIR}`／`${ACTIVITIES_DIR}` Discovery 真相，並嚴格套用 `aibdd-dependency-plan::rules/scope-discriminant.md` 的判別式 REASONING 本階段被牽動的 finding，包含但不限於測試互動會經過的外部第三方依賴（快取／外部 API／MQ／外部儲存／websocket／gRPC／身分服務，值域六 kind：api／store／channel／websocket／grpc／identity）之新增／變更／移除。僅收外部依賴：判別式排除的第一方 REST endpoint 歸 `aibdd-api-plan`、SUT 自身 persistent state 歸 `aibdd-data-plan`，不重複歸本階段；判定不出 kind 或範圍內外難辨者仍先收進 finding（交由 dependency-plan 後續 `/clarify` 釐清），本步不臆斷、不補洞。加入 `$STAGE_FINDINGS`。本階段為三個 planner（dependency-plan／api-plan／data-plan）之首，先劃定外部依賴邊界，api／data 兩階段再於其內收第一方 finding。
 
-    12.5 `aibdd-data-plan` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${DATA_DIR}` 下 schema 檔 REASONING 本階段被牽動的 finding，包含但不限於 persistent data schema、entity／table／欄位，加入 `$STAGE_FINDINGS`。
+    12.5 `aibdd-api-plan` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${CONTRACTS_DIR}` 下契約檔 REASONING 本階段被牽動的 finding，包含但不限於 operation contract、對外 operation／路由／欄位，加入 `$STAGE_FINDINGS`；段落分不清是對外互動承諾還是須穩定保存的系統狀態（operation／state 兩屬不明）者，一律先歸本階段收進 finding、不歸 `aibdd-data-plan`。惟本階段僅收 SUT 自身對外提供的第一方 operation／contract；段落若為 SUT 反向呼叫外部第三方服務（送簽／發訊／查外部 API／存取外部儲存等），不歸本階段，改由 12.4 `aibdd-dependency-plan` 依 scope-discriminant 判別。
+
+    12.6 `aibdd-data-plan` 階段: 依據 `$RAW_IDEA` 與 `$FINDING_RULE`、參考 `${DATA_DIR}` 下 schema 檔 REASONING 本階段被牽動的 finding，包含但不限於 persistent data schema、entity／table／欄位，加入 `$STAGE_FINDINGS`。
 
 13. 彙整待校準清單
 
@@ -159,7 +162,7 @@ metadata:
 
     13.2 自 `$STAGE_FINDINGS` 取無 `spec_path` 者 REASONING `$NEW_IMPACTS`，每筆含 `{ owner, quote, rationale }`：`owner` 取自該 finding；`quote` 取自該 finding 之 quotes；`rationale` 整合其 quote 以一句話說明此 impact 在該 owner 下為何要產生 spec。
 
-    13.3 owner 覆蓋檢查: 依 `$STALE_SPECS` 與 `$NEW_IMPACTS` REASONING 檢查 step 12 的每個 owner（`aibdd-flows-specify`、`aibdd-rules-specify`、`aibdd-spec-by-example`、`aibdd-api-plan`、`aibdd-data-plan`）是否各自至少分得一筆。對一筆都沒有的 owner，回到 step 12 該 owner 的 sub-step 以 `$FINDING_RULE` 的派工從寬原則重新 REASONING 一次：只要 `$RAW_IDEA` 任一段落在該 owner 職責下可能需要增修 spec——含被其他階段的變更間接牽動者（例：權限、角色、狀態、欄位、流程的連動）——即補構成 finding 併入 13.1／13.2。重查後仍無 finding 的 owner 屬例外情況，記入 `$UNDISPATCHED_OWNERS`，每筆含 `{ owner, reason }`：`reason` 為本批次確定不牽動該階段的具體排除理由，嚴禁只寫「需求未提及」帶過；亦嚴禁為湊數捏造與 `$RAW_IDEA` 無關的任務。
+    13.3 owner 覆蓋檢查: 依 `$STALE_SPECS` 與 `$NEW_IMPACTS` REASONING 檢查 step 12 的每個 owner（`aibdd-flows-specify`、`aibdd-rules-specify`、`aibdd-spec-by-example`、`aibdd-dependency-plan`、`aibdd-api-plan`、`aibdd-data-plan`）是否各自至少分得一筆。對一筆都沒有的 owner，回到 step 12 該 owner 的 sub-step 以 `$FINDING_RULE` 的派工從寬原則重新 REASONING 一次：只要 `$RAW_IDEA` 任一段落在該 owner 職責下可能需要增修 spec——含被其他階段的變更間接牽動者（例：權限、角色、狀態、欄位、流程的連動）——即補構成 finding 併入 13.1／13.2。重查後仍無 finding 的 owner 屬例外情況，記入 `$UNDISPATCHED_OWNERS`，每筆含 `{ owner, reason }`：`reason` 為本批次確定不牽動該階段的具體排除理由，嚴禁只寫「需求未提及」帶過；亦嚴禁為湊數捏造與 `$RAW_IDEA` 無關的任務。
 
 14. 標記過時 spec: 對 `$STALE_SPECS` 每一筆 `{ impact_id, spec_path, owner, quote, rationale }` 執行下列 CLI command；任一 command 回 ok 為 false 時依其 `violations` 修正後重試直到 ok。
 
@@ -169,4 +172,4 @@ metadata:
 
 15. 新增全新 impact: 對 `$NEW_IMPACTS` 每一筆 `{ owner, quote, rationale }` EXECUTE command `write --owner <owner> --quote <quote> --rationale <rationale>` 新建一個 spec-less 的 `pending` impact；任一 command 回 ok 為 false 時依其 `violations` 修正後重試直到 ok。
 
-16. 回報結果: 對使用者輸出（可使用不同詞彙但維持語意）「OK，/aibdd-reconcile 已把本批次需求追加進 `spec.md`，並把影響矩陣校準完成：受影響而過時的 spec 已標成 `inconsistent`（對應 impact 降級為 `pending`），新發現的影響已新增為 `pending` impact。下面逐一列出本輪被標 `inconsistent` 的 spec 與新增的 impact：<逐一列出>。」若 `$UNDISPATCHED_OWNERS` 非空，接著逐筆輸出「owner <owner> 本輪未獲派任何 impact，排除理由：<reason>」。最後輸出「接著請依序重新執行 planner skills（`aibdd-function-packaging`、`aibdd-flows-specify`、`aibdd-rules-specify`、`aibdd-spec-by-example`、`aibdd-api-plan`、`aibdd-data-plan`）。」
+16. 回報結果: 對使用者輸出（可使用不同詞彙但維持語意）「OK，/aibdd-reconcile 已把本批次需求追加進 `spec.md`，並把影響矩陣校準完成：受影響而過時的 spec 已標成 `inconsistent`（對應 impact 降級為 `pending`），新發現的影響已新增為 `pending` impact。下面逐一列出本輪被標 `inconsistent` 的 spec 與新增的 impact：<逐一列出>。」若 `$UNDISPATCHED_OWNERS` 非空，接著逐筆輸出「owner <owner> 本輪未獲派任何 impact，排除理由：<reason>」。最後輸出「接著請依序重新執行 planner skills（`aibdd-function-packaging`、`aibdd-flows-specify`、`aibdd-rules-specify`、`aibdd-spec-by-example`、`aibdd-dependency-plan`、`aibdd-api-plan`、`aibdd-data-plan`）。」
