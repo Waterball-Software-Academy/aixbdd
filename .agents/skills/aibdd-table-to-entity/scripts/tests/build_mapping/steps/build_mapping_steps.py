@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import json
-import os
 import subprocess
 from pathlib import Path
 
@@ -18,16 +17,12 @@ def _normalize_text(text: str) -> str:
     return "\n".join(lines)
 
 
-def _run(args: list[str], *, drop_data_dir_env: bool = False, stdin: str | None = None):
-    env = dict(os.environ)
-    if drop_data_dir_env:
-        env.pop("DATA_DIR", None)
+def _run(args: list[str], *, stdin: str | None = None):
     return subprocess.run(
         ["uv", "run", str(_CLI), *args],
         text=True,
         capture_output=True,
         input=stdin,
-        env=env,
     )
 
 
@@ -51,11 +46,6 @@ def step_existing_mapping(context, relpath: str):
     target.write_text(context.text, encoding="utf-8")
 
 
-@when("build_mapping CLI is run against the data directory")
-def step_run_against_data_dir(context):
-    context.last_result = _run([str(context.data_dir)])
-
-
 @when("build_mapping plan is run against the data directory")
 def step_run_plan(context):
     context.last_result = _run(["plan", str(context.data_dir)])
@@ -68,15 +58,15 @@ def step_run_apply(context):
     )
 
 
-@when("build_mapping CLI is run against a missing data directory")
+@when("build_mapping plan is run against a missing data directory")
 def step_run_missing_dir(context):
     missing = context.tmp_root / "does-not-exist"
-    context.last_result = _run([str(missing)])
+    context.last_result = _run(["plan", str(missing)])
 
 
 @when("build_mapping CLI is run with no arguments")
 def step_run_no_args(context):
-    context.last_result = _run([], drop_data_dir_env=True)
+    context.last_result = _run([])
 
 
 @then("CLI exit code is {code:d}")
@@ -151,13 +141,32 @@ def step_plan_existing(context, folder: str, mapping: str):
     )
 
 
-@when("build_mapping CLI is run with DATA_DIR env var pointing to the data directory")
-def step_run_with_env_var(context):
-    env = dict(os.environ)
-    env["DATA_DIR"] = str(context.data_dir)
-    context.last_result = subprocess.run(
-        ["uv", "run", str(_CLI)],
-        text=True,
-        capture_output=True,
-        env=env,
+@then("the plan should list ignored files {files}")
+def step_plan_ignored_files(context, files: str):
+    plan = json.loads(context.last_result.stdout)
+    expected = json.loads(files)
+    assert plan["ignored_files"] == expected, (
+        f"ignored_files: expected {expected}, got {plan['ignored_files']}"
     )
+
+
+@then('the plan should include a foreign mapping at folder "{folder}" with entities {entities}')
+def step_plan_foreign_mapping(context, folder: str, entities: str):
+    plan = json.loads(context.last_result.stdout)
+    entry = next(
+        (f for f in plan["foreign_mappings"] if f["folder"] == folder), None
+    )
+    assert entry is not None, (
+        f"foreign mapping for {folder!r} not in plan: {plan['foreign_mappings']}"
+    )
+    expected = json.loads(entities)
+    assert entry["entities"] == expected, (
+        f"foreign entities for {folder}: expected {expected}, got {entry['entities']}"
+    )
+
+
+@then('the plan should list no folder "{folder}"')
+def step_plan_no_folder(context, folder: str):
+    plan = json.loads(context.last_result.stdout)
+    folders = [f["folder"] for f in plan["folders"]]
+    assert folder not in folders, f"unexpected folder {folder!r} in plan: {folders}"

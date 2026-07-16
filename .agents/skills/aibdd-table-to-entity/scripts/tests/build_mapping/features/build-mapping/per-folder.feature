@@ -15,7 +15,10 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           id SERIAL PRIMARY KEY
         );
         """
-      When build_mapping CLI is run against the data directory
+      When build_mapping apply is run against the data directory with naming:
+        """
+        {"primary": {"accounts": "accounts", "rooms": "rooms"}}
+        """
       Then CLI exit code is 0
       And the generated mapping at "primary/entity_to_table_mapping.yml" should equal:
         """
@@ -41,7 +44,10 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           PRIMARY KEY (`id`)
         );
         """
-      When build_mapping CLI is run against the data directory
+      When build_mapping apply is run against the data directory with naming:
+        """
+        {"primary": {"accounts": "accounts"}, "secondary": {"players": "players"}}
+        """
       Then CLI exit code is 0
       And the generated mapping at "primary/entity_to_table_mapping.yml" should equal:
         """
@@ -71,7 +77,10 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           id SERIAL PRIMARY KEY
         );
         """
-      When build_mapping CLI is run against the data directory
+      When build_mapping apply is run against the data directory with naming:
+        """
+        {".": {"games": "games"}, "primary": {"accounts": "accounts"}}
+        """
       Then CLI exit code is 0
       And the generated mapping should equal:
         """
@@ -95,7 +104,10 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           id SERIAL PRIMARY KEY
         );
         """
-      When build_mapping CLI is run against the data directory
+      When build_mapping apply is run against the data directory with naming:
+        """
+        {"primary": {"accounts": "accounts"}}
+        """
       Then CLI exit code is 0
       And the generated mapping at "primary/entity_to_table_mapping.yml" should equal:
         """
@@ -139,7 +151,7 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           - secondary_users: users
         """
 
-    Example: identity naming on same-named tables across folders collides and is rejected
+    Example: naming same-named tables across folders with the same entity name collides and is rejected
       Given a temporary data directory
       And a schema file "primary/users.pg.sql" with content:
         """
@@ -154,7 +166,10 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           PRIMARY KEY (`id`)
         );
         """
-      When build_mapping CLI is run against the data directory
+      When build_mapping apply is run against the data directory with naming:
+        """
+        {"primary": {"users": "users"}, "secondary": {"users": "users"}}
+        """
       Then CLI exit code is 4
       And CLI stderr should contain "duplicate entity 'users'"
 
@@ -173,6 +188,6 @@ Feature: build entity_to_table_mapping.yml per subfolder from schema files
           id SERIAL PRIMARY KEY
         );
         """
-      When build_mapping CLI is run against the data directory
+      When build_mapping plan is run against the data directory
       Then CLI exit code is 3
       And CLI stderr should contain "duplicate table 'accounts'"

@@ -2,12 +2,12 @@ Feature: build entity_to_table_mapping.yml from schema files
 
   Rule: 缺少 data 資料夾時要 stderr 失敗
     Example: data directory does not exist
-      When build_mapping CLI is run against a missing data directory
+      When build_mapping plan is run against a missing data directory
       Then CLI exit code is 2
       And CLI stderr should contain "DATA_DIR not found"
 
-  Rule: 缺少參數與環境變數時顯示 usage
-    Example: no DATA_DIR argument and no env var
+  Rule: 缺少子命令時顯示 usage
+    Example: no subcommand and no argument
       When build_mapping CLI is run with no arguments
       Then CLI exit code is 1
       And CLI stderr should contain "usage: build_mapping.py"
@@ -15,7 +15,10 @@ Feature: build entity_to_table_mapping.yml from schema files
   Rule: 空資料目錄產出空 mapping 而非錯誤
     Example: data directory exists but contains no schema files
       Given a temporary data directory
-      When build_mapping CLI is run against the data directory
+      When build_mapping apply is run against the data directory with naming:
+        """
+        {}
+        """
       Then CLI exit code is 0
       And the generated mapping should equal:
         """
