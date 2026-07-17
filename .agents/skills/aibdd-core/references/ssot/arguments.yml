@@ -155,6 +155,11 @@ RED_PREHANDLING_HOOK_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/prehandling-before-red-p
 # 設為某 skill 名（如 batch-implement-feature）→ green-execute 把實作轉綠委派給該 skill、不跑預設流程；
 # 委派 skill 的實作紀律/範疇由其自身定義，green-execute 仍負責接 red handoff、drift 檢查、確認全綠與 green handoff。
 GREEN_IMPLEMENT_DELEGATE_SKILL: ''
+# RED_ARCHIVE_SPECS — red-execute 是否執行 specs 歸檔同步（SOP step 4 的 archive_specs.py mirror／
+# 未安裝框架時的 FEATURE_ARCHIVE_RUNTIME_REF）。選填 feature flag，未宣告預設 true（維持現行：
+# 把 specs mirror 進 test resources）。設 false → red-execute 不再自動同步 specs，
+# 改由使用者自訂方式管理 specs 落點（如 pom.xml 的 build/resources 配置、Maven plugin，或自備同步腳本）。
+RED_ARCHIVE_SPECS: true
 
 # =============================================================================
 # 以下由 02-execute-layout/SOP.md append per-stack/<stack>/arguments.tail.yml

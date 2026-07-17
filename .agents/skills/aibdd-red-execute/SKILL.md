@@ -50,7 +50,9 @@ metadata:
 
 3. BIND active boundary：以已 RESOLVE 的 `${PRESET_KIND}` 作為本專案 active boundary；值為空就停下來，回報 `stop_reason: missing_active_boundary`。BIND 並確認此路徑存在：`.claude/skills/aibdd-core/assets/boundaries/${PRESET_KIND}/`
 
-4. Feature 歸檔：把 spec 產物放到測試框架要求的位置（Java cucumber 須在 resources 下；python behave 要與測試碼放一塊）。依 `${INSTALL_SPECTRUM}` 分流：
+4. Feature 歸檔：把 spec 產物放到測試框架要求的位置（Java cucumber 須在 resources 下；python behave 要與測試碼放一塊）。
+
+   **歸檔開關（feature flag，選填）**：先讀 `${AIBDD_ARGUMENTS_PATH}` 的 `RED_ARCHIVE_SPECS`（未宣告視為 `true`；僅 `false` 才關閉）。若為 `false` → **SKIP 本步整個 Feature 歸檔**——不執行 specs 同步腳本（`archive_specs.py`）、也不跑 `${FEATURE_ARCHIVE_RUNTIME_REF}`；specs 落點改由使用者自訂方式管理（如 pom.xml 的 build/resources 配置、Maven plugin，或自備同步腳本），red-execute 不介入。於 red handoff 註記 `specs_archive: skipped`，直接進 step 5。否則（`true`）依 `${INSTALL_SPECTRUM}` 分流：
 
    - **`${INSTALL_SPECTRUM}` 為 true（框架 / preprocess）** → RUN 歸檔腳本（**mirror；嚴禁手動複製、禁手改 target**）。它把 specs 的 feature+dsl+isa+api+data mirror 到 test resources（4 target，clean-then-copy；來源刪檔下游一併移除；還沒完成 dsl-refine〔無同名 `.dsl.yml`〕的 feature 不搬）：
      ```bash
