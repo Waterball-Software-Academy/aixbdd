@@ -147,6 +147,11 @@ FIXTURES_RUNTIME_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/fixtures.md
 FEATURE_ARCHIVE_RUNTIME_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/feature-archive.md
 # RED_PREHANDLING_HOOK_REF — red phase 前置 prehandling hook 文件（值為檔案路徑）
 RED_PREHANDLING_HOOK_REF: ${AIBDD_CONFIG_DIR}/bdd-stack/prehandling-before-red-phase.md
+# GREEN_IMPLEMENT_DELEGATE_SKILL — green 階段「實作轉綠」委派目標 skill（選填 feature flag）。
+# 空／未宣告 → aibdd-green-execute 跑預設綠燈流程（steps/turn-green-edit-product-code.md 迴圈，只改產品碼）。
+# 設為某 skill 名（如 batch-implement-feature）→ green-execute 把實作轉綠委派給該 skill、不跑預設流程；
+# 委派 skill 的實作紀律/範疇由其自身定義，green-execute 仍負責接 red handoff、drift 檢查、確認全綠與 green handoff。
+GREEN_IMPLEMENT_DELEGATE_SKILL: ''
 
 # =============================================================================
 # 以下由 02-execute-layout/SOP.md append per-stack/<stack>/arguments.tail.yml
