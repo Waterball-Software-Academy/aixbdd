@@ -139,7 +139,7 @@ metadata:
 
     11.1 EXECUTE command 以 `read`（無 filter）重新讀出 `${IMPACT_MATRIX_YML}` 全部 impact 作為 `$CURRENT_MATRIX` 並對使用者輸出。
 
-    11.2 確立 finding 構成原則作為 `$FINDING_RULE`：以 `$RAW_IDEA` 的完整敘述段落為捕捉單位（一段為一個或多個語意連續的自然段，含段內的表格／分級／允許值／回應欄位等列舉清單整塊），一個 impact 把某幾個段落交給某 owner 職責下 formulate 成 spec；本步以段落為單位對照既有 spec 判斷該段是改動既有 spec、還是須由 owner 新建 spec。每個 finding 為 `{ owner, quotes, spec_path }`：`owner` 為所屬階段；`quotes` 為交給該 owner 的 `$RAW_IDEA` 段落，一律逐字整段照抄；同一段落若同時觸及多個 owner 的職責，則該段落同時歸屬每個被觸及 owner 的 finding，`quotes` 可跨 owner 重疊不必互斥；`spec_path` 僅在影響既有 spec 時填其相對 `${TRUTH_BOUNDARY_ROOT}` 的路徑，否則留空，確定或有懷疑被牽動者皆視為受影響。
+    11.2 確立 finding 構成原則作為 `$FINDING_RULE`：以 `$RAW_IDEA` 的完整敘述段落為捕捉單位（一段為一個或多個語意連續的自然段，含段內的表格／分級／允許值／回應欄位等列舉清單整塊），一個 impact 把某幾個段落交給某 owner 職責下 formulate 成 spec；本步以段落為單位對照既有 spec 判斷該段是改動既有 spec、還是須由 owner 新建 spec。每個 finding 為 `{ owner, quotes, spec_path }`：`owner` 為所屬階段；`quotes` 為交給該 owner 的 `$RAW_IDEA` 段落，一律逐字整段照抄；同一段落若同時觸及多個 owner 的職責，則該段落同時歸屬每個被觸及 owner 的 finding，`quotes` 可跨 owner 重疊不必互斥；`spec_path` 僅在影響既有 spec 時填其相對 `${TRUTH_BOUNDARY_ROOT}` 的路徑，否則留空，確定或有懷疑被牽動者皆視為受影響。派工從寬，各 owner 之後只以掛名自己的 pending impact 為 worklist，不會自行檢查本批次是否需要出手，漏派會讓該階段整批靜默缺工，多派至多是該 owner 領工後確認無事；因此判斷段落是否牽動某 owner 時一律從寬——確定牽動、懷疑牽動、無法明確排除者，皆須為該 owner 構成 finding。
 
 12. 探索各階段 impact
 
@@ -159,6 +159,8 @@ metadata:
 
     13.2 自 `$STAGE_FINDINGS` 取無 `spec_path` 者 REASONING `$NEW_IMPACTS`，每筆含 `{ owner, quote, rationale }`：`owner` 取自該 finding；`quote` 取自該 finding 之 quotes；`rationale` 整合其 quote 以一句話說明此 impact 在該 owner 下為何要產生 spec。
 
+    13.3 owner 覆蓋檢查: 依 `$STALE_SPECS` 與 `$NEW_IMPACTS` REASONING 檢查 step 12 的每個 owner（`aibdd-flows-specify`、`aibdd-rules-specify`、`aibdd-spec-by-example`、`aibdd-api-plan`、`aibdd-data-plan`）是否各自至少分得一筆。對一筆都沒有的 owner，回到 step 12 該 owner 的 sub-step 以 `$FINDING_RULE` 的派工從寬原則重新 REASONING 一次：只要 `$RAW_IDEA` 任一段落在該 owner 職責下可能需要增修 spec——含被其他階段的變更間接牽動者（例：權限、角色、狀態、欄位、流程的連動）——即補構成 finding 併入 13.1／13.2。重查後仍無 finding 的 owner 屬例外情況，記入 `$UNDISPATCHED_OWNERS`，每筆含 `{ owner, reason }`：`reason` 為本批次確定不牽動該階段的具體排除理由，嚴禁只寫「需求未提及」帶過；亦嚴禁為湊數捏造與 `$RAW_IDEA` 無關的任務。
+
 14. 標記過時 spec: 對 `$STALE_SPECS` 每一筆 `{ impact_id, spec_path, owner, quote, rationale }` 執行下列 CLI command；任一 command 回 ok 為 false 時依其 `violations` 修正後重試直到 ok。
 
     14.1 若該筆 `quote` 或 `rationale` 較 `$CURRENT_MATRIX` 現值有更新 則 EXECUTE command `read --id <impact_id>` 取回該 impact 全貌後 EXECUTE command `write --id <impact_id>` 以更新後的 `quotes` 與 `rationale` 取代該 impact，保留其餘既有 spec 與 quotes 不遺漏；無變化則略過。
@@ -167,4 +169,4 @@ metadata:
 
 15. 新增全新 impact: 對 `$NEW_IMPACTS` 每一筆 `{ owner, quote, rationale }` EXECUTE command `write --owner <owner> --quote <quote> --rationale <rationale>` 新建一個 spec-less 的 `pending` impact；任一 command 回 ok 為 false 時依其 `violations` 修正後重試直到 ok。
 
-16. 回報結果: 對使用者輸出（可使用不同詞彙但維持語意）「OK，/aibdd-reconcile 已把本批次需求追加進 `spec.md`，並把影響矩陣校準完成：受影響而過時的 spec 已標成 `inconsistent`（對應 impact 降級為 `pending`），新發現的影響已新增為 `pending` impact。下面逐一列出本輪被標 `inconsistent` 的 spec 與新增的 impact：<逐一列出>。接著請依序重新執行 planner skills（`aibdd-function-packaging`、`aibdd-flows-specify`、`aibdd-rules-specify`、`aibdd-spec-by-example`、`aibdd-api-plan`、`aibdd-data-plan`）。」
+16. 回報結果: 對使用者輸出（可使用不同詞彙但維持語意）「OK，/aibdd-reconcile 已把本批次需求追加進 `spec.md`，並把影響矩陣校準完成：受影響而過時的 spec 已標成 `inconsistent`（對應 impact 降級為 `pending`），新發現的影響已新增為 `pending` impact。下面逐一列出本輪被標 `inconsistent` 的 spec 與新增的 impact：<逐一列出>。」若 `$UNDISPATCHED_OWNERS` 非空，接著逐筆輸出「owner <owner> 本輪未獲派任何 impact，排除理由：<reason>」。最後輸出「接著請依序重新執行 planner skills（`aibdd-function-packaging`、`aibdd-flows-specify`、`aibdd-rules-specify`、`aibdd-spec-by-example`、`aibdd-api-plan`、`aibdd-data-plan`）。」
