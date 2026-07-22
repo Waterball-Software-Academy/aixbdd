@@ -161,7 +161,7 @@ def _java_spectrum_blocks(resolved: dict) -> dict:
             f"\n\t\t<specformula.version>{version}</specformula.version>"
         ),
         "SPECFORMULA_DEPENDENCIES": (
-            "\n\n\t\t<!-- aibdd-spectrum (SpecFormula), installed via kickoff Q6 -->"
+            "\n\n\t\t<!-- aibdd-spectrum (SpecFormula), installed via kickoff Q5 -->"
             + dep("specformula-cucumber")
             + dep("specformula-testcontainer")
             + dep("specformula-dsl")
