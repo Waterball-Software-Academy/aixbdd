@@ -42,11 +42,11 @@ instructions:
 
   # ── API call（操作呼叫；summary 靠 config.api 的 OpenAPI 動態對應 operation）──
   - name: API call
-    format: ^\((?:No Actor|UID="(?P<userId>\$[<>\w.]+)")\) (?P<summary>.+?), call table:$
+    format: ^\((?:No Actor|UID="(?P<userId>\$[<>一-鿿a-zA-Z0-9_.]+)")\) (?P<summary>.+?), call table:$
     instruction_type: api_call
     data_format: data_table
   - name: API call (JSON)
-    format: ^\((?:No Actor|UID="(?P<userId>\$[<>\w.]+)")\) (?P<summary>.+?), call JSON:$
+    format: ^\((?:No Actor|UID="(?P<userId>\$[<>一-鿿a-zA-Z0-9_.]+)")\) (?P<summary>.+?), call JSON:$
     instruction_type: api_call
     data_format: json
 
