@@ -65,6 +65,7 @@ metadata:
    PLAN_REPORTS_DIR=${PLAN_REPORTS_DIR}
    PLAN_SPEC=${PLAN_SPEC}
    PROJECT_SPEC_LANGUAGE=${PROJECT_SPEC_LANGUAGE}
+   TRUTH_BOUNDARY_PACKAGES_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}
    TRUTH_BOUNDARY_ROOT=${TRUTH_BOUNDARY_ROOT}
    EOF
    ```
@@ -81,6 +82,8 @@ metadata:
 
    5.2 READ `${PLAN_SPEC}` 全文作為本批次補 Example 的主要真相來源；依據 `$WORKLIST_QUOTES` 在 `${PLAN_SPEC}` 全文 REASONING 每個 quote 跨段落相關的完整需求上下文作為 `$QUOTE_SEGMENTS`。並設 `$BATCH_NO` 為其需求描述段最新批次號。
 
+   5.3 載入既有 DSL 語料: SEARCH `${TRUTH_BOUNDARY_PACKAGES_DIR}` 下各 package 的 `dsl.yml` 與 `*.dsl.yml`（含 `features/` 下的 `{feature}.dsl.yml`），READ 各檔 dsl_step 定義，設 `$DSL_CORPUS` 為每條 `{ name, format, params, 來源檔路徑 }`。第二輪以上的 plan 這裡會有前輪 dsl-refine 的產出；找不到任何檔（首輪）則設空集合，後續步驟不受 `dsl-step-reuse.md` 約束。
+
 6. 鎖定待補 Example 的 feature
 
    6.1 SEARCH `$PLAN_SCOPE` 各 function package 之 `${FEATURE_SPECS_DIR}` 下現存的 `.feature`，依各檔 `Feature:` 業務意圖與 `$WORKLIST_QUOTES` REASONING 配對，設 `$RULE_TARGETS` 為每個被本批次 quotes 命中且仍存在的 `.feature`，每筆為 `{ feature_path, impact_id, quotes }`，其 `quotes` 為命中該檔的需求句子集；對映不到任一現存 `.feature` 的 quotes 蒐集成 `$SOURCE_GAPS`。
@@ -95,11 +98,11 @@ metadata:
 
 8. 草擬並收斂 Example
 
-   8.1 對 `$RULES_TO_EXPAND` 每條取對應 pattern 之 `aibdd-spec-by-example/assets/templates/` 模板，依 `aibdd-spec-by-example/rules/five-elements-mapping.md`、`aibdd-spec-by-example/rules/business-language-judgments.md`、`aibdd-spec-by-example/rules/skeleton-vs-semantics-tradeoff.md` 與 `aibdd-spec-by-example/rules/example-value-rule.md` REASONING 出該 rule 的 5 個關鍵組成，再依據該 rule 對應 impact 的 `$QUOTE_SEGMENTS` REASONING 出 Example 的具體輸入與預期結果，套模板草擬其 Example block 作為 `$DRAFTS`；推論中一旦缺少定案所需的重要資訊（模板必填元素從標題與 `$QUOTE_SEGMENTS` 推不出而須標 null 者、以及 `example-value-rule.md` 之型別一致性約束無法從真相滿足者）蒐集成 `$ASK_BATCH`；本步不寫檔。
+   8.1 對 `$RULES_TO_EXPAND` 每條取對應 pattern 之 `aibdd-spec-by-example/assets/templates/` 模板，依 `aibdd-spec-by-example/rules/five-elements-mapping.md`、`aibdd-spec-by-example/rules/business-language-judgments.md`、`aibdd-spec-by-example/rules/skeleton-vs-semantics-tradeoff.md` 與 `aibdd-spec-by-example/rules/example-value-rule.md` REASONING 出該 rule 的 5 個關鍵組成，再依據該 rule 對應 impact 的 `$QUOTE_SEGMENTS` REASONING 出 Example 的具體輸入與預期結果，套模板草擬其 Example block 作為 `$DRAFTS`。草擬每個 Given／When／Then 句時，先對照 `$DSL_CORPUS` 並嚴格遵守 `aibdd-spec-by-example/rules/dsl-step-reuse.md`：同語意者必沿用既有 dsl_step 的 `format` 句式填本 Example 具體值，不得另創同義異形句；語意不同才草擬新句式。推論中一旦缺少定案所需的重要資訊（模板必填元素從標題與 `$QUOTE_SEGMENTS` 推不出而須標 null 者、`example-value-rule.md` 之型別一致性約束無法從真相滿足者、以及 `dsl-step-reuse.md` 之語意對映拿不準者）蒐集成 `$ASK_BATCH`；本步不寫檔。
 
    8.2 若 `$ASK_BATCH` 非空 則一次性 DELEGATE `/clarify` 批次問清，附各項來源 quote 與對應 `.feature`／rule 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-spec-by-example` 的澄清區塊，再依結論回 8.1 重新草擬對應 `$DRAFTS`，重複至 `$ASK_BATCH` 清空。
 
-   8.3 對收斂後的 `$DRAFTS` DELEGATE `/analyze-and-clarify` 稽核，交辦上下文說清楚：稽核對象為 plan package `$PLAN_PACKAGE_SLUG` 需求批次 `$BATCH_NO` 的推論結果；推論目的為依各 rule 標題與其 `$QUOTE_SEGMENTS` 套 4-pattern 模板產出 Example，且每條本批次 in-scope rule 都要有對應 Example；稽核基準為 `aibdd-spec-by-example/rules/` 下的 `rule-pattern-taxonomy.md`、`five-elements-mapping.md`、`business-language-judgments.md`、`formatter-rules.md`、`cucumber-literal-format.md`、`example-value-rule.md`，example 為 `aibdd-spec-by-example/assets/templates/` 的 pattern 模板；待稽核結果為 `$DRAFTS` 完整內容（附內容本身，非路徑）。
+   8.3 對收斂後的 `$DRAFTS` DELEGATE `/analyze-and-clarify` 稽核，交辦上下文說清楚：稽核對象為 plan package `$PLAN_PACKAGE_SLUG` 需求批次 `$BATCH_NO` 的推論結果；推論目的為依各 rule 標題與其 `$QUOTE_SEGMENTS` 套 4-pattern 模板產出 Example，且每條本批次 in-scope rule 都要有對應 Example；稽核基準為 `aibdd-spec-by-example/rules/` 下的 `rule-pattern-taxonomy.md`、`five-elements-mapping.md`、`business-language-judgments.md`、`formatter-rules.md`、`cucumber-literal-format.md`、`example-value-rule.md`、`dsl-step-reuse.md`（`$DSL_CORPUS` 非空時須逐句檢查同語意句是否沿用既有 format）；待稽核結果為 `$DRAFTS` 完整內容（附內容本身，非路徑），並附 `$DSL_CORPUS` 的 `{ name, format }` 清單供重用檢查；example 為 `aibdd-spec-by-example/assets/templates/` 的 pattern 模板。
 
    8.4 依 `/analyze-and-clarify` 回報的 violations 處置：`fixable` 就地重擬對應 `$DRAFTS`；`to-clarify` 併入 `$ASK_BATCH` 回 8.2 批次問清、記澄清區後重擬；本輪 violations 尚有 `to-clarify` 未獲使用者回答前不得重新 DELEGATE `/analyze-and-clarify`，待全數處置完畢才回 8.3 重新稽核，重複至 violations 回空。
 
