@@ -43,3 +43,7 @@ operation contract 產出須滿足下列約束與驗收標準。
 10. 不得重複拆分
     1. 可由單一 operation contract 表達的能力，不得拆成多個只差細節的重複 target。
     2. 例：同一個查詢能力不得拆成三份只差欄位的 contract 檔。
+
+11. summary 須全域唯一且不得缺漏
+    1. 每個 operation 的 `summary` 在 `${CONTRACTS_DIR}` 全樹內（跨檔）不得與任何其他 operation 重複，亦不得缺漏或僅空白；比對時去除頭尾空白、大小寫敏感。
+    2. 例：`orders.api.yml` 與 `checkout.api.yml` 各有一個 operation summary 同為「建立訂單」即違規，須改寫成可區辨的 summary。

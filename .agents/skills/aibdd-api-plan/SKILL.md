@@ -50,6 +50,7 @@ Boundary profile 宣告之 `operation_contract_specifier.skill` 是寫入 `${CON
 - [ ] (5) 載入分析基準。
 - [ ] (6) 推論並收斂 operation contract。
 - [ ] (7) 委派 specifier 落地 contracts。
+- [ ] (7.2) 機械驗證 summary 全域唯一。
 - [ ] (8) 回寫 impact matrix。
 - [ ] (9) 回報結果。
 ```
@@ -105,7 +106,11 @@ Boundary profile 宣告之 `operation_contract_specifier.skill` 是寫入 `${CON
 
    6.4 依 `/analyze-and-clarify` 回報的 violations 處置：`fixable` 就地重推對應 `$CONTRACT_TARGETS`；`to-clarify` 併入 `$ASK_BATCH` 回 6.2 批次問清、記澄清區後重推；本輪 violations 尚有 `to-clarify` 未獲使用者回答前不得重新 DELEGATE `/analyze-and-clarify`，待全數處置完畢才回 6.3 重新稽核，重複至 violations 回空。
 
-7. 委派 specifier 落地 contracts: 對 `$CONTRACT_TARGETS` 每個 target DELEGATE `/${SPECIFIER.skill}`，帶入該 target 作為 caller payload，遵循該 skill 自身的輸入／輸出形狀與禁令；specifier 依其認定之 `format` 寫入 `${CONTRACTS_DIR}` 下的 `target.target_path`，一個 target 一次 DELEGATE。
+7. 委派 specifier 落地 contracts
+
+   7.1 對 `$CONTRACT_TARGETS` 每個 target DELEGATE `/${SPECIFIER.skill}`，帶入該 target 作為 caller payload，遵循該 skill 自身的輸入／輸出形狀與禁令；specifier 依其認定之 `format` 寫入 `${CONTRACTS_DIR}` 下的 `target.target_path`，一個 target 一次 DELEGATE。
+
+   7.2 機械驗證 summary 全域唯一: EXECUTE command `python3 .agents/skills/aibdd-api-plan/scripts/check_summary_unique.py ${CONTRACTS_DIR}` 檢驗全樹 operation summary 唯一性；輸出 `ok=false` 時依其 violations 指出的撞名 operation 回 6.1 重新收斂該些 target 的 summary（改寫成可區辨的 summary），再回 7.1 重派受影響 target 的 specifier；若撞名源於兩個需求本應同一 operation 的語意疑慮，併入 `$ASK_BATCH` 依 6.2 DELEGATE `/clarify` 批次問清，不得擅自合併；重複執行本步直到 `ok=true` 才進 step 8。
 
 8. 回寫 impact matrix
 
