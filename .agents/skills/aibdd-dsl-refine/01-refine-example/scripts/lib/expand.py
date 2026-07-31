@@ -14,7 +14,7 @@ import re
 # 自足的比對基元（與 skill 根 scripts/lib/scan.py 同義；sub-SOP 自帶，避免反向依賴主流程腳本）
 STEP_RE = re.compile(r"^\s*(Given|When|Then|And|But)\s+(.*\S)\s*$")
 _PLACEHOLDER_RE = re.compile(r'"\{(\w+)\}"|\{(\w+)\}')
-_BARE_VAL = r"(?P<%s>\d{4}-\d{2}-\d{2}|\d+(?:\.\d+)?)"
+_BARE_VAL = r"(?P<%s>\d{4}-\d{2}-\d{2}|-?\d+(?:\.\d+)?)"
 _TT_RE = re.compile(r"\{\{(\w+)\}\}")
 
 

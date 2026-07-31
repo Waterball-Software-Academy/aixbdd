@@ -12,15 +12,16 @@ from __future__ import annotations
 import re
 
 STEP_RE = re.compile(r"^\s*(Given|When|Then|And|But)\s+(.*\S)\s*$")
-# 左到右、date 在 number 之前：引號值 / 日期 / 數字（含小數）
-TOKEN_RE = re.compile(r'("[^"]*")|(\d{4}-\d{2}-\d{2})|(\d+(?:\.\d+)?)')
+# 左到右、date 在 number 之前：引號值 / 日期 / 數字（含小數、負數）
+# 負號僅在前一字元非 ASCII 英數時視為 sign（保護 ORD-001 這類識別碼與日期連字號）
+TOKEN_RE = re.compile(r'("[^"]*")|(\d{4}-\d{2}-\d{2})|((?<![0-9A-Za-z])-\d+(?:\.\d+)?|\d+(?:\.\d+)?)')
 _EXAMPLE_RE = re.compile(r"^\s*(?:Example|Scenario)(?:\s+Outline)?:\s*(.*?)\s*$")
 _DONE_RE = re.compile(r"^\s*#\s*done\b")
 _NAME_RE = re.compile(r"^\s*-\s*name:")
 _NAME_VAL_RE = re.compile(r"^\s*-\s*name:\s*(.*\S)\s*$")
 _FORMAT_RE = re.compile(r"^\s*format:\s*(.*\S)\s*$")
 _PLACEHOLDER_RE = re.compile(r'"\{(\w+)\}"|\{(\w+)\}')
-_BARE_VAL = r"(?P<%s>\d{4}-\d{2}-\d{2}|\d+(?:\.\d+)?)"
+_BARE_VAL = r"(?P<%s>\d{4}-\d{2}-\d{2}|-?\d+(?:\.\d+)?)"
 
 
 def parameterize(text: str) -> str:
