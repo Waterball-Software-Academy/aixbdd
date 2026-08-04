@@ -1,7 +1,7 @@
 ---
 name: aibdd-spec-by-example
 description: >
-  當 reconcile 校準 impact matrix 後、本 owner 名下有 pending impact 待補 Example 時觸發。以當前 plan package 內 rules-specify 本批次補了 atomic rule 且仍存在的 `.feature` 為工作集，把每條尚無 Example 的 rule 依其類型前綴套對應 4-pattern 模板，將 Example 全部草擬完、批次釐清收斂後一次寫入，最後回寫 impact matrix。當 CWD 下找不到 arguments.yml 須先執行 /aibdd-kickoff；當尚無含 rule 的 `.feature` 須先執行 /aibdd-rules-specify。
+  當 reconcile 校準 impact matrix 後、本 owner 名下有 pending impact 待補 Example 時觸發。以當前 plan package 內 rules-specify 本批次補了 atomic rule 且仍存在的 `.feature` 為工作集，把每條尚無 Example 的 rule 依其類型前綴套對應 4-pattern 模板草擬 Example，再以 QA 覆蓋推導增補遺漏情境，批次釐清收斂後一次寫入，同步產出各 feature 的 dsl step 推理意圖檔與 package 的 DSL 字典表，最後回寫 impact matrix。當 CWD 下找不到 arguments.yml 須先執行 /aibdd-kickoff；當尚無含 rule 的 `.feature` 須先執行 /aibdd-rules-specify。
 metadata:
   user-invocable: true
   source: project-level
@@ -43,7 +43,7 @@ metadata:
 - [ ] (6) 鎖定待補 Example 的 feature。
 - [ ] (7) 分類 rules。
 - [ ] (8) 草擬並收斂 Example。
-- [ ] (9) 一次寫入 Example。
+- [ ] (9) 一次寫入 Example、推理意圖檔與字典表。
 - [ ] (10) 回寫 impact matrix。
 - [ ] (11) 回報結果。
 ```
@@ -82,7 +82,9 @@ metadata:
 
    5.2 READ `${PLAN_SPEC}` 全文作為本批次補 Example 的主要真相來源；依據 `$WORKLIST_QUOTES` 在 `${PLAN_SPEC}` 全文 REASONING 每個 quote 跨段落相關的完整需求上下文作為 `$QUOTE_SEGMENTS`。並設 `$BATCH_NO` 為其需求描述段最新批次號。
 
-   5.3 載入既有 DSL 語料: SEARCH `${TRUTH_BOUNDARY_PACKAGES_DIR}` 下各 package 的 `dsl.yml` 與 `*.dsl.yml`（含 `features/` 下的 `{feature}.dsl.yml`），READ 各檔 dsl_step 定義，設 `$DSL_CORPUS` 為每條 `{ name, format, params, 來源檔路徑 }`。第二輪以上的 plan 這裡會有前輪 dsl-refine 的產出；找不到任何檔（首輪）則設空集合，後續步驟不受 `dsl-step-reuse.md` 約束。
+   5.3 載入既有 DSL 語料: SEARCH `${TRUTH_BOUNDARY_PACKAGES_DIR}` 下各 package 的 `dsl.yml` 與 `*.dsl.yml`（含 `features/` 下的 `{feature}.dsl.yml`），READ 各檔 dsl_step 定義，設 `$DSL_CORPUS` 為每條 `{ name, format, params, 來源檔路徑 }`。第二輪以上的 plan 這裡會有前輪 dsl-refine 的產出；找不到任何檔（首輪）則設空集合。`$DSL_CORPUS` 是句式參考、非約束——沿用與否以本例好讀為準（見 `aibdd-spec-by-example/rules/dsl-dictionary.md`）。
+
+   5.4 載入 DSL 字典表: 對 `$PLAN_SCOPE` 各 function package READ `${TRUTH_BOUNDARY_PACKAGES_DIR}/<NN-package>/dsl-dictionary.md`（若存在），設 `$DSL_DICTIONARY` 為各 package 的詞條集合；檔不存在者視為待建，於步驟 9 以 `aibdd-spec-by-example/assets/templates/dsl-dictionary.template.md` 建立。
 
 6. 鎖定待補 Example 的 feature
 
@@ -98,15 +100,23 @@ metadata:
 
 8. 草擬並收斂 Example
 
-   8.1 對 `$RULES_TO_EXPAND` 每條取對應 pattern 之 `aibdd-spec-by-example/assets/templates/` 模板，依 `aibdd-spec-by-example/rules/five-elements-mapping.md`、`aibdd-spec-by-example/rules/business-language-judgments.md`、`aibdd-spec-by-example/rules/skeleton-vs-semantics-tradeoff.md` 與 `aibdd-spec-by-example/rules/example-value-rule.md` REASONING 出該 rule 的 5 個關鍵組成，再依據該 rule 對應 impact 的 `$QUOTE_SEGMENTS` REASONING 出 Example 的具體輸入與預期結果，套模板草擬其 Example block 作為 `$DRAFTS`。草擬每個 Given／When／Then 句時，先對照 `$DSL_CORPUS` 並嚴格遵守 `aibdd-spec-by-example/rules/dsl-step-reuse.md`：同語意者必沿用既有 dsl_step 的 `format` 句式填本 Example 具體值，不得另創同義異形句；語意不同才草擬新句式。推論中一旦缺少定案所需的重要資訊（模板必填元素從標題與 `$QUOTE_SEGMENTS` 推不出而須標 null 者、`example-value-rule.md` 之型別一致性約束無法從真相滿足者、以及 `dsl-step-reuse.md` 之語意對映拿不準者）蒐集成 `$ASK_BATCH`；本步不寫檔。
+   8.1 對 `$RULES_TO_EXPAND` 每條取對應 pattern 之 `aibdd-spec-by-example/assets/templates/` 模板，依 `aibdd-spec-by-example/rules/five-elements-mapping.md`、`aibdd-spec-by-example/rules/business-language-judgments.md`、`aibdd-spec-by-example/rules/skeleton-vs-semantics-tradeoff.md` 與 `aibdd-spec-by-example/rules/example-value-rule.md` REASONING 出該 rule 的 5 個關鍵組成，再依據該 rule 對應 impact 的 `$QUOTE_SEGMENTS` REASONING 出 Example 的具體輸入與預期結果，套模板草擬其 Example block 作為 `$DRAFTS`。草擬每個 Given／When／Then 句時遵守 `aibdd-spec-by-example/rules/pm-writing-rules.md`（先拆必要參數、句子為測試意圖最佳化、人看得懂）與 `aibdd-spec-by-example/rules/dsl-dictionary.md`（用詞查 `$DSL_DICTIONARY`，同概念必用字典的詞；新概念記入字典草稿）；`$DSL_CORPUS` 僅為句式參考，同語意不必沿用既有 format 句式，以本例好讀為準。草擬同時為每個 Example 記錄推理意圖（測試意圖、關鍵參數與選值理由、逐句觀察意圖），結構依 `aibdd-spec-by-example/assets/templates/dsl-intent.template.md`，隨 `$DRAFTS` 保存。推論中一旦缺少定案所需的重要資訊（模板必填元素從標題與 `$QUOTE_SEGMENTS` 推不出而須標 null 者、`example-value-rule.md` 之型別一致性約束無法從真相滿足者、以及 `dsl-dictionary.md` 之兩詞疑似同概念拿不準者）蒐集成 `$ASK_BATCH`；本步不寫檔。
 
-   8.2 若 `$ASK_BATCH` 非空 則一次性 DELEGATE `/clarify` 批次問清，附各項來源 quote 與對應 `.feature`／rule 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-spec-by-example` 的澄清區塊，再依結論回 8.1 重新草擬對應 `$DRAFTS`，重複至 `$ASK_BATCH` 清空。
+   8.2 QA 覆蓋增補: 對 `$RULE_TARGETS` 每個 `.feature` 依 `aibdd-spec-by-example/rules/qa-coverage-reasoning.md` REASONING 一輪覆蓋問題（等價類、邊界、正反例、多條件、狀態轉移、CRUD 寫後讀、查詢形狀、唯一冪等、權限、失敗與副作用），把 `$QUOTE_SEGMENTS` 明文支持但 8.1 草稿尚未覆蓋的情境增補成 example 草稿併入 `$DRAFTS`（增補例只提供關鍵參數變化，並同樣記錄推理意圖）；需求未明文的情境不發明，覆蓋疑慮蒐集成 `$ASK_BATCH`。
 
-   8.3 對收斂後的 `$DRAFTS` DELEGATE `/analyze-and-clarify` 稽核，交辦上下文說清楚：稽核對象為 plan package `$PLAN_PACKAGE_SLUG` 需求批次 `$BATCH_NO` 的推論結果；推論目的為依各 rule 標題與其 `$QUOTE_SEGMENTS` 套 4-pattern 模板產出 Example，且每條本批次 in-scope rule 都要有對應 Example；稽核基準為 `aibdd-spec-by-example/rules/` 下的 `rule-pattern-taxonomy.md`、`five-elements-mapping.md`、`business-language-judgments.md`、`formatter-rules.md`、`cucumber-literal-format.md`、`example-value-rule.md`、`dsl-step-reuse.md`（`$DSL_CORPUS` 非空時須逐句檢查同語意句是否沿用既有 format）；待稽核結果為 `$DRAFTS` 完整內容（附內容本身，非路徑），並附 `$DSL_CORPUS` 的 `{ name, format }` 清單供重用檢查；example 為 `aibdd-spec-by-example/assets/templates/` 的 pattern 模板。
+   8.3 若 `$ASK_BATCH` 非空 則一次性 DELEGATE `/clarify` 批次問清，附各項來源 quote 與對應 `.feature`／rule 作 anchor，參考 `aibdd-core::references/ssot/spec.template.md` 的澄清紀錄填寫規則把拍板結論 WRITE 進 `${PLAN_SPEC}` 批次 `$BATCH_NO`、owner `aibdd-spec-by-example` 的澄清區塊，再依結論回 8.1／8.2 重新草擬對應 `$DRAFTS`，重複至 `$ASK_BATCH` 清空。
 
-   8.4 依 `/analyze-and-clarify` 回報的 violations 處置：`fixable` 就地重擬對應 `$DRAFTS`；`to-clarify` 併入 `$ASK_BATCH` 回 8.2 批次問清、記澄清區後重擬；本輪 violations 尚有 `to-clarify` 未獲使用者回答前不得重新 DELEGATE `/analyze-and-clarify`，待全數處置完畢才回 8.3 重新稽核，重複至 violations 回空。
+   8.4 對收斂後的 `$DRAFTS` DELEGATE `/analyze-and-clarify` 稽核，交辦上下文說清楚：稽核對象為 plan package `$PLAN_PACKAGE_SLUG` 需求批次 `$BATCH_NO` 的推論結果；推論目的為依各 rule 標題與其 `$QUOTE_SEGMENTS` 套 4-pattern 模板產出 Example 並以 QA 覆蓋推導增補情境，且每條本批次 in-scope rule 都要有對應 Example；稽核基準為 `aibdd-spec-by-example/rules/` 下的 `rule-pattern-taxonomy.md`、`five-elements-mapping.md`、`business-language-judgments.md`、`formatter-rules.md`、`cucumber-literal-format.md`、`example-value-rule.md`、`pm-writing-rules.md`、`qa-coverage-reasoning.md`、`dsl-dictionary.md`（須逐句檢查用詞是否與 `$DSL_DICTIONARY` 一致）；待稽核結果為 `$DRAFTS` 完整內容（附內容本身，非路徑），並附 `$DSL_DICTIONARY` 詞條清單供用詞檢查；example 為 `aibdd-spec-by-example/assets/templates/` 的 pattern 模板。
 
-9. 一次寫入 Example: 對 `$DRAFTS` 每筆 UPDATE 進其 `feature_path`，在對應 `Rule:` body 下方插入收斂後的 Example block；保留既有檔頭（`#` 註解列、`@ignore`、`Feature:` 標題）與既有 Rule，Example 不帶類型前綴（前綴僅屬 `Rule:` 標題層），不得新增 `Background` 或建立新檔。
+   8.5 依 `/analyze-and-clarify` 回報的 violations 處置：`fixable` 就地重擬對應 `$DRAFTS`；`to-clarify` 併入 `$ASK_BATCH` 回 8.3 批次問清、記澄清區後重擬；本輪 violations 尚有 `to-clarify` 未獲使用者回答前不得重新 DELEGATE `/analyze-and-clarify`，待全數處置完畢才回 8.4 重新稽核，重複至 violations 回空。
+
+9. 一次寫入 Example、推理意圖檔與字典表
+
+   9.1 對 `$DRAFTS` 每筆 UPDATE 進其 `feature_path`，在對應 `Rule:` body 下方插入收斂後的 Example block；保留既有檔頭（`#` 註解列、`@ignore`、`Feature:` 標題）與既有 Rule，Example 不帶類型前綴（前綴僅屬 `Rule:` 標題層），不得新增 `Background` 或建立新檔。
+
+   9.2 對本批次觸動的每個 `.feature`，以 `aibdd-spec-by-example/assets/templates/dsl-intent.template.md` 為模版把 8.1／8.2 記錄的推理意圖 WRITE 進同目錄 `{feature}.dsl-intent.md`（檔已存在則 UPDATE：本批次觸動的 Example 區塊覆寫、未觸動者保留），供 /aibdd-dsl-refine 展開 isa steps 時消費。
+
+   9.3 對 `$PLAN_SCOPE` 各觸動的 function package，把本批次新增或修訂的詞條 WRITE 進 `${TRUTH_BOUNDARY_PACKAGES_DIR}/<NN-package>/dsl-dictionary.md`（不存在則以 `aibdd-spec-by-example/assets/templates/dsl-dictionary.template.md` CREATE），既有詞條非經澄清結論不得改寫。
 
 10. 回寫 impact matrix
 

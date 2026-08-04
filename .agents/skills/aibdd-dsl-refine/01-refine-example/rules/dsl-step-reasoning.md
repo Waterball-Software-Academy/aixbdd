@@ -8,6 +8,8 @@
 
 ## 1. 測試意圖分析
 
+SBE 若已產出 `{feature}.dsl-intent.md`（dsl step 推理意圖檔），該 example 的測試意圖、關鍵參數選值理由與逐句觀察意圖以其記載為第一手來源，本節只做核對與補漏；無意圖檔（或該 example 無區塊）才自行從文本推讀。
+
 對該 example 讀出：
 - 角色與意圖：前置（Given 建什麼狀態）／動作（When 觸發什麼操作）／斷言（Then 驗什麼結果）。
 - 類型：happy / negative / idempotency。

@@ -105,7 +105,7 @@ metadata:
 
 9. LOOP examples（推導期，**不中途確認**）——對 worklist 中「屬 `$TARGET_FEATURES`、`status: pending`」的每個 example，逐一 EXECUTE the sub-sop：
 
-   `01-refine-example/SOP.md`（輸入：該 example 的 feature 路徑 `${FEATURE}`、example 標題、worklist 列的未完成 step）
+   `01-refine-example/SOP.md`（輸入：該 example 的 feature 路徑 `${FEATURE}`、example 標題、worklist 列的未完成 step；`$FP_FEATURES/{feature}.dsl-intent.md` 存在時一併作為輸入——SBE 產出的 dsl step 推理意圖檔，該 example 的測試意圖與逐句觀察意圖以此為第一手來源）
 
    每個 example 的 sub-SOP 返回後（帶回該 example 的待 review 展開），接續下一個 `pending` example；直到 `$TARGET_FEATURES` 內無 `pending`。
    **【嚴禁】推導期間逐 example 或逐 dsl_step 向使用者確認 ISA**；所有 ISA 確認集中在 step 10 的收尾 batch review 一次進行（sub-SOP 內 a/b 的 example 合理性變更授權不在此限）。
@@ -129,7 +129,7 @@ metadata:
     ```
 
     b. **exit 3（有跨 feature 重複）**：對回報的每一條都要處理，依 `01-refine-example/rules/example-refactor.md` §2 hoist 到 `$FP_PACKAGE_DSL`、刪各 `{feature}.dsl.yml` 的重複（**保留 `# done`**）。
-       - **name 重複**為阻斷級（dsl.yml 規則：dsl_step name 在其 FP 解析範圍／祖先鏈內必須唯一；重複會在展開時造成名稱衝突 `DSL_DEFINITION_DUPLICATE_NAME`、阻斷整個 FP、連 dry-run 都掃不到）→ **務必全部上移**；標「同名不同 format」者先對齊 format 再上移。
-       - format 重複（收斂級）一併上移。
+       - **name 重複**為阻斷級（dsl.yml 規則：dsl_step name 在其 FP 解析範圍／祖先鏈內必須唯一；重複會在展開時造成名稱衝突 `DSL_DEFINITION_DUPLICATE_NAME`、阻斷整個 FP、連 dry-run 都掃不到）→ **務必全部處理**；標「同名不同 format」者屬語意不同，**優先改名各自保留**（不對齊句式），確為同語意同 format 才合併上移。
+       - format 完全相同的重複（同句面會造成 `DSL_STEP_AMBIGUOUS_MATCH`）一併上移共用。僅處理逐字相同的 format；相似但不同的句式不在本 gate 範圍，不需合併或對齊。
     c. **重跑 a，直到 exit 0**。**唯有 detect exit 0 才得宣告完成**；仍 exit 3 代表還有重複，未清不得結束。
     d. 清乾淨後重跑 step 5 `build_worklist.py` 確認 worklist 仍空。本步只重構結構、不改驗收意圖。
