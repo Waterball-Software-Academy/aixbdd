@@ -129,7 +129,7 @@ metadata:
     ```
 
     b. **exit 3（有跨 feature 重複）**：對回報的每一條都要處理，依 `01-refine-example/rules/example-refactor.md` §2 hoist 到 `$FP_PACKAGE_DSL`、刪各 `{feature}.dsl.yml` 的重複（**保留 `# done`**）。
-       - **name 重複**為阻斷級（dsl.yml 規則：dsl_step name 在其 FP 解析範圍／祖先鏈內必須唯一；重複會在展開時造成名稱衝突 `DSL_DEFINITION_DUPLICATE_NAME`、阻斷整個 FP、連 dry-run 都掃不到）→ **務必全部處理**；標「同名不同 format」者屬語意不同，**優先改名各自保留**（不對齊句式），確為同語意同 format 才合併上移。
+       - **name 重複**為阻斷級（dsl.yml 規則：dsl_step name 在其 FP 解析範圍／祖先鏈內必須唯一；重複會在展開時造成名稱衝突 `DSL_DEFINITION_DUPLICATE_NAME`、阻斷整個 FP、連 dry-run 都掃不到）→ **務必全部處理**；標「同名不同 format」者屬語意不同，**優先改名各自保留**（不對齊句式），確為同語意同 format 才合併上移。改名屬須授權變更：擬定新名稱後 DELEGATE `/clarify-loop`（附衝突清單與擬名）取得同意才落檔，【嚴禁】逕行改名。
        - format 完全相同的重複（同句面會造成 `DSL_STEP_AMBIGUOUS_MATCH`）一併上移共用。僅處理逐字相同的 format；相似但不同的句式不在本 gate 範圍，不需合併或對齊。
     c. **重跑 a，直到 exit 0**。**唯有 detect exit 0 才得宣告完成**；仍 exit 3 代表還有重複，未清不得結束。
     d. 清乾淨後重跑 step 5 `build_worklist.py` 確認 worklist 仍空。本步只重構結構、不改驗收意圖。
