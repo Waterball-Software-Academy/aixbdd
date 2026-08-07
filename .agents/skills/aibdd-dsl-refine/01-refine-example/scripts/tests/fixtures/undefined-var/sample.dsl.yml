@@ -1,0 +1,22 @@
+dsl_steps:
+  - name: 已登入的店員
+    format: 已登入的店員 "{alias}"
+    isa_steps:
+      - instruction: '準備一個員工, with table:'
+        table:
+          '>{{alias}}.id': '<id'
+          name: '{{alias}}'
+
+  - name: 標記會籍付款完成
+    format: '"{actor}" 標記 "{owner}" 的會籍付款完成'
+    isa_steps:
+      - instruction: '(UID="${{actor}}.id") 標記會籍付款完成, call table:'
+        table:
+          membershipId: '${{owner}}會籍.id'
+
+  - name: 系統回應訊息
+    format: 系統回應 "{message}"
+    isa_steps:
+      - instruction: '標記會籍付款完成(404)回應, with table:'
+        table:
+          message: '{{message}}'

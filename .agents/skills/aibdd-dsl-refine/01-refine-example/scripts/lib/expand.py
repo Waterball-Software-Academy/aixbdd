@@ -84,6 +84,19 @@ def classify(instr_text: str, instructions):
     return None, None
 
 
+def classify_full(instr_text: str, instructions):
+    """instr 對 isa.yml instructions → (instruction_type, data_format, captures)。
+
+    captures 為該 instruction format 的具名群組（例：entity_setup 的 `entity`、
+    api_call 的 `summary`），供 lint 判定「同一個 entity」等語意。
+    """
+    for rx, itype, dfmt, *_ in instructions:
+        m = rx.match(instr_text)
+        if m:
+            return itype, dfmt, {k: v for k, v in m.groupdict().items() if v is not None}
+    return None, None, {}
+
+
 def _param_keys(params) -> set:
     """dsl_step.params（list 或 dict）→ 宣告的參數 key 集合。"""
     if isinstance(params, dict):
@@ -153,6 +166,55 @@ def _render_isa_step(isa_step: dict, vmap: dict, source_kw, instructions, out: l
         else:
             out.append("      | " + " | ".join(keys) + " |")
             out.append("      | " + " | ".join(vals) + " |")
+
+
+def expand_example_records(gwt_steps, dsl_steps, instructions=None) -> list:
+    """與 expand_example 同一套比對／內插，但回傳結構化紀錄供 lint 消費。
+
+    每筆：{keyword, text, dsl_step, captures, vmap, isa_steps:[{instruction, itype,
+    dfmt, isa_captures, table:{k:v}, raw_table:{k:v}, text}]}。
+    `raw_table` 保留內插前的模板值，用來判斷某格的值是否源自 format 捕獲。
+    """
+    instructions = instructions or []
+    matchers = [(format_matcher(d.get("format", "") or ""), d) for d in dsl_steps or []]
+    records: list = []
+    for kw, text in gwt_steps:
+        step = next((d for rx, d in matchers if rx and rx.match(text)), None)
+        rec = {
+            "keyword": kw,
+            "text": text,
+            "dsl_step": step,
+            "captures": {},
+            "vmap": {},
+            "isa_steps": [],
+        }
+        records.append(rec)
+        if step is None:
+            continue
+        fmt = step.get("format", "") or ""
+        rx = format_matcher(fmt)
+        m = rx.match(text) if rx else None
+        rec["captures"] = {k: v for k, v in (m.groupdict() if m else {}).items() if v is not None}
+        rec["vmap"] = extract_values(fmt, text, step.get("params"))
+        for isa_step in step.get("isa_steps") or []:
+            instr = _subst(isa_step.get("instruction", ""), rec["vmap"])
+            itype, dfmt, isa_caps = classify_full(instr, instructions)
+            raw_table = isa_step.get("table") or {}
+            table = {
+                _subst(k, rec["vmap"]): _subst(v, rec["vmap"]) for k, v in raw_table.items()
+            }
+            rec["isa_steps"].append(
+                {
+                    "instruction": instr,
+                    "itype": itype,
+                    "dfmt": dfmt,
+                    "isa_captures": isa_caps,
+                    "table": table,
+                    "raw_table": {_subst(k, rec["vmap"]): v for k, v in raw_table.items()},
+                    "text": _subst(isa_step.get("text") or "", rec["vmap"]),
+                }
+            )
+    return records
 
 
 def expand_example(gwt_steps, dsl_steps, instructions=None) -> list:

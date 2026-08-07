@@ -1,0 +1,29 @@
+dsl_steps:
+  - name: 會籍_生效中月卡_到期日
+    format: '"{alias}" 有一筆 "{status}" 的 "{plan}" 會籍，到期日 "{expiry}"'
+    params:
+      freezeCount: 0
+    isa_steps:
+      - instruction: '準備一個會籍, with table:'
+        table:
+          '>{{alias}}會籍.id': '<id'
+          member_name: '{{alias}}'
+          status: '{{status}}'
+          plan: '{{plan}}'
+          expired_at: '{{expiry}}'
+          freeze_count: '{{freezeCount}}'
+
+  - name: 查詢會籍現況
+    format: 系統查詢 "{alias}" 的會籍
+    isa_steps:
+      - instruction: '(No Actor) 查詢會籍現況, call table:'
+        table:
+          memberName: '{{alias}}'
+
+  - name: 會籍凍結次數不變斷言
+    format: '"{alias}" 的會籍累計凍結次數維持 {count}'
+    isa_steps:
+      - instruction: '應該存在一個會籍, with table:'
+        table:
+          member_name: '{{alias}}'
+          freeze_count: '{{count}}'

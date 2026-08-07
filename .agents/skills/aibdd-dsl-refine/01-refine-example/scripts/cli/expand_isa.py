@@ -21,6 +21,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(_SCRIPTS_DIR))
 
 from lib.expand import STEP_RE, expand_example, format_matcher, lint_datatable  # noqa: E402
+from lib.lints import has_blocking, run_lints  # noqa: E402
 
 _EXAMPLE_RE = re.compile(r"^\s*(?:Example|Scenario)(?:\s+Outline)?:\s*(.*?)\s*$")
 _TABLE_ROW_RE = re.compile(r"^\s*\|(.+)\|\s*$")
@@ -126,8 +127,10 @@ def main() -> int:
     if args.isa:
         instructions = load_instructions(Path(args.isa))
 
+    feature_text = feature_path.read_text(encoding="utf-8")
+
     out = [f"# 展開 isa example — {feature_path.stem}"]
-    for title, gwts in iter_examples_kw(feature_path.read_text(encoding="utf-8")):
+    for title, gwts in iter_examples_kw(feature_text):
         if args.example and args.example not in title:
             continue
         out.append(f"\n## Example: {title}")
@@ -137,11 +140,30 @@ def main() -> int:
     # lint：custom data_table 指令的 datatable_parameters 必須鏡射進 dsl_step 的 params/table
     warns = lint_datatable(dsl_steps, instructions)
     # lint：feature 句掛 DataTable 但 dsl_step params 未宣告表頭欄位（會 DSL_EXPAND_PARAM_UNKNOWN）
-    warns += lint_feature_datatable_params(feature_path.read_text(encoding="utf-8"), dsl_steps)
+    warns += lint_feature_datatable_params(feature_text, dsl_steps)
     if warns:
         print("\n⚠ datatable lint：", file=sys.stderr)
         for w in warns:
             print(f"  - {w}", file=sys.stderr)
+
+    # lint：#24 重複佈建／#40 seed-斷言對賬／#35 未捕獲 VAR／#23 預設蓋 DataTable／#52 預設格式漂移
+    if not instructions:
+        print(
+            "\n⚠ 未提供 --isa，指令型別無從判定，語意 lint（重複佈建／seed 對賬／未捕獲 VAR）已略過。",
+            file=sys.stderr,
+        )
+    findings = run_lints(feature_text, dsl_steps, instructions, example_filter=args.example)
+    if findings:
+        print("\n⚠ 展開 lint：", file=sys.stderr)
+        for f in findings:
+            print(f"  {f.render()}", file=sys.stderr)
+    if has_blocking(findings):
+        print(
+            "\n展開 lint 有阻斷級違規（✗）——回 sub-SOP c 修正該 dsl_step 或 .feature 後重跑，"
+            "不得帶著違規進 batch review。",
+            file=sys.stderr,
+        )
+        return 3
     return 0
 
 

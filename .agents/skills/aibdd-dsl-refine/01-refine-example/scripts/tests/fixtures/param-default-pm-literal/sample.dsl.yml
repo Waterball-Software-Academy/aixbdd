@@ -1,0 +1,25 @@
+dsl_steps:
+  - name: 時間控制
+    format: 現在時間為 "{now}"
+    isa_steps:
+      - instruction: '現在時間為 "{{now}}"'
+
+  - name: 開課
+    format: '"{coach}" 開一堂 "{course}" 課程'
+    params:
+      開始時間: '2026-03-02 02:00:00'
+      備註: '課程於 2026-03-02 10:00（台北時間）開始'
+    isa_steps:
+      - instruction: '(No Actor) 開課, call table:'
+        table:
+          coachName: '{{coach}}'
+          courseName: '{{course}}'
+          startTime: '{{開始時間}}'
+          note: '{{備註}}'
+
+  - name: 系統回應訊息
+    format: 系統回應 "{message}"
+    isa_steps:
+      - instruction: '開課(201)回應, with table:'
+        table:
+          message: '{{message}}'

@@ -1,0 +1,27 @@
+dsl_steps:
+  - name: 會籍_指定狀態方案
+    format: '"{alias}" 有一筆 "{status}" 的 "{plan}" 會籍'
+    params:
+      累計凍結次數: 0
+    isa_steps:
+      - instruction: '準備一個會籍, with table:'
+        table:
+          '>{{alias}}會籍.id': '<id'
+          member_name: '{{alias}}'
+          status: '{{status}}'
+          plan: '{{plan}}'
+          freeze_count: '{{累計凍結次數}}'
+
+  - name: 查詢會籍現況
+    format: 系統查詢 "{alias}" 的會籍
+    isa_steps:
+      - instruction: '(No Actor) 查詢會籍現況, call table:'
+        table:
+          memberName: '{{alias}}'
+
+  - name: 剩餘凍結次數回應斷言
+    format: 會籍現況回應剩餘凍結次數 {remaining}
+    isa_steps:
+      - instruction: '查詢會籍現況(200)回應, with table:'
+        table:
+          remainingFreezeCount: '{{remaining}}'

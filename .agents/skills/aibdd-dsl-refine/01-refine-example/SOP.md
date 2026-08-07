@@ -27,8 +27,19 @@ c+d. 逐個未完成 dsl_step（**一次一個推導；ISA 確認不在本 sub-S
       python3 .claude/skills/aibdd-dsl-refine/01-refine-example/scripts/cli/expand_isa.py --feature ${FEATURE} --example "<example 標題>" --dsl $FP_FEATURES/{feature}.dsl.yml --isa ${BOUNDARY_ISA}
       ```
 
+      - **`--isa` 必給**（`${BOUNDARY_ISA}`）：缺它就判不出 instruction_type，語意 lint 會整組略過。
       - 腳本若於 stderr 印出 `⚠ datatable lint`（對上 data_table 指令卻缺 params/table）→ 先回 c 補齊鏡射再重展開。
-      - 展開成功 → 將該 dsl_step 的展開加入本 example 的待 review 清單，取下一個未完成 dsl_step。
+      - **exit code 即 gate**：腳本 **exit 3** 代表 `⚠ 展開 lint` 有阻斷級違規（`✗`），一律先回 c 修正該 dsl_step、或依 b 的授權流程改 `.feature`，重跑到 exit 0 才續行。五條規則與對應處置：
+
+        | code | 意思 | 處置 |
+        |------|------|------|
+        | `duplicate-entity-setup` | 同 example 同 entity 佈建兩次（同 alias 或識別欄位值重疊） | 後一句改成「只佈下游 entity、引用前句捕獲的 `$alias.id`」的變體 dsl_step；見 `rules/builtin-composition-patterns.md`「複合佈建句」 |
+        | `seed-assertion-consistency` | Given 佈建值／When 送出值／Then 斷言值三方對不上（含「變成 X」恆真、標題數值與 seed 不符） | seed 與斷言必有一邊錯；屬 `.feature` 語意問題就回 b 走變更授權，屬 params 降階誤刪欄位就回 c 補回（見 `rules/example-refactor.md` 降階前置條件） |
+        | `undefined-var` | isa_step 引用了本 example 未捕獲的 `$alias.x` | 依 `rules/custom-isa-placement.md`「順序依賴」與「不存在標的」處理：改用不依賴捕獲順序的業務鍵，或在無 seed 情境送保證不存在的字面 id |
+        | `param-default-pm-literal` | params 預設值寫成需衍生區轉換的 PM 字面（含「（台北時間）」、空白分隔無時區的時間） | 預設值改寫成 ISA 值域的最終字面 |
+        | `default-vs-datatable`（warn） | param 有預設又被 feature DataTable 供值 | 該欄位改宣告成 required（無預設），讓 PM 的值進得來；warn 不阻斷但不得無故留著 |
+
+      - 展開成功（exit 0） → 將該 dsl_step 的展開加入本 example 的待 review 清單，取下一個未完成 dsl_step。
       - 【嚴禁】在此逐 dsl_step DELEGATE `/clarify-loop` 確認、標 `# done`、或寫 FP 層 isa.yml——ISA 確認、`# done` 標記與 custom 契約落檔一律由主 SOP step 10 batch review 取得使用者同意後才執行。
 
 e. 重構判斷——該 example 所有 dsl_step 推導完成（待 review 清單就緒）後，依 `rules/example-refactor.md`：抽變數（format 參數化）／視情況抽 DataTable；跨 feature 共用 → 寫 `$FP_PACKAGE_DSL`（`{FP}/dsl.yml`，不存在則以 `../assets/dsl.template.yml` 建）；**禁過複雜**；改 `.feature` 或搬 dsl_step 經 `/clarify-loop` 同意後才動。

@@ -1,0 +1,29 @@
+dsl_steps:
+  - name: 會籍_資料表佈建
+    format: '"{alias}" 有一筆會籍：'
+    params:
+      狀態:
+      方案:
+      到期日: ''
+    isa_steps:
+      - instruction: '準備一個會籍, with table:'
+        table:
+          '>{{alias}}會籍.id': '<id'
+          member_name: '{{alias}}'
+          status: '{{狀態}}'
+          plan: '{{方案}}'
+          expired_at: '{{到期日}}'
+
+  - name: 查詢會籍現況
+    format: 系統查詢 "{alias}" 的會籍
+    isa_steps:
+      - instruction: '(No Actor) 查詢會籍現況, call table:'
+        table:
+          memberName: '{{alias}}'
+
+  - name: 系統回應訊息
+    format: 系統回應 "{message}"
+    isa_steps:
+      - instruction: '查詢會籍現況(200)回應, with table:'
+        table:
+          message: '{{message}}'
