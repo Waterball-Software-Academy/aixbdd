@@ -29,6 +29,29 @@ API 回 2xx 不等於資料寫對——Then 關心落地就補 entity_validate�
 | P13 | 有限值域的否定不存在 | 對每個不允許的值各一條 entity_non_existence_validate 等值枚舉 |
 | P14 | 多步前置流程 | 依序多條 entity_setup（或 api_call 串 P4）鋪狀態；跨 4 表以上或句意為單一配置概念 → 必走 custom（見上限，硬界限） |
 
+## 複合佈建句：同 example 同 entity 只准佈一次
+
+模式表把每個 dsl_step 當獨立單位推導，於是很容易漏掉**跨句的重疊**：兩個前置句各自展開出
+同一筆 `entity_setup`。fitbook B-71 就是這樣——`系統中已有會員 "陳美惠"，手機 "…"` 與
+`"陳美惠" 有一筆…會籍`（複合句，內含 P1 的「先佈父表會員、再佈子表會籍」）在同一個 example
+佈了兩筆同 phone／同 national_id 的會員：有唯一鍵時第二筆直接爆，沒唯一鍵時依手機查詢變兩筆，
+兩種都毀掉測試。
+
+規則：**同一個 example 內，同一個 entity 的 `entity_setup` 只准出現一次。**
+複合佈建句（一句同時佈父表與子表）因此需要兩種變體，依「該 example 的父表是否已由前句佈建」擇一：
+
+| 情境 | dsl_step 變體 |
+|------|---------------|
+| 父表**未**被前句佈建 | 複合版：`entity_setup` 父表擷取 `>{{alias}}.id` → `entity_setup` 子表以 `${{alias}}.id` 填 FK（即 P1） |
+| 父表**已**被前句佈建 | 精簡版：只佈子表，FK 直接引用前句捕獲的 `${{alias}}.id`；**不再**佈父表 |
+
+兩個變體的 format 必須在句面可區分（例：`"{alias}" 有一筆 "{status}" 的 "{plan}" 會籍`
+vs `系統中已有會員 "{alias}"，且有一筆 "{status}" 的 "{plan}" 會籍`）；句面不可區分就先依
+sub-SOP b 的授權流程改 `.feature`，不得靠「哪個 example 用哪條」的隱性約定。
+
+`expand_isa.py` 的 `duplicate-entity-setup` lint 是這條規則的機械 gate：同 example 同 entity
+出現第二次 `entity_setup`，且 alias 相同或識別欄位值重疊，即 exit 3。
+
 ## 拆解原則
 
 - 先拆再判：一句 dsl_step 先嘗試以上模式組合；`isa_steps` 本來就是有序多條，拆多條不是失敗。

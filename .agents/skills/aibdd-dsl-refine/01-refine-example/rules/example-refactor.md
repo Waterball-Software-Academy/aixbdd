@@ -33,6 +33,30 @@ hoist 時**保留 `# done`**（標記是持久真相），刪 `{feature}.dsl.yml
   **DataTable 放進該 `.dsl.feature` 的 step**（dsl_step `params` 以欄位清單 `[a, b]` 宣告），讓業務句保持簡潔。
 - 僅在「明顯更清楚／收斂重複」時才做。
 
+### 3b. 降階（DataTable → 單行）：刪欄位前必過的前置條件
+
+反向操作——SBE 草稿是 DataTable，refine 時為了「降回 4 參數以內的單行句」而刪掉欄位、
+把值收進 `params` 預設。這條降階是 fitbook B-66 的**真因**：`累計凍結次數` 明明被同一個
+Example 的 Then 直接驗證，卻被當成「未被驗證的欄位」一併刪掉，兩個原本不同的 example
+於是塌縮成同一支 `freeze_count: 0` 的 dsl_step，seed 與斷言互相矛盾，拖到 green 才炸。
+
+降階前逐欄位過這三條，任一不過即**不得刪除該欄位**：
+
+1. **被同一個 example 的 Then 直接驗證的欄位不得刪除**——欄位值出現在該 example 任一
+   Then／And-after-Then 的斷言裡（含衍生語意，如 `累計凍結次數` → `剩餘凍結次數 = 上限 − 累計`），
+   一律保留在句面或 `params`，且值必須與斷言自洽。
+2. **被 When 送出的欄位不得刪除**——它是本例的輸入，刪掉即改變測試意圖。
+3. **驅動本例行為（driving-only）的欄位不得刪除**——即使沒有 Then 斷言它，只要它是被測
+   規則的判斷輸入（見 SBE `rules/pm-writing-rules.md` 可核對性 1 的 driving-only 形態），
+   刪掉就換掉了等價類。此類欄位保留時，`{feature}.dsl-intent.md` 須留有「為何不斷言」的記載。
+
+只有「三條皆不成立」的 NOT NULL 陪襯欄位才可收進 `params` 預設並降回單行。
+
+降階後**必跑 `expand_isa.py`**：`seed-assertion-consistency` lint 會比對展開後的 seed 值與
+Then 斷言值／Example 標題的數值語意，誤刪被驗證欄位一律在此被攔下（exit 3）。
+`{feature}.dsl-intent.md` 若記載了該 example 原始的 DataTable 欄位，降階前後逐欄比對一次，
+少掉的欄位都要能對應到上面三條的「皆不成立」。
+
 ## 禁止（過於複雜）
 
 - 不為消除重複，把不相關的東西硬塞同一條 dsl_step 或同一張 DataTable。

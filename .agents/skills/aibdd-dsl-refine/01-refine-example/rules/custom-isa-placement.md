@@ -31,6 +31,44 @@ feature 句觸及外部依賴（快取／外部 API／MQ／外部儲存／websoc
 4. 本檔下方「外部徵信」等範例僅示範 format 語法與 intent 寫法；實際遇到外部依賴時
    一律先過本節 registry 分流，不得以範例存在為由略過。
 
+## 順序依賴：custom 不得引用尚未捕獲的 VAR
+
+custom 契約（尤其 kind-constants 的身分／identity 模版）常要求「帶上關聯實體的識別碼」，
+但那個識別碼只有在對應的 `entity_setup` 執行、捕獲 `>alias.id` 之後才存在。而 SBE 的寫法
+慣例是**身分句排在資料前置句之前**（`Given 已登入的會員 "X"` 在 `Given 系統中已有會員 "X"…` 之上），
+於是照模版填 `memberId: $X.id` 展開時變數尚未存在——雞生蛋，執行期 `SYMBOL_VAR_KEY_NOT_FOUND`。
+
+處置優先序（**不得**用「把 custom 往後搬」以外的隱性假設）：
+
+1. **改用不依賴執行順序的業務鍵**（首選）：模版槽位若允許，改帶語意等價、不需捕獲的業務鍵
+   （`memberName: '{{alias}}'` 而非 `memberId: '${{alias}}.id'`——解析交給 red-execute 的 step def）。
+   fitbook 的 `已登入的會員` 即採此法：只做 identity、不佈會員主檔。
+2. 業務鍵不足以定位（真的只能用 id）→ 依 [DISCUSS] 帶完整 Example 經 `/clarify-loop` 請使用者裁決
+   「把資料前置句排到身分句之前」，同意後才依 `feature-restructure.md` 改 `.feature`。
+3. 【嚴禁】為了讓變數存在，就在身分句的 custom 裡偷偷再佈一次該實體——那是
+   `duplicate-entity-setup`（同 example 同 entity 佈建兩次），`expand_isa.py` 會 exit 3 攔下。
+
+`expand_isa.py` 的 `undefined-var` lint 即這條規則的機械 gate：isa_step 引用的 `$alias.x`
+在該 example 內未被任何**前置**句捕獲即 exit 3。
+
+## 不存在標的：無 seed 情境不得引用 VAR
+
+「標記**不存在**的會籍付款完成」「查詢**不存在**的訂單」這類反例，句面常與成功情境**完全相同**
+（`When "林小柔" 標記 "陳美惠" 的會籍付款完成`），因此對到同一條 dsl_step、送同一個
+`$陳美惠會籍.id`。但反例沒有 seed 那筆資料，VAR 從未捕獲 → `SYMBOL_VAR_KEY_NOT_FOUND`，
+這在 step-def 層無法補救。
+
+規則：**同一條 dsl_step 不得同時服務「標的存在」與「標的不存在」兩種情境。** 二擇一：
+
+- **（首選）送保證不存在的字面 id**：為不存在情境另立一條 dsl_step，識別碼直接寫死一個
+  在測試資料範圍內保證不存在的字面值（fitbook 先例：`999999`），不引用任何 `$var`。
+  兩條 dsl_step 的 format 必須在句面可區分——句面若相同就無法分流，須先依 b 的授權流程
+  讓 `.feature` 的敘事對齊該情境（例：`… 標記一筆不存在的會籍付款完成`）。
+- 句面確實不能改（同句雙用是專案契約）→ 以 dsl 層 regex 負向前瞻分流兩條定義，
+  並在 `{feature}.dsl-intent.md` 記下分流理由；此法屬變更授權範圍，須經 `/clarify-loop` 同意。
+
+【嚴禁】把不存在情境的識別碼留成 `$alias.id` 期待「執行期剛好查無」——那不是查無，是變數不存在。
+
 ## 先找：由內往外到 specs
 
 custom 的真相同樣是 isa.yml，但分層。判斷該 custom 是否已定義，從該 feature 的 package 層往最外層找：

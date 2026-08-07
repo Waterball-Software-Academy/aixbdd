@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
@@ -115,6 +116,12 @@ def main() -> int:
         "每個路徑的同名 `.draft`（推導中、尚未經 batch review 核可的定義）存在時自動一併載入。",
     )
     ap.add_argument("--isa", help="isa.yml（推 keyword 用；預設 <feature>/../../../isa.yml 找不到就略過）")
+    ap.add_argument(
+        "--framework-verify",
+        metavar="CMD",
+        help="選填：本腳本的展開是近似展開；給一條指令（例：專案的 red-refresh + preprocess）"
+        "即在 lint 之後跑框架真展開，非 0 退出視為阻斷級。INSTALL_SPECTRUM=true 時建議帶上。",
+    )
     args = ap.parse_args()
 
     feature_path = Path(args.feature)
@@ -189,6 +196,18 @@ def main() -> int:
             file=sys.stderr,
         )
         return 3
+
+    if args.framework_verify:
+        print(f"\n▶ 框架真展開驗證：{args.framework_verify}", file=sys.stderr)
+        proc = subprocess.run(args.framework_verify, shell=True)
+        if proc.returncode != 0:
+            print(
+                f"\n框架真展開驗證失敗（exit {proc.returncode}）——本腳本的展開只是近似展開，"
+                "框架擋下的 DSL_FORMAT_PARAM_COLLIDE_CAPTURE／DSL_DEFINITION_DUPLICATE_NAME／"
+                "DSL_EXPAND_PARAM_UNKNOWN 一律在此收斂，不得留到 red 才炸。",
+                file=sys.stderr,
+            )
+            return 3
     return 0
 
 

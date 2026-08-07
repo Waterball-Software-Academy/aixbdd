@@ -118,17 +118,39 @@ metadata:
 
 10. BATCH REVIEW（收尾一次 review，**強制硬閘門**）——所有選定 examples 推導完成後才執行；使用者同意前不得定案：
 
-    a. 對每個受影響 example RUN `01-refine-example` 的 `expand_isa.py` 取得展開，**一次 EMIT 全部受影響 features/examples 的完整展開預覽到對話**（每個 example：完整 Example ＋ 逐 dsl_step 展開）。
+    a. 對每個受影響 example RUN `01-refine-example` 的 `expand_isa.py` 取得展開，**一次 EMIT 全部受影響 features/examples 的完整展開預覽到對話**（每個 example：完整 Example ＋ 逐 dsl_step 展開）。任一 example 的腳本 exit 3（展開 lint 阻斷級違規）→ 不得進 b，先回 sub-SOP c 修到全數 exit 0。
+
+       **框架真展開（`INSTALL_SPECTRUM=true` 時必做）**：本腳本的展開是**近似展開**，擋不掉框架層的 `DSL_FORMAT_PARAM_COLLIDE_CAPTURE`（format 捕獲與 params 鍵同名）、`DSL_DEFINITION_DUPLICATE_NAME`、`DSL_EXPAND_PARAM_UNKNOWN`——這三類在 fitbook 是裝上框架後第一次 preprocess 才連擋三批、拖到 red 才炸。arguments.yml 的 `INSTALL_SPECTRUM` 為 true 時，在預覽前多跑一次框架 preprocess：
+
+       ```bash
+       # CMD 換成專案的衍生區刷新＋preprocess 指令（例：./tools/red-refresh.sh && ./mvnw -q generate-test-resources）
+       python3 .claude/skills/aibdd-dsl-refine/01-refine-example/scripts/cli/expand_isa.py --feature ${FEATURE} --dsl $FP_FEATURES/{feature}.dsl.yml --isa ${BOUNDARY_ISA} --framework-verify "<CMD>"
+       ```
+
+       - 專案沒有可用的 preprocess 指令（框架未安裝、或 `INSTALL_SPECTRUM=false`）→ 略過本段，於預覽中明講「未經框架真展開驗證」，讓使用者知道 review 的是近似展開。
+       - 真展開需要 FP 層 isa.yml 的 custom 契約就位，與 10.d「核可前不得寫該檔」互鎖 → 走 d 的**驗證用暫存例外**。
     b. 依 `01-refine-example/assets/isa-question.template.md` 組裝、DELEGATE `/clarify-loop` 讓使用者對預覽逐項同意／不同意（引用上方預覽，question 保持精簡單句）。
        - 互動工具不可用或 clarify-loop 未能取得真實使用者回覆 → 確保 a 的完整預覽已 EMIT，補上逐項待答問題後結束本回合：**此時本回合的正式交付物就是這份待 review 展開與問題清單**，交出它即視為本回合任務圓滿完成，等待下一輪使用者輸入再續。
        - 【嚴禁】代答同意：「候選唯一」「背景／subagent 執行」「開場指令已指定範圍或整批授權」皆**不構成**代行 review 的理由；「採同意為工作假設」即未授權標 `# done`（見 Artifact output contract）。
     c. **任一項不同意** → 依回饋回 sub-SOP c 調整該 dsl_step（含把誤開的 custom 改為 builtin 組合），重跑該 example 展開，回 a **只重審被拒項**，直到全數同意。
+
+       **裁決對賬（機械，不可省）**——一條裁決往往同時適用多個同型項目，逐項套用必漏（fitbook 實測連錯兩次：同一條 seed 裁決六項只套到三項、重複佈建裁決漏一項，兩次都靠複審者人眼補抓）。每收到一條裁決即：
+       1. WRITE 一筆 `{裁決, 受影響項清單}`：**受影響項不是使用者點名的那一項，而是掃全檔（本輪全部 `$TARGET_FEATURES` 的草稿檔＋`.feature`）同型 pattern 命中的所有項目**——同一條 dsl_step 被哪些 example 共用、同一個欄位語意出現在哪些 dsl_step，全部列進去。
+       2. 逐項套用並重跑該 example 的 `expand_isa.py`。
+       3. 回 a 重出預覽前 **ASSERT 清單內每一項都已重跑且 exit 0**；有任一項未重跑就重出預覽，即屬未完成處置。
+       4. 把所有裁決紀錄一併附在重出的預覽裡（讓使用者看得到「這條裁決套到了哪幾項」）。
     d. **全數同意** → 才定案，依序：
        1. 在草稿檔各 dsl_step name 上方標 `# done`；
        2. **草稿轉正**：把 `{feature}.dsl.yml.draft`（與 `{FP}/dsl.yml.draft`，若有）的 dsl_step MERGE 進同名本尊——本尊不存在則直接改名，存在則以 dsl_step `name` 為鍵覆蓋／附加，保留本尊既有的 `# done` 定義；MERGE 完成後 DELETE 該 `.draft`。**在此之前 `.dsl.yml` 本尊不得出現本輪未核可的定義**（否則下一次 `red-refresh` 會把未定案的 feature 帶進衍生區、preprocess 因找不到 custom 指令而整個 build 失敗）。
        3. custom 有新增 → 此時才寫 FP 層 isa.yml 契約；
        4. 再重跑 step 5 的 `build_worklist.py` 刷新 worklist，確認 `$TARGET_FEATURES` 內無 `pending`。
     【嚴禁】在使用者同意前標 `# done`、把草稿 MERGE 進 `.dsl.yml` 本尊、寫 FP 層 isa.yml，或以任何理由（含環境無互動工具）跳過本 review 自行定案。
+
+    **驗證用暫存例外（僅供 a 的框架真展開）**——「核可前不得寫 FP 層 isa.yml」與「產出須經框架驗證」在有 custom 的 FP 上直接互鎖：不寫契約就跑不了真展開，寫了就越權。故開一個窄例外：
+
+    - 允許把**本輪待 review 的 custom 契約**寫進 `${TRUTH_BOUNDARY_PACKAGES_DIR}/$FP_SLUG/isa.yml.verify`（驗證用暫存位置，與正式檔同目錄、不同副檔名），僅供 a 的 `--framework-verify` 指令消費（專案的 preprocess 指令若只吃 `isa.yml`，則以「複製成 `isa.yml` → 跑驗證 → 立刻刪除該檔並還原衍生區」的方式使用，且該還原**必須在同一步完成**）。
+    - 例外只涵蓋 **isa.yml 的 custom 契約**，不涵蓋 `# done`、不涵蓋草稿轉正；`.dsl.yml` 本尊在核可前一律不得出現本輪定義。
+    - 驗證結束**必須**確認 `isa.yml.verify` 已刪除、`isa.yml` 與衍生區回到驗證前狀態；殘留即屬未授權產出。10.d 核可後才把該契約正式寫進 FP 層 `isa.yml`。
 
 11. FP 級去重 + name 唯一性 gate（收尾，**強制硬閘門**）——**所有選定 feature 的 example 全部 `# done` 後**才執行；這是宣告完成前的決定性 gate，不可略過、不可只憑自我回報「已收斂」（曾發生 agent 謊報無重複、實際 16 條未上移、展開階段被阻斷）。
 
@@ -138,8 +160,24 @@ metadata:
     python3 .claude/skills/aibdd-dsl-refine/scripts/cli/detect_shared_dsl.py --packages-dir ${TRUTH_BOUNDARY_PACKAGES_DIR} --fp $FP_SLUG
     ```
 
-    b. **exit 3（有跨 feature 重複）**：對回報的每一條都要處理，依 `01-refine-example/rules/example-refactor.md` §2 hoist 到 `$FP_PACKAGE_DSL`、刪各 `{feature}.dsl.yml` 的重複（**保留 `# done`**）。
-       - **name 重複**為阻斷級（dsl.yml 規則：dsl_step name 在其 FP 解析範圍／祖先鏈內必須唯一；重複會在展開時造成名稱衝突 `DSL_DEFINITION_DUPLICATE_NAME`、阻斷整個 FP、連 dry-run 都掃不到）→ **務必全部處理**；標「同名不同 format」者屬語意不同，**優先改名各自保留**（不對齊句式），確為同語意同 format 才合併上移。改名屬須授權變更：擬定新名稱後 DELEGATE `/clarify-loop`（附衝突清單與擬名）取得同意才落檔，【嚴禁】逕行改名。
-       - format 完全相同的重複（同句面會造成 `DSL_STEP_AMBIGUOUS_MATCH`）一併上移共用。僅處理逐字相同的 format；相似但不同的句式不在本 gate 範圍，不需合併或對齊。
-    c. **重跑 a，直到 exit 0**。**唯有 detect exit 0 才得宣告完成**；仍 exit 3 代表還有重複，未清不得結束。
+    a-0. **先判定本 gate 是 blocking 還是 advisory**——本 gate 的理由是「重名會在 folder-scope 合併時 `DSL_DEFINITION_DUPLICATE_NAME`、阻斷整個 FP」。若專案已把每個 feature 隔離進自己的子目錄（per-feature 佈局），重名根本不相撞，這條 gate 就變成「為了滿足規則而做的重構」。判定順序（取第一個可得的證據）：
+       - 專案有可跑的 preprocess 指令 → 先跑一次；**0 error** → 本 gate 降級為 **advisory**。
+       - 否則檢查衍生區佈局：`.dsl.feature` 是否已落在 per-feature 子目錄（每個 feature 一個資料夾）→ 是 → **advisory**。
+       - 兩者都不成立 → 維持 **blocking**（原行為）。
+
+       advisory 時：仍 RUN a 取清單，把「可上移／須改名」的處置計畫連同「本專案已 per-feature 隔離、重名實測 0 error」的證據列進預覽交使用者裁決，**不以 exit 3 阻斷宣告完成**，也不在核可前逕行重構。
+
+    b. **exit 3（有跨 feature 重複）且為 blocking**：對回報的每一條都要處理，依 `01-refine-example/rules/example-refactor.md` §2 hoist 到 `$FP_PACKAGE_DSL`、刪各 `{feature}.dsl.yml` 的重複（**保留 `# done`**）。分支判準**以 name／format／isa_steps 三者交叉判**，不可只看 format：
+
+       | 情況 | 處置 |
+       |------|------|
+       | 同 name、同 format、**isa_steps 也相同** | 上移 `$FP_PACKAGE_DSL` 共用 |
+       | 同 name、同 format、**isa_steps 不同** | **必須走改名分支**——各自綁不同 operation／不同斷言，上移共用會直接改壞語意。【嚴禁】以「format 完全相同就上移共用」處理 |
+       | 同 name、不同 format | 語意不同 → 改名各自保留（不對齊句式） |
+       | 不同 name、同 format | 同句面會 `DSL_STEP_AMBIGUOUS_MATCH` → 收斂成一條上移；若 isa_steps 不同則同樣改為改名分支 |
+
+       - **name 重複**為阻斷級（dsl.yml 規則：dsl_step name 在其 FP 解析範圍／祖先鏈內必須唯一；重複會在展開時造成名稱衝突 `DSL_DEFINITION_DUPLICATE_NAME`、阻斷整個 FP、連 dry-run 都掃不到）→ **務必全部處理**。
+       - 改名屬須授權變更：擬定新名稱後 DELEGATE `/clarify-loop`（附衝突清單、各條的 isa_steps 差異、擬名）取得同意才落檔，【嚴禁】逕行改名。
+       - 僅處理逐字相同的 format；相似但不同的句式不在本 gate 範圍，不需合併或對齊。
+    c. blocking 時 **重跑 a，直到 exit 0**。**唯有 detect exit 0 才得宣告完成**；仍 exit 3 代表還有重複，未清不得結束。advisory 時以「已列出處置計畫並交使用者裁決」為完成條件。
     d. 清乾淨後重跑 step 5 `build_worklist.py` 確認 worklist 仍空。本步只重構結構、不改驗收意圖。
