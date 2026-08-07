@@ -1,0 +1,22 @@
+dsl_steps:
+  # dsl_step 的佔位名是中文 {業務}，isa.yml 契約的 export key 卻是 `{{alias}}.id`
+  - name: 已登入的業務
+    format: 已登入的業務 "{業務}"
+    isa_steps:
+      - instruction: '"{{業務}}" 是一個操作員 (無權限), with table:'
+        table:
+          操作員: '{{業務}}'
+
+  - name: 提交新客授信申請
+    format: '"{業務}" 提交新客授信申請'
+    isa_steps:
+      - instruction: '(UID="${{業務}}.id") 提交新客授信申請, call table:'
+        table:
+          applicationType: 新客授信
+
+  - name: 系統回應訊息
+    format: 系統回應 "{message}"
+    isa_steps:
+      - instruction: '提交新客授信申請(200)回應, with table:'
+        table:
+          message: '{{message}}'

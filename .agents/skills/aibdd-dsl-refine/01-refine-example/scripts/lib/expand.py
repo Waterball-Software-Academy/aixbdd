@@ -171,6 +171,21 @@ def _render_isa_step(isa_step: dict, vmap: dict, source_kw, instructions, out: l
             out.append("      | " + " | ".join(vals) + " |")
 
 
+def _resolve_exports(export_keys, isa_captures, rendered_table, vmap) -> list:
+    """把 isa.yml `export_vars` 的 key（如 `{{alias}}.id`）解析成本句實際導出的符號名。
+
+    key 裡的 `{{name}}` 屬於**該 instruction 自己的 format 具名群組／DataTable 欄位**，
+    與 dsl_step 怎麼命名自己的 param 無關（dsl_step 可能寫 `{業務}`）。
+    解析優先序：instruction format 捕獲 > 該句展開後的 table 欄位 > dsl_step 的 vmap。
+    以 dsl_step vmap 為主會在 param 名不同時靜默丟失 export、讓 undefined-var 誤報。
+    """
+    emap = dict(vmap or {})
+    for k, v in (rendered_table or {}).items():
+        emap[str(k).strip()] = v
+    emap.update(isa_captures or {})
+    return [_subst(k, emap) for k in export_keys or []]
+
+
 def expand_example_records(gwt_steps, dsl_steps, instructions=None) -> list:
     """與 expand_example 同一套比對／內插，但回傳結構化紀錄供 lint 消費。
 
@@ -212,7 +227,7 @@ def expand_example_records(gwt_steps, dsl_steps, instructions=None) -> list:
                     "itype": itype,
                     "dfmt": dfmt,
                     "isa_captures": isa_caps,
-                    "export_vars": [_subst(k, rec["vmap"]) for k in exports],
+                    "export_vars": _resolve_exports(exports, isa_caps, table, rec["vmap"]),
                     "table": table,
                     "raw_table": {_subst(k, rec["vmap"]): v for k, v in raw_table.items()},
                     "text": _subst(isa_step.get("text") or "", rec["vmap"]),

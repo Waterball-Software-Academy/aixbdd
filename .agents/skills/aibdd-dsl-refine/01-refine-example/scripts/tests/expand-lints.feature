@@ -65,14 +65,24 @@ Feature: expand_isa 展開 lint
 
   Rule: #52 param 預設值命中 PM 字面樣式即阻斷（param-default-pm-literal）
 
-    Example: M2 預設寫成空白分隔無時區的時間與含（台北時間）的字面
+    Example: M2 預設與 feature 供值走兩套格式，加上含（台北時間）的字面
       Given fixture "param-default-pm-literal"
       When 執行 expand_isa
       Then 退出碼為 3
       And lint 回報:
         | severity | code                     | 訊息含       |
-        | fail     | param-default-pm-literal | 非 ISO-8601  |
+        | fail     | param-default-pm-literal | 兩套格式     |
         | fail     | param-default-pm-literal | 中文括號註記 |
+
+    # 驗收期發現：專案的 ISA 值域本來就吃 `yyyy-MM-dd HH:mm:ss` 時，
+    # 這種預設不是漂移；只有同一支 feature 另以 ISO-8601 供值才是 #52 的兩套格式。
+    Example: feature 沒有 ISO 供值時，空白分隔的時間預設只提醒不阻斷
+      Given fixture "param-default-plain-timestamp"
+      When 執行 expand_isa
+      Then 退出碼為 0
+      And lint 回報:
+        | severity | code                     | 訊息含           |
+        | warn     | param-default-pm-literal | 與 feature 供值同格式 |
 
   Rule: 正確的推導不得被誤報
 
@@ -108,3 +118,9 @@ Feature: expand_isa 展開 lint
       And lint 回報:
         | severity | code          | 訊息含      |
         | fail     | undefined-var | $查無此人.id |
+
+    Example: dsl_step 用中文佔位名，export key 仍解析得到實際符號
+      Given fixture "export-vars-cjk-placeholder"
+      When 執行 expand_isa
+      Then 退出碼為 0
+      And lint 沒有任何回報

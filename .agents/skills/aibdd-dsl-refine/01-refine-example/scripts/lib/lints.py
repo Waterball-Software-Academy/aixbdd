@@ -35,10 +35,11 @@ _CHANGED_KW = ("變成", "改為", "轉為", "更新為", "調整為", "變更�
 # 「標題數值語意」比對：<中文標籤><數字>
 _TITLE_NUM_RE = re.compile(r"([一-鿿]{2,10})\s*[為是]?\s*(\d+(?:\.\d+)?)")
 # #52：需衍生區轉換的 PM 字面樣式
-_PM_LITERAL_PATTERNS = (
-    (re.compile(r"[（(][^（()）]*[一-鿿][^（()）]*[)）]"), "含中文括號註記（如「（台北時間）」）"),
-    (re.compile(r"^\s*\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}(:\d{2})?\s*$"), "空白分隔且無時區的日期時間（非 ISO-8601）"),
-)
+_PM_ANNOTATION_RE = re.compile(r"[（(][^（()）]*[一-鿿][^（()）]*[)）]")
+# 空白分隔、無 T、無時區的日期時間；本身未必違規（專案 ISA 值域可能就吃這格式），
+# 只有當同一支 feature 另以 ISO-8601 供值時才是 #52 的「兩套格式靜默漂移」。
+_SPACE_DATETIME_RE = re.compile(r"^\s*\d{4}-\d{2}-\d{2}[ ]\d{2}:\d{2}(:\d{2})?\s*$")
+_ISO_DATETIME_RE = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}")
 
 
 class Finding:
@@ -272,25 +273,57 @@ def lint_default_vs_datatable(title: str, steps, dsl_steps) -> "list[Finding]":
 
 
 # ── #52 param 預設格式漂移 ────────────────────────────────────────────────
-def lint_param_default_pm_literal(dsl_steps) -> "list[Finding]":
+def lint_param_default_pm_literal(dsl_steps, feature_text: str = "") -> "list[Finding]":
+    """params 預設值不得寫「需要衍生區轉換」的 PM 字面。
+
+    兩種樣式，嚴重度不同：
+    - 中文括號註記（如「（台北時間）」）：一定要經衍生區正規化才能進 ISA → fail。
+    - 空白分隔、無時區的日期時間：本身未必違規（專案的 ISA 值域可能就吃這格式）。
+      只有當**同一支 feature 另有 ISO-8601 供值**時，才是 #52 的「feature 供值與 param
+      預設走兩套格式」靜默漂移 → fail；否則只 warn，提醒作者確認與 feature 供值同格式。
+    """
+    feature_has_iso = bool(_ISO_DATETIME_RE.search(feature_text or ""))
     out: "list[Finding]" = []
     for d in dsl_steps or []:
         for k, default in _param_items(d.get("params")):
             if default is None or not isinstance(default, str):
                 continue
-            for rx, why in _PM_LITERAL_PATTERNS:
-                if rx.search(default):
+            scope = f"dsl_step「{d.get('name')}」"
+            if _PM_ANNOTATION_RE.search(default):
+                out.append(
+                    Finding(
+                        "fail",
+                        "param-default-pm-literal",
+                        scope,
+                        f"params.{k} 的預設值 {default!r} 含中文括號註記（如「（台北時間）」）；"
+                        f"params 預設不會經過衍生區的字面正規化，"
+                        f"必須直接寫 ISA 值域的最終字面（例：2026-03-02T10:00:00+08:00）",
+                    )
+                )
+                continue
+            if _SPACE_DATETIME_RE.match(default):
+                if feature_has_iso:
                     out.append(
                         Finding(
                             "fail",
                             "param-default-pm-literal",
-                            f"dsl_step「{d.get('name')}」",
-                            f"params.{k} 的預設值 {default!r} {why}；"
-                            f"params 預設不會經過衍生區的字面正規化，"
-                            f"必須直接寫 ISA 值域的最終字面（例：2026-03-02T10:00:00+08:00）",
+                            scope,
+                            f"params.{k} 的預設值 {default!r} 是空白分隔且無時區的日期時間，"
+                            f"但同一支 feature 另以 ISO-8601 供值；同一個 dsl_step 的 feature 供值"
+                            f"與 param 預設走兩套格式會靜默漂移，預設須改寫成同一格式",
                         )
                     )
-                    break
+                else:
+                    out.append(
+                        Finding(
+                            "warn",
+                            "param-default-pm-literal",
+                            scope,
+                            f"params.{k} 的預設值 {default!r} 是空白分隔且無時區的日期時間；"
+                            f"params 預設不經衍生區正規化，請確認它已是 ISA 值域的最終字面、"
+                            f"且與 feature 供值同格式",
+                        )
+                    )
     return out
 
 
@@ -453,7 +486,7 @@ def _lint_title_numbers(title: str, records, flat_seed) -> "list[Finding]":
 def run_lints(feature_text: str, dsl_steps, instructions=None, example_filter=None):
     """跑齊五條 lint，回傳 [Finding]（依 example 出現順序）。"""
     findings: "list[Finding]" = []
-    findings += lint_param_default_pm_literal(dsl_steps)
+    findings += lint_param_default_pm_literal(dsl_steps, feature_text)
     for title, steps in iter_examples_full(feature_text):
         if example_filter and example_filter not in title:
             continue
