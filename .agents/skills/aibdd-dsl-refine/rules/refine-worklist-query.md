@@ -14,12 +14,23 @@ FP / Features / Examples 三層「找出需要 refine 的對象」是**同一個
 
 ## 定義：未完成定義的 dsl step
 
-一個業務 step（feature example 的一行 GWT）算「已完成定義」需同時：
-1. 在該 feature 的 `{feature}.dsl.yml`、或 FP 層 `{FP}/dsl.yml`（跨 feature 共用）有一條 dsl_step，其 `format` 對得上該句（`{name}` 佔位或 `^…$` regex 皆可）；
-2. 該 dsl_step 標記為 done（name 上方註解一行 `# done`）；
-3. isa_steps 已填、非空。
+一個業務 step（feature example 的一行 GWT）算「已完成定義」需：
 
-不滿足即「未完成」：未建立（找不到對應 dsl_step）、或已建立未標 `# done`。
+1. 在該 feature 的 `{feature}.dsl.yml`、或 FP 層 `{FP}/dsl.yml`（跨 feature 共用）有一條 dsl_step，其 `format` 對得上該句（`{name}` 佔位或 `^…$` regex 皆可）；**且**
+2. 該定義已「安定」——下列任一成立即可：
+   - name 上方註解一行 `# done`（使用者於 batch review 核可的持久真相）；或
+   - `isa_steps` 已填、非空。
+
+第 2 點的第二個判準是 SKILL-GAPS #48 的修法：red-execute 階段對 `.dsl.yml` 做機械修補時，新增／拆分出來的定義不會補標 `# done`，只看註解會讓已 green-evaluate PASS 的模組**永久假陽性**。之所以敢放寬，是因為 `.dsl.yml` 本尊已由「草稿態」保證只收核可過的定義（見下節）——推導中的定義住 `.draft`，不在掃描範圍。
+
+不滿足即「未完成」：找不到對應 dsl_step、或找到了但 `isa_steps` 空且未標 `# done`。
+
+## 草稿態：`.dsl.yml.draft` 不算數
+
+- 推導期（主 SOP step 8/9、sub-SOP c/e）產出的 dsl_step 一律寫進 **`{feature}.dsl.yml.draft`／`{FP}/dsl.yml.draft`**；step 10.d 使用者逐項核可後才 MERGE 進本尊並刪草稿。
+- `build_worklist.py` 與 `detect_shared_dsl.py` 都只掃 `*.dsl.yml`（glob 不匹配 `*.dsl.yml.draft`），故**草稿一律不算已完成**，中斷後重掃會正確回到 pending。
+- 下游 red-execute 的 `archive_specs.py` 同樣以「有同名 `.dsl.yml`」判定該 feature 已 refine；草稿態即是讓「dsl-refine 的中間狀態」變成可安全交接的狀態（SKILL-GAPS #46）。
+- `expand_isa.py` 例外：它對每個 `--dsl` 會自動一併載入同名 `.draft`，讓推導期的預覽算得出來。
 
 ## worklist 暫存區
 
@@ -31,6 +42,23 @@ FP / Features / Examples 三層「找出需要 refine 的對象」是**同一個
 - SSOT 分工：dsl.yml 的 `# done` 是**持久真相**；worklist 是**衍生的 session 暫存**，可隨時丟棄重建。
 - session 內進度：refine 完成一個 → 只寫 dsl.yml 的 `# done`；要讓後續層級反映進度就**重跑腳本刷新 worklist**（dsl.yml 是 SSOT，重建即反映，無需也不得手改 worklist）。
 
+### schema（消費端唯一權威的鍵表，勿猜鍵）
+
+| 層級 | 鍵 | 型別 | 語意 |
+|------|----|------|------|
+| 根 | `fps` | list | 含待處理 example 的 FP；全部完成時為空 list |
+| `fps[]` | `slug` | str | FP 目錄名（`NN-<slug>`），即主 SOP 的 `$FP_SLUG` |
+| `fps[]` | `pending_examples` | int | 該 FP 底下 pending example 總數 |
+| `fps[]` | `features` | list | 含 pending example 的 feature |
+| `features[]` | `feature` | str | feature 檔名去副檔名（`01-提交新客授信審核單`），即 `$TARGET_FEATURES` 的值 |
+| `features[]` | `pending_examples` | int | 該 feature 底下 pending example 數 |
+| `features[]` | `examples` | list | pending example |
+| `examples[]` | `title` | str | Example 標題原文 |
+| `examples[]` | `status` | str | `pending`（worklist 只收 pending，此鍵供人閱讀） |
+| `examples[]` | `undone_steps` | list[str] | 未完成的 GWT 原句 |
+| `examples[]` | `reuse` | list | 選填；該 step 在 FP 內別處已有定義 |
+| `reuse[]` | `step` / `defined_in` / `dsl_step` | str | 原句／既有定義位置（`dsl.yml`＝FP 層）／既有 dsl_step name |
+
 結構（示意）：
 ```yaml
 # DSL_REFINE_PLAN.yml — session worklist（衍生、非 SSOT）
@@ -38,7 +66,8 @@ fps:
   - slug: 01-授信申請與審核
     pending_examples: 35
     features:
-      - name: 01-提交新客授信審核單
+      - feature: 01-提交新客授信審核單
+        pending_examples: 12
         examples:
           - title: '"王業務" 提交新客授信審核單但沒填客戶名稱，提交沒成功'
             status: pending          # pending | done
@@ -54,9 +83,9 @@ fps:
 
 | 主流程步驟 | 讀 worklist | 列為選項的條件 |
 |------------|-------------|----------------|
-| FP 查詢 | `fps[]` | `pending_examples > 0` |
-| Features 查詢 | 選定 FP 的 `features[]` | 含 `status: pending` 的 example |
-| Examples 查詢 | 選定 features 的 `examples[]` | `status: pending` |
+| FP 查詢 | `fps[]` | `pending_examples > 0`（選項文字取 `slug`） |
+| Features 查詢 | 選定 FP 的 `features[]` | `pending_examples > 0`（選項文字取 `feature`） |
+| Examples 查詢 | 選定 features 的 `examples[]` | `status: pending`（選項文字取 `title`） |
 
 ## 腳本職責
 

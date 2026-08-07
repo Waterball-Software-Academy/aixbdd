@@ -81,3 +81,12 @@ Feature: expand_isa 展開 lint
       When 執行 expand_isa
       Then 退出碼為 0
       And lint 沒有任何回報
+
+  Rule: 推導中的定義住 `.dsl.yml.draft`，展開時自動一併載入（#46）
+
+    Example: 本尊尚無定義、草稿已有定義，展開仍算得出來
+      Given fixture "draft-load"
+      When 執行 expand_isa
+      Then 退出碼為 0
+      And lint 沒有任何回報
+      And 展開結果含 "準備一個會籍, with table:"

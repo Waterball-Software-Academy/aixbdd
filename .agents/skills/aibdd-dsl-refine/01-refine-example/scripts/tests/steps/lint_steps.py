@@ -71,3 +71,10 @@ def step_then_no_findings(context):
 def step_then_count(context, n):
     got = _findings(context.result.stderr)
     assert len(got) == n, f"預期 {n} 筆 finding，實際 {len(got)} 筆：{got}"
+
+
+@then('展開結果含 "{needle}"')
+def step_then_stdout_has(context, needle):
+    assert needle in context.result.stdout, (
+        f"展開結果不含「{needle}」\nstdout:\n{context.result.stdout}"
+    )

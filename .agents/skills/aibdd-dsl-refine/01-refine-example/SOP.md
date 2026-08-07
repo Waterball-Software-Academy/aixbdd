@@ -13,17 +13,19 @@ b. 合理性未過 → 變更 example——依 `assets/change-question.template.
 
 c+d. 逐個未完成 dsl_step（**一次一個推導；ISA 確認不在本 sub-SOP 內，集中於主 SOP step 10 batch review**）：
 
-   c. DERIVE＋CREATE dsl_step——在該 `{feature}.dsl.yml` 新建／補該 dsl_step（format `{name}` 佔位）：
-      - **先找後建**：該 step 若在 worklist 該 example 帶 `reuse` 提示（FP 內已有同 format 定義）→ **不重建**。定義在 `{FP}/dsl.yml` → 直接引用；定義在別的 `{feature}.dsl.yml` → 依 `rules/example-refactor.md` §2 hoist 到 `$FP_PACKAGE_DSL` 兩邊共用（經 `/clarify-loop` 同意）。
+   c. DERIVE＋CREATE dsl_step——在該 feature 的**草稿檔** `{feature}.dsl.yml.draft` 新建／補該 dsl_step（format `{name}` 佔位；【嚴禁】寫進 `.dsl.yml` 本尊——本尊只收 step 10.d 核可後 MERGE 進來的定義，見主 SOP PRINCIPLE「草稿態」）：
+      - **先找後建**：該 step 若在 worklist 該 example 帶 `reuse` 提示（FP 內已有同 format 定義）→ **不重建**。定義在 `{FP}/dsl.yml` → 直接引用；定義在別的 `{feature}.dsl.yml` → 依 `rules/example-refactor.md` §2 hoist 到 `$FP_PACKAGE_DSL` 的草稿檔 `{FP}/dsl.yml.draft` 兩邊共用（經 `/clarify-loop` 同意）。
       - 依 `rules/builtin-instruction-decision-tree.md` 選內建型別（一句可展開多條有序 isa_step）；拆解組合依 `rules/builtin-composition-patterns.md`（先套模式、後判 custom），各型指令用法界限對照 `rules/builtin-instruction-usage.md`；
       - 依 `rules/symbol-system-usage.md` 決定 table 符號，NOT NULL 但與情境無關欄位填預設（放 `params`）；
       - 每條 isa_step 的 instruction 必對上主 SOP step 4 已載入的 isa 目錄某條 format；對不上且屬內建範圍外 → 依 `rules/custom-isa-placement.md` **草擬** FP 層 isa.yml 的 custom 契約並附進待 review 清單（只寫契約，Step Definition 實作留 RED；**落檔在主 SOP step 10 batch review 同意後**）。宣告 custom 時 **`intent` 為必填**：一句話描述該 custom 觀察到的行為（含 Given／When／Then 角色），只寫 WHAT、不寫 HOW（供下游 red-execute 推論實作）；`{feature}.dsl-intent.md` 對該句已有逐句意圖記載時，據以撰寫、不重新腦補。
       - **DataTable 欄位必進 params**（builtin／custom 皆適用）：該 dsl_step 若 (i) feature 句掛了 DataTable、或 (ii) 對上的指令在 isa.yml 有 `datatable_parameters` → 必須把那些欄位**全部宣告進 `params`**、並在 `isa_steps[].table` 以 `{{欄位}}` 內插（見 `rules/symbol-system-usage.md`「params 必涵蓋 DataTable 欄位」＋ `rules/custom-isa-placement.md`）。漏宣告即展開報 `DSL_EXPAND_PARAM_UNKNOWN`。
-      WRITE 該 dsl_step 的 `isa_steps`（尚未標 `# done`）。
+      WRITE 該 dsl_step 的 `isa_steps` 到草稿檔（尚未標 `# done`）。
 
    d. 展開驗證＋累積待 review（**僅此 dsl_step，不確認、不定案**）——RUN 下列腳本算該 dsl_step 的展開：
 
       ```bash
+      # --dsl 給本尊路徑即可：腳本會自動一併載入同名 `.draft`（推導中的定義）。
+      # FP 層有共用定義時再加一個 --dsl $FP_PACKAGE_DSL。
       python3 .claude/skills/aibdd-dsl-refine/01-refine-example/scripts/cli/expand_isa.py --feature ${FEATURE} --example "<example 標題>" --dsl $FP_FEATURES/{feature}.dsl.yml --isa ${BOUNDARY_ISA}
       ```
 
@@ -42,8 +44,8 @@ c+d. 逐個未完成 dsl_step（**一次一個推導；ISA 確認不在本 sub-S
       - 展開成功（exit 0） → 將該 dsl_step 的展開加入本 example 的待 review 清單，取下一個未完成 dsl_step。
       - 【嚴禁】在此逐 dsl_step DELEGATE `/clarify-loop` 確認、標 `# done`、或寫 FP 層 isa.yml——ISA 確認、`# done` 標記與 custom 契約落檔一律由主 SOP step 10 batch review 取得使用者同意後才執行。
 
-e. 重構判斷——該 example 所有 dsl_step 推導完成（待 review 清單就緒）後，依 `rules/example-refactor.md`：抽變數（format 參數化）／視情況抽 DataTable；跨 feature 共用 → 寫 `$FP_PACKAGE_DSL`（`{FP}/dsl.yml`，不存在則以 `../assets/dsl.template.yml` 建）；**禁過複雜**；改 `.feature` 或搬 dsl_step 經 `/clarify-loop` 同意後才動。
+e. 重構判斷——該 example 所有 dsl_step 推導完成（待 review 清單就緒）後，依 `rules/example-refactor.md`：抽變數（format 參數化）／視情況抽 DataTable；跨 feature 共用 → 寫 `$FP_PACKAGE_DSL` 的草稿 `{FP}/dsl.yml.draft`（不存在則以 `../assets/dsl.template.yml` 建）；**禁過複雜**；改 `.feature` 或搬 dsl_step 經 `/clarify-loop` 同意後才動。
 
    貫穿本 sub-SOP 的 [DISCUSS]——a 的意圖／合理性、c 的型別歸屬（內建哪型／是否 custom）或欄位角色（斷言重點 vs NOT NULL 陪襯）一旦無法有把握判定（資訊不足、規格含糊、兩解皆通），停止臆測，帶完整 Example DELEGATE `/clarify-loop` 澄清再續，不得帶猜測寫入。
 
-本 sub-SOP 允許寫入：`{feature}.dsl.yml`／`$FP_PACKAGE_DSL` 的 dsl_step 定義、以及經 `/clarify-loop` 同意後重構的 `.feature`（僅步驟結構、不改驗收意圖）。`# done` 註解與 FP 層 isa.yml 的 custom 契約**不在本 sub-SOP 寫入**——由主 SOP step 10 batch review 同意後落檔。【嚴禁】未經 `/clarify-loop` 同意逕改 `.feature`；【嚴禁】改 spec／contracts／data／既有 isa 內建定義；【嚴禁】在 custom 寫 Step Definition 實作；【嚴禁】手改 `DSL_REFINE_PLAN.yml`（worklist 由主 SOP 重跑腳本刷新）。
+本 sub-SOP 允許寫入：`{feature}.dsl.yml.draft`／`{FP}/dsl.yml.draft` 的 dsl_step 定義、以及經 `/clarify-loop` 同意後重構的 `.feature`（僅步驟結構、不改驗收意圖）。`# done` 註解、草稿轉正（MERGE 進 `.dsl.yml` 本尊）與 FP 層 isa.yml 的 custom 契約**不在本 sub-SOP 寫入**——由主 SOP step 10 batch review 同意後落檔。【嚴禁】未經 `/clarify-loop` 同意逕改 `.feature`；【嚴禁】改 spec／contracts／data／既有 isa 內建定義；【嚴禁】在 custom 寫 Step Definition 實作；【嚴禁】手改 `DSL_REFINE_PLAN.yml`（worklist 由主 SOP 重跑腳本刷新）。

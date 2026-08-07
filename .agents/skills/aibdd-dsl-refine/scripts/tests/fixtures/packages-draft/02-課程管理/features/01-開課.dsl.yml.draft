@@ -1,0 +1,11 @@
+dsl_steps:
+  - name: 時間控制
+    format: 現在時間為 "{now}"
+    isa_steps:
+      - instruction: '現在時間為 "{{now}}"'
+  - name: 開課
+    format: '"{coach}" 開一堂 "{course}" 課程'
+    isa_steps:
+      - instruction: '(No Actor) 開課, call table:'
+        table:
+          courseName: '{{course}}'

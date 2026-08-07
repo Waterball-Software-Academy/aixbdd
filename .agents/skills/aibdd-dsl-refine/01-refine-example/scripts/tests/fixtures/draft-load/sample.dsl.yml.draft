@@ -1,0 +1,33 @@
+dsl_steps:
+  - name: 已登入的店員
+    format: 已登入的店員 "{alias}"
+    isa_steps:
+      - instruction: '準備一個員工, with table:'
+        table:
+          '>{{alias}}.id': '<id'
+          name: '{{alias}}'
+
+  - name: 會籍_指定狀態方案
+    format: '"{alias}" 有一筆 "{status}" 的 "{plan}" 會籍'
+    isa_steps:
+      - instruction: '準備一個會籍, with table:'
+        table:
+          '>{{alias}}會籍.id': '<id'
+          member_name: '{{alias}}'
+          status: '{{status}}'
+          plan: '{{plan}}'
+
+  - name: 凍結會籍
+    format: '"{actor}" 凍結 "{owner}" 的會籍'
+    isa_steps:
+      - instruction: '(UID="${{actor}}.id") 凍結會籍, call table:'
+        table:
+          membershipId: '${{owner}}會籍.id'
+
+  - name: 會籍狀態變更斷言
+    format: '"{alias}" 的會籍變成 "{status}"'
+    isa_steps:
+      - instruction: '應該存在一個會籍, with table:'
+        table:
+          member_name: '{{alias}}'
+          status: '{{status}}'

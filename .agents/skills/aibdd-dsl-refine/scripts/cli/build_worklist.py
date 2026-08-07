@@ -21,6 +21,7 @@ if str(_SCRIPTS_DIR) not in sys.path:
 
 from lib.scan import (  # noqa: E402
     all_step_formats,
+    defined_formats,
     done_formats,
     format_matcher,
     iter_examples,
@@ -58,6 +59,13 @@ def _reuse_hint(step_text: str, fp_defs, self_location: str):
     return None
 
 
+def _settled_matchers(dsl_text: str):
+    """「已完成定義」的 matcher：標 `# done`（使用者核可的持久真相）
+    ∪ isa_steps 已填非空（SKILL-GAPS #48：red-execute 機械修補新增的定義不會補標）。"""
+    formats = set(done_formats(dsl_text)) | set(defined_formats(dsl_text))
+    return [m for m in (format_matcher(f) for f in formats) if m]
+
+
 def build(packages_dir: Path) -> dict:
     """掃 packages → worklist 結構（只含有待處理 example 的 FP/feature/example）。"""
     fps = []
@@ -66,9 +74,7 @@ def build(packages_dir: Path) -> dict:
         # FP 層共用 dsl.yml（跨 feature 共用的 dsl_step）；對該 FP 全 feature 生效
         fp_dsl = pkg / "dsl.yml"
         fp_done_matchers = (
-            [format_matcher(f) for f in done_formats(fp_dsl.read_text(encoding="utf-8"))]
-            if fp_dsl.exists()
-            else []
+            _settled_matchers(fp_dsl.read_text(encoding="utf-8")) if fp_dsl.exists() else []
         )
         fp_defs = _fp_definitions(pkg)  # 先找後建：FP 內既有定義索引
         for ff in sorted(pkg.glob("features/*.feature")):
@@ -76,9 +82,7 @@ def build(packages_dir: Path) -> dict:
             self_location = f"features/{feat_dsl.name}"
             done_matchers = list(fp_done_matchers)
             if feat_dsl.exists():
-                done_matchers += [
-                    format_matcher(f) for f in done_formats(feat_dsl.read_text(encoding="utf-8"))
-                ]
+                done_matchers += _settled_matchers(feat_dsl.read_text(encoding="utf-8"))
             examples = []
             for title, steps in iter_examples(ff.read_text(encoding="utf-8")):
                 undone = undone_in_example(steps, done_matchers)
@@ -92,7 +96,13 @@ def build(packages_dir: Path) -> dict:
                     examples.append(ex)
             if examples:
                 fp["pending_examples"] += len(examples)
-                fp["features"].append({"name": ff.stem, "examples": examples})
+                fp["features"].append(
+                    {
+                        "feature": ff.stem,
+                        "pending_examples": len(examples),
+                        "examples": examples,
+                    }
+                )
         if fp["features"]:
             fps.append(fp)
     return {"fps": fps}

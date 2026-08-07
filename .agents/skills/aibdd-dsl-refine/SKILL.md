@@ -19,7 +19,7 @@ metadata:
 
 - 本 SOP 唯一允許產生或修改的 artifact，只能來自於下述 SOP 中透過 CREATE / WRITE / UPDATE 明確標注的產出物。
 - 【嚴禁】除上述 target 外，其他任何 READ / SEARCH / THINK / DERIVE 所觀察到的路徑，都只可作為分析依據，不得被順手建立、寫入、更新或補骨架。
-- **互動授權亦屬本契約**：在 step 6/7 未取得使用者回覆前 BIND `$FP_SLUG`／`$TARGET_FEATURES`、在 step 10 未取得使用者逐項同意前標 `# done` 或寫 FP 層 isa.yml，一律屬**未授權產出**（等同越權寫檔）。即使開場指令看似已指定範圍（如「完成所有推導」），該指令只授權「開始跑本 SOP」，不取代任何停點的使用者回覆。
+- **互動授權亦屬本契約**：在 step 6/7 未取得使用者回覆前 BIND `$FP_SLUG`／`$TARGET_FEATURES`、在 step 10 未取得使用者逐項同意前標 `# done`、把 `.draft` MERGE 進 `.dsl.yml` 本尊或寫 FP 層 isa.yml，一律屬**未授權產出**（等同越權寫檔）。即使開場指令看似已指定範圍（如「完成所有推導」），該指令只授權「開始跑本 SOP」，不取代任何停點的使用者回覆。
 
 ## PRINCIPLE: STRICT SOP
 
@@ -43,6 +43,12 @@ metadata:
 
 - `.feature`（SBE 產出）為**待驗證候選、非 SSOT**。每個未定義 step 先驗測試意圖與合理性（見 `01-refine-example/rules/dsl-step-reasoning.md`），確認正確才推 isa_step。
 - 【嚴禁】在不正確的 step 上推理 isa_step；合理性未過即先經 `/clarify-loop`（帶完整 Example）確認後變更 `.feature`，再續。
+
+## PRINCIPLE: 草稿態（未定案的 dsl_step 不進 `.dsl.yml` 本尊）
+
+- `{feature}.dsl.yml`／`{FP}/dsl.yml` 是**已定案**的產物：下游 red-execute 的 `archive_specs.py` 以「有同名 `.dsl.yml`」判定該 feature 已完成 refine 並帶進衍生區。推導期就把定義落進本尊，等於把未定案狀態交接給下游，`red-refresh` 後 preprocess 會因找不到尚未落檔的 custom 指令而整個 build 失敗。
+- 因此本 SOP 推導期的所有 dsl_step 一律寫進 **`<本尊檔名>.draft`**（`{feature}.dsl.yml.draft`、`{FP}/dsl.yml.draft`）；`expand_isa.py` 對每個 `--dsl` 會自動一併載入同名 `.draft`，預覽照常算得出來。
+- 只有 step 10.d 取得使用者逐項同意後，才把 `.draft` MERGE 進本尊並刪除草稿。【嚴禁】在核可前建立或修改 `.dsl.yml` 本尊。
 
 ## PRINCIPLE: worklist 只由腳本產出
 
@@ -91,17 +97,17 @@ metadata:
 
    產出為空（全部完成）→ STOP 並回報完成；腳本回報找不到 package → STOP 並提示先完成 `/aibdd-flows-specify`。
 
-6. SELECT FP（單選硬閘門）——READ `DSL_REFINE_PLAN.yml` 的 `fps[]`，以 `assets/fp-question.template.md` 組裝、DELEGATE `/clarify-loop` 讓使用者選一個 FP。
+6. SELECT FP（單選硬閘門）——READ `DSL_REFINE_PLAN.yml` 的 `fps[]`（每筆的鍵：`slug`／`pending_examples`／`features`，鍵表見 `rules/refine-worklist-query.md`），以 `assets/fp-question.template.md` 組裝、DELEGATE `/clarify-loop` 讓使用者選一個 FP。
    - 取得真實使用者回覆 → BIND `$FP_SLUG`、`$FP_DIR=${TRUTH_BOUNDARY_PACKAGES_DIR}/$FP_SLUG`、`$FP_FEATURES=$FP_DIR/features`、`$FP_PACKAGE_DSL=$FP_DIR/dsl.yml`，進入 step 7。
    - 互動工具不可用或 clarify-loop 未能取得真實使用者回覆 → EMIT FP 選項清單並結束本回合：**此時本回合的正式交付物就是這份問題清單**，交出它即視為本回合任務圓滿完成（不是失敗、不是中止），最後一則訊息就是待答問題，等待下一輪使用者輸入再續。
    - 【嚴禁】代選：「候選唯一」「背景／subagent 執行」「開場指令已指定範圍或整批授權（如：完成所有推導）」皆**不構成**代答理由——開場指令只授權開始跑本 SOP，不取代本停點的回覆。
 
-7. SELECT Features（多選硬閘門）——READ worklist 選定 FP 的 `features[]`，以 `assets/features-question.template.md` 組裝、DELEGATE `/clarify-loop` 讓使用者複選。
-   - 取得真實使用者回覆 → BIND `$TARGET_FEATURES[]`；空集合 → STOP。
+7. SELECT Features（多選硬閘門）——READ worklist 選定 FP 的 `features[]`（每筆的鍵：`feature`＝feature 檔名去副檔名／`pending_examples`／`examples`），以 `assets/features-question.template.md` 組裝、DELEGATE `/clarify-loop` 讓使用者複選。
+   - 取得真實使用者回覆 → BIND `$TARGET_FEATURES[]`（值取各筆的 `feature`）；空集合 → STOP。
    - 互動工具不可用或 clarify-loop 未能取得真實使用者回覆 → EMIT features 選項清單並結束本回合（同 step 6：問題清單即本回合正式交付物，交出即圓滿完成）。
    - 【嚴禁】代選；不構成理由同 step 6。
 
-8. ENSURE `{feature}.dsl.yml` 就緒——對每個 `$TARGET_FEATURES`，`$FP_FEATURES/{feature}.dsl.yml` 不存在 → 以 `assets/dsl.template.yml` 為模版 CREATE 空骨架。（跨 feature 共用的 `$FP_PACKAGE_DSL` 待 sub-SOP 重構步按需才建。）本步只 CREATE 空骨架，不填內容。
+8. ENSURE 草稿檔就緒——對每個 `$TARGET_FEATURES`，以 `assets/dsl.template.yml` 為模版 CREATE 空骨架 `$FP_FEATURES/{feature}.dsl.yml.draft`（已存在則沿用）。**本輪推導中的 dsl_step 一律只寫這個 `.draft`**，`{feature}.dsl.yml` 本尊在 step 10.d 核可前不得新增／修改（見 PRINCIPLE「草稿態」）。（跨 feature 共用的 `$FP_PACKAGE_DSL` 待 sub-SOP 重構步按需才建，同樣先落 `{FP}/dsl.yml.draft`。）本步只 CREATE 空骨架，不填內容。
 
 9. LOOP examples（推導期，**不中途確認**）——對 worklist 中「屬 `$TARGET_FEATURES`、`status: pending`」的每個 example，逐一 EXECUTE the sub-sop：
 
@@ -117,8 +123,12 @@ metadata:
        - 互動工具不可用或 clarify-loop 未能取得真實使用者回覆 → 確保 a 的完整預覽已 EMIT，補上逐項待答問題後結束本回合：**此時本回合的正式交付物就是這份待 review 展開與問題清單**，交出它即視為本回合任務圓滿完成，等待下一輪使用者輸入再續。
        - 【嚴禁】代答同意：「候選唯一」「背景／subagent 執行」「開場指令已指定範圍或整批授權」皆**不構成**代行 review 的理由；「採同意為工作假設」即未授權標 `# done`（見 Artifact output contract）。
     c. **任一項不同意** → 依回饋回 sub-SOP c 調整該 dsl_step（含把誤開的 custom 改為 builtin 組合），重跑該 example 展開，回 a **只重審被拒項**，直到全數同意。
-    d. **全數同意** → 才在各 dsl_step name 上方標 `# done`；custom 有新增 → 此時才寫 FP 層 isa.yml 契約；再重跑 step 5 的 `build_worklist.py` 刷新 worklist，確認 `$TARGET_FEATURES` 內無 `pending`。
-    【嚴禁】在使用者同意前標 `# done`、寫 FP 層 isa.yml，或以任何理由（含環境無互動工具）跳過本 review 自行定案。
+    d. **全數同意** → 才定案，依序：
+       1. 在草稿檔各 dsl_step name 上方標 `# done`；
+       2. **草稿轉正**：把 `{feature}.dsl.yml.draft`（與 `{FP}/dsl.yml.draft`，若有）的 dsl_step MERGE 進同名本尊——本尊不存在則直接改名，存在則以 dsl_step `name` 為鍵覆蓋／附加，保留本尊既有的 `# done` 定義；MERGE 完成後 DELETE 該 `.draft`。**在此之前 `.dsl.yml` 本尊不得出現本輪未核可的定義**（否則下一次 `red-refresh` 會把未定案的 feature 帶進衍生區、preprocess 因找不到 custom 指令而整個 build 失敗）。
+       3. custom 有新增 → 此時才寫 FP 層 isa.yml 契約；
+       4. 再重跑 step 5 的 `build_worklist.py` 刷新 worklist，確認 `$TARGET_FEATURES` 內無 `pending`。
+    【嚴禁】在使用者同意前標 `# done`、把草稿 MERGE 進 `.dsl.yml` 本尊、寫 FP 層 isa.yml，或以任何理由（含環境無互動工具）跳過本 review 自行定案。
 
 11. FP 級去重 + name 唯一性 gate（收尾，**強制硬閘門**）——**所有選定 feature 的 example 全部 `# done` 後**才執行；這是宣告完成前的決定性 gate，不可略過、不可只憑自我回報「已收斂」（曾發生 agent 謊報無重複、實際 16 條未上移、展開階段被阻斷）。
 

@@ -107,21 +107,46 @@ def main() -> int:
     ap = argparse.ArgumentParser(description="dsl example → isa example 展開")
     ap.add_argument("--feature", required=True, help="含該 example 的 .feature")
     ap.add_argument("--example", help="只展開標題含此子字串的 example（省略＝全部）")
-    ap.add_argument("--dsl", required=True, help="dsl_steps 來源（{feature}.dsl.yml）")
+    ap.add_argument(
+        "--dsl",
+        required=True,
+        action="append",
+        help="dsl_steps 來源（{feature}.dsl.yml；可重複指定，例如再加上 {FP}/dsl.yml）。"
+        "每個路徑的同名 `.draft`（推導中、尚未經 batch review 核可的定義）存在時自動一併載入。",
+    )
     ap.add_argument("--isa", help="isa.yml（推 keyword 用；預設 <feature>/../../../isa.yml 找不到就略過）")
     args = ap.parse_args()
 
     feature_path = Path(args.feature)
-    dsl_path = Path(args.dsl)
     if not feature_path.is_file():
         print(f"feature 不存在：{feature_path}", file=sys.stderr)
         return 1
-    if not dsl_path.is_file():
-        print(f"dsl.yml 不存在：{dsl_path}", file=sys.stderr)
-        return 1
 
-    dsl_doc = yaml.safe_load(dsl_path.read_text(encoding="utf-8")) or {}
-    dsl_steps = dsl_doc.get("dsl_steps") or []
+    # 每個 --dsl 都連帶載入其 `.draft`（SKILL-GAPS #46：推導中的定義住草稿檔，
+    # 核可後才 merge 回本尊；沒有 draft 就只讀本尊）。draft 後載入 → 同名覆蓋本尊。
+    dsl_paths: "list[Path]" = []
+    for raw in args.dsl:
+        p = Path(raw)
+        draft = p.with_name(p.name + ".draft")
+        if not p.is_file() and not draft.is_file():
+            print(f"dsl.yml 不存在（本尊與 .draft 皆無）：{p}", file=sys.stderr)
+            return 1
+        if p.is_file():
+            dsl_paths.append(p)
+        if draft.is_file():
+            dsl_paths.append(draft)
+
+    by_name: "dict[str, dict]" = {}
+    dsl_steps: "list[dict]" = []
+    for p in dsl_paths:
+        doc = yaml.safe_load(p.read_text(encoding="utf-8")) or {}
+        for d in doc.get("dsl_steps") or []:
+            key = str(d.get("name"))
+            if key in by_name:
+                dsl_steps[dsl_steps.index(by_name[key])] = d
+            else:
+                dsl_steps.append(d)
+            by_name[key] = d
 
     instructions = []
     if args.isa:

@@ -114,6 +114,33 @@ def all_step_formats(dsl_text: str) -> "list[tuple[str, str]]":
     return out
 
 
+def defined_formats(dsl_text: str) -> "list[str]":
+    """回傳「已備妥定義」的 dsl_step format：isa_steps 已填、非空者。
+
+    `# done` 是使用者核可的持久真相，但 red-execute 對已收官模組做機械修補時
+    新增／拆分出來的定義不會補標，只看 `# done` 會讓那些 example 永久假陽性
+    （SKILL-GAPS #48）。定案後的 `{feature}.dsl.yml` 只會收核可過的定義
+    （推導中的草稿住 `.dsl.yml.draft`，見 SKILL-GAPS #46），故「有非空 isa_steps
+    的定義」在已定案檔上等價於已完成。
+    """
+    try:
+        import yaml
+    except ImportError:  # pragma: no cover - 執行環境一定有 pyyaml
+        return []
+    try:
+        doc = yaml.safe_load(dsl_text) or {}
+    except Exception:
+        return []
+    out: "list[str]" = []
+    for d in (doc.get("dsl_steps") or []):
+        if not isinstance(d, dict):
+            continue
+        fmt = d.get("format")
+        if fmt and d.get("isa_steps"):
+            out.append(str(fmt))
+    return out
+
+
 def iter_examples(feature_text: str):
     """yield (title, [raw_step_text, ...]) per Example/Scenario。"""
     title = None

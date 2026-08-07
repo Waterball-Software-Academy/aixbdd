@@ -9,10 +9,10 @@ DELEGATE `/clarify-loop` 讓使用者複選。已全部完成的 feature 不列�
 
 `{{FP_SLUG}}`
 
-## 候選 Features（來自 worklist 該 FP 的 `features[]`，含 `status: pending` 的 example）
+## 候選 Features（來自 worklist 該 FP 的 `features[]`，`pending_examples > 0`）
 
 {{FEATURE_OPTIONS}}
-<!-- 逐筆一行：`{{name}}`（待處理 example {{pending_count}}） -->
+<!-- 逐筆一行：`{{feature}}`（待處理 example {{pending_examples}}） -->
 
 ## 問題
 
