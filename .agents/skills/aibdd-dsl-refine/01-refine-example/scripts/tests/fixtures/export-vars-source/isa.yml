@@ -1,0 +1,35 @@
+# 本 fixture 的完整 isa 指令目錄：builtin 六型 ＋ 一條宣告 export_vars 的 FP 層 custom。
+instructions:
+  - name: Time control
+    instruction_type: time_control
+    format: ^現在時間為 "(?P<time>[^"]+)"$
+  - name: Data preparation
+    instruction_type: entity_setup
+    data_format: data_table
+    format: ^準備一個(?P<entity>[一-鿿a-zA-Z0-9_]+), with table:$
+  - name: API call
+    instruction_type: api_call
+    data_format: data_table
+    format: ^\((?:No Actor|UID="(?P<userId>\$[<>\w.]+)")\) (?P<summary>.+?), call table:$
+  - name: Response validation
+    instruction_type: response_validate
+    data_format: data_table
+    format: ^(?P<summary>.+?)\((?P<status_code>\d{3})\)回應,?\s*with table:$
+  - name: Entity validation
+    instruction_type: entity_validate
+    data_format: data_table
+    format: ^應該存在一個(?P<entity>[一-鿿a-zA-Z0-9_]+), with table:$
+  - name: Entity non-existence validation
+    instruction_type: entity_non_existence_validate
+    data_format: data_table
+    format: ^應該不存在一個(?P<entity>[一-鿿a-zA-Z0-9_]+), with table:$
+
+  - name: Operator setup
+    instruction_type: custom
+    data_format: data_table
+    format: ^"(?P<alias>[^"]+)" 是一個操作員 \(無權限\), with table:$
+    intent: 前置：建立操作員身分並導出其 id（跨 user／role 多表，單一 entity_setup 表達不了）
+    export_vars:
+      "{{alias}}.id":
+        type: Number
+        description: 操作員 ID

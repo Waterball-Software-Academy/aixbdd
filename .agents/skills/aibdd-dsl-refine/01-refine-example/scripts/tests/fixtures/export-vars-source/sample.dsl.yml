@@ -1,0 +1,30 @@
+dsl_steps:
+  - name: 已登入的業務
+    format: 已登入的業務 "{alias}"
+    params: [alias]
+    isa_steps:
+      - instruction: '"{{alias}}" 是一個操作員 (無權限), with table:'
+        table:
+          alias: '{{alias}}'
+
+  - name: 提交新客授信申請
+    format: '"{alias}" 提交新客授信申請'
+    isa_steps:
+      - instruction: '(UID="${{alias}}.id") 提交新客授信申請, call table:'
+        table:
+          applicationType: 新客授信
+
+  # 反例：operator 從未建立，$查無此人.id 沒有任何來源
+  - name: 代人提交新客授信申請
+    format: '"{alias}" 為 "{owner}" 提交新客授信申請'
+    isa_steps:
+      - instruction: '(UID="${{owner}}.id") 提交新客授信申請, call table:'
+        table:
+          applicationType: 新客授信
+
+  - name: 系統回應訊息
+    format: 系統回應 "{message}"
+    isa_steps:
+      - instruction: '提交新客授信申請(200)回應, with table:'
+        table:
+          message: '{{message}}'

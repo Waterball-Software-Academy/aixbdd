@@ -99,7 +99,13 @@ def load_instructions(isa_path: Path):
         except re.error:
             continue
         out.append(
-            (rx, ins.get("instruction_type"), ins.get("data_format"), ins.get("datatable_parameters") or {})
+            (
+                rx,
+                ins.get("instruction_type"),
+                ins.get("data_format"),
+                ins.get("datatable_parameters") or {},
+                ins.get("export_vars") or {},
+            )
         )
     return out
 
@@ -115,7 +121,12 @@ def main() -> int:
         help="dsl_steps 來源（{feature}.dsl.yml；可重複指定，例如再加上 {FP}/dsl.yml）。"
         "每個路徑的同名 `.draft`（推導中、尚未經 batch review 核可的定義）存在時自動一併載入。",
     )
-    ap.add_argument("--isa", help="isa.yml（推 keyword 用；預設 <feature>/../../../isa.yml 找不到就略過）")
+    ap.add_argument(
+        "--isa",
+        action="append",
+        help="isa 指令目錄（boundary `specs/isa.yml`；可重複指定，FP 層 `*.isa.yml` 的 custom 契約"
+        "也要一併給，否則其 export_vars 認不得、undefined-var lint 會誤報）。",
+    )
     ap.add_argument(
         "--framework-verify",
         metavar="CMD",
@@ -156,8 +167,8 @@ def main() -> int:
             by_name[key] = d
 
     instructions = []
-    if args.isa:
-        instructions = load_instructions(Path(args.isa))
+    for isa_path in args.isa or []:
+        instructions += load_instructions(Path(isa_path))
 
     feature_text = feature_path.read_text(encoding="utf-8")
 

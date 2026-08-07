@@ -181,10 +181,26 @@ def lint_duplicate_entity_setup(title: str, records) -> "list[Finding]":
 
 
 # ── #35 undefined-VAR ─────────────────────────────────────────────────────
+_EXPORT_PATH_RE = re.compile(r"^([\w一-鿿]+)((?:\.[\w一-鿿\[\]0-9]+)*)$")
+
+
 def _captured_paths(isa_step) -> "set[str]":
+    """該 isa_step 執行後可用的符號：DataTable 的 `>alias.path` 捕獲 ∪ 指令契約的 export_vars。
+
+    export_vars 是 isa.yml 指令（builtin 與 custom 皆可）明文宣告的輸出契約——
+    例如「是一個操作員」宣告 export `{{alias}}.id`，之後 `$業務阿宏.id` 就是合法引用。
+    漏收它會讓 undefined-var 對完全合法的推導發阻斷級誤報（驗收實跑發現）。
+    """
     out: "set[str]" = set()
     for k in isa_step["table"]:
         m = _CAPTURE_RE.match(str(k).strip())
+        if m:
+            root, path = m.group(1), m.group(2)
+            out.add(root)
+            if path:
+                out.add(root + path)
+    for k in isa_step.get("export_vars") or []:
+        m = _EXPORT_PATH_RE.match(str(k).strip())
         if m:
             root, path = m.group(1), m.group(2)
             out.add(root)

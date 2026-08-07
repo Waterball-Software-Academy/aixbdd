@@ -29,7 +29,7 @@ c+d. 逐個未完成 dsl_step（**一次一個推導；ISA 確認不在本 sub-S
       python3 .claude/skills/aibdd-dsl-refine/01-refine-example/scripts/cli/expand_isa.py --feature ${FEATURE} --example "<example 標題>" --dsl $FP_FEATURES/{feature}.dsl.yml --isa ${BOUNDARY_ISA}
       ```
 
-      - **`--isa` 必給**（`${BOUNDARY_ISA}`）：缺它就判不出 instruction_type，語意 lint 會整組略過。
+      - **`--isa` 必給**（`${BOUNDARY_ISA}`）：缺它就判不出 instruction_type，語意 lint 會整組略過。FP 層若已有 `*.isa.yml`（custom 契約），**必須再加一個 `--isa` 指向它**——custom 的 `export_vars` 是 `$var` 的合法來源，漏給會讓 `undefined-var` 對正確的推導誤報。
       - 腳本若於 stderr 印出 `⚠ datatable lint`（對上 data_table 指令卻缺 params/table）→ 先回 c 補齊鏡射再重展開。
       - **exit code 即 gate**：腳本 **exit 3** 代表 `⚠ 展開 lint` 有阻斷級違規（`✗`），一律先回 c 修正該 dsl_step、或依 b 的授權流程改 `.feature`，重跑到 exit 0 才續行。五條規則與對應處置：
 

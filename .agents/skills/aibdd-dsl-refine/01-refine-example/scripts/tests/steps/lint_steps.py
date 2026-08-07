@@ -11,6 +11,14 @@ def step_given_fixture(context, name):
     d = context.fixtures_dir / name
     assert d.is_dir(), f"fixture 不存在：{d}"
     context.fixture = d
+    context.example_filter = None
+    # fixture 自帶 isa.yml（例如要宣告 custom 的 export_vars）則優先用它
+    context.isa = d / "isa.yml" if (d / "isa.yml").is_file() else context.fixtures_dir / "isa.yml"
+
+
+@given('只展開 Example "{title}"')
+def step_given_example_filter(context, title):
+    context.example_filter = title
 
 
 @when("執行 expand_isa")
@@ -25,8 +33,9 @@ def step_when_run(context):
             "--dsl",
             str(context.fixture / "sample.dsl.yml"),
             "--isa",
-            str(context.fixtures_dir / "isa.yml"),
-        ],
+            str(context.isa),
+        ]
+        + (["--example", context.example_filter] if context.example_filter else []),
         capture_output=True,
         text=True,
     )

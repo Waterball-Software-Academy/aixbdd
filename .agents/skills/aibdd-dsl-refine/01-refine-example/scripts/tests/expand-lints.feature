@@ -90,3 +90,21 @@ Feature: expand_isa 展開 lint
       Then 退出碼為 0
       And lint 沒有任何回報
       And 展開結果含 "準備一個會籍, with table:"
+
+  Rule: #35 的 VAR 來源包含 isa.yml 指令契約宣告的 export_vars（驗收期發現的誤報）
+
+    Example: 引用來源是 custom 契約的 export_vars，不得誤報
+      Given fixture "export-vars-source"
+      And 只展開 Example "業務提交新客授信申請，提交成功"
+      When 執行 expand_isa
+      Then 退出碼為 0
+      And lint 沒有任何回報
+
+    Example: 真的沒有任何來源的 VAR 仍然被攔下
+      Given fixture "export-vars-source"
+      And 只展開 Example "引用完全沒有來源的變數，應該仍被攔下"
+      When 執行 expand_isa
+      Then 退出碼為 3
+      And lint 回報:
+        | severity | code          | 訊息含      |
+        | fail     | undefined-var | $查無此人.id |

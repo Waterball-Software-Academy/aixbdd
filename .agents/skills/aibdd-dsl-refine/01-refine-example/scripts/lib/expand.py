@@ -85,16 +85,19 @@ def classify(instr_text: str, instructions):
 
 
 def classify_full(instr_text: str, instructions):
-    """instr 對 isa.yml instructions → (instruction_type, data_format, captures)。
+    """instr 對 isa.yml instructions → (instruction_type, data_format, captures, export_vars)。
 
     captures 為該 instruction format 的具名群組（例：entity_setup 的 `entity`、
     api_call 的 `summary`），供 lint 判定「同一個 entity」等語意。
+    export_vars 為該指令契約宣告的輸出符號 key（如 `{{alias}}.id`）——builtin 與 custom
+    都可能宣告，是 `$var` 的合法來源之一，undefined-var lint 必須認得。
     """
-    for rx, itype, dfmt, *_ in instructions:
+    for rx, itype, dfmt, *rest in instructions:
         m = rx.match(instr_text)
         if m:
-            return itype, dfmt, {k: v for k, v in m.groupdict().items() if v is not None}
-    return None, None, {}
+            exports = list((rest[1] if len(rest) > 1 else None) or {})
+            return itype, dfmt, {k: v for k, v in m.groupdict().items() if v is not None}, exports
+    return None, None, {}, []
 
 
 def _param_keys(params) -> set:
@@ -198,7 +201,7 @@ def expand_example_records(gwt_steps, dsl_steps, instructions=None) -> list:
         rec["vmap"] = extract_values(fmt, text, step.get("params"))
         for isa_step in step.get("isa_steps") or []:
             instr = _subst(isa_step.get("instruction", ""), rec["vmap"])
-            itype, dfmt, isa_caps = classify_full(instr, instructions)
+            itype, dfmt, isa_caps, exports = classify_full(instr, instructions)
             raw_table = isa_step.get("table") or {}
             table = {
                 _subst(k, rec["vmap"]): _subst(v, rec["vmap"]) for k, v in raw_table.items()
@@ -209,6 +212,7 @@ def expand_example_records(gwt_steps, dsl_steps, instructions=None) -> list:
                     "itype": itype,
                     "dfmt": dfmt,
                     "isa_captures": isa_caps,
+                    "export_vars": [_subst(k, rec["vmap"]) for k in exports],
                     "table": table,
                     "raw_table": {_subst(k, rec["vmap"]): v for k, v in raw_table.items()},
                     "text": _subst(isa_step.get("text") or "", rec["vmap"]),
