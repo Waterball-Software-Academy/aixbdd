@@ -11,7 +11,7 @@
 - 關鍵字順序：Example 內必為 `Given` → `When` → `Then` 順序；`And` 僅當跟在前一個 Given/When/Then 之後。
 - 空行分隔：Rule 之間必為至少一空行；Example 與下一 Rule 之間必為至少一空行；Given/When/Then/And 之間不得有空行。
 - Example 標題：必為 `Example: <情境描述>` 格式；情境描述不得為純關鍵字堆疊，必為含逗號或語句結構的自然句，且必為業務語言（依 `aibdd-spec-by-example/rules/business-language-judgments.md`）。
-- 取捨註解：若 Example 上方有 `# 取捨：...` 註解，必為緊貼 Example 之上一行，且註解之前必為空行。
+- Example 上方註解：若 Example 上方有 `#` 註解（**所有種類**——`# 取捨：...` 的省略理由、`# 測試設計註記：...` 的設計意圖、其他任何註記），必為緊貼 Example 之上（多行註解視為一個連續區塊），且**該區塊之前必為空行**。此規則不分註解種類，`qa-coverage-reasoning.md` 的示範亦適用。
 - 中文標點：When/Then 句內若有並列短語，必為以全形逗號「，」分隔；禁止多個短語並列無連接。
 - 高參數 step：單一 Given/When/Then/And 若承載超過 4 個可綁定參數，必須依 `cucumber-literal-format.md` 改寫為 Data Table；本檔只檢核版面分隔，參數計數與 Data Table 字面規則由 `cucumber-literal-format.md` 負責。
 

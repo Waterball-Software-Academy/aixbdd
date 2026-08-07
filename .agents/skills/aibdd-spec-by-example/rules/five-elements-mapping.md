@@ -4,7 +4,7 @@
 - 自動推導只准用 `Feature:` 標題與 `Rule:` 標題文字；禁止讀其他 `.feature` 檔或外部資料源來猜值。
 - 任何元素若無法從文字推出，必須標 `null` 並走補問流程；禁止自行擬定 placeholder（如「某顧客」「某訂單」）填入。
 - 推出之元素值必為業務語言；禁止直接搬技術 ID、英文 enum、API 動詞填入。詳見 `aibdd-spec-by-example/rules/business-language-judgments.md`。
-- `Event` 在前置失敗 pattern（A／B）必為「無」；後置成功 pattern（C／D）必須有業務化通知名（C）或業務化回應內容（D）。
+- `Event` 在前置失敗 pattern（A／B）必為「無」；後置成功 pattern（C／D）必須有業務化通知名（C）或業務化回應內容（D）。**例外**：需求明文排除通知／事件機制時，C 的 `$event` 依 `skeleton-vs-semantics-tradeoff.md`「PATTERN_C 的 Event 例外」改以「操作者可見的完成回饋」表達或留痕後省略——但仍禁止自生需求沒授權的通知名。
 - `Input` 在 PATTERN_A 必填；在其他 pattern 不得強加，會混淆失敗原因。
 
 ## 元素來源對應

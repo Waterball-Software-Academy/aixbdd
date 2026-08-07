@@ -5,6 +5,8 @@
 類型前綴：`後置（狀態）`
 必填元素：`$actor` / `$aggregate`（初始業務狀態） / `$command` / `$aggregate`（變更後業務狀態） / `$event`（業務化的通知）
 
+`$event` 的唯一例外：需求**明文排除**通知／事件機制時，依 `aibdd-spec-by-example/rules/skeleton-vs-semantics-tradeoff.md`「PATTERN_C 的 Event 例外」改以「操作者可見的完成回饋」表達，或留痕後省略；仍禁止自生需求沒授權的通知名。
+
 ## Given/When/Then 骨架
 
 ```gherkin
