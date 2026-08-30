@@ -71,10 +71,12 @@ REGRESSION: 跑離房清空與他房隔離 focused tests
 刪掉 API 欄位，但保留舊 feature file 與 step definition。
 ```
 
-# Rule 4 - 委派 BDD 時必須帶上 action 與既有測試面
+# Rule 4 - 委派 BDD 時必須帶上 action、雙層 DSL 與既有測試面
 
 - Level: `MUST`
-- `/implement` 呼叫 `/bdd` 時，必須明確提供 truth delta action、affected truth rows、truth feature file、對應 `dsl.md`、requested step 與 affected existing automation surfaces。
+- `/implement` 呼叫 `/bdd` 時，必須明確提供 truth delta action、affected truth rows、truth feature file、同模組 `dsl.md`、該 feature 實際使用的介面根共用 DSL rows、requested step 與 affected existing automation surfaces。
+- 若該 feature 沒有使用介面根共用 DSL row，必須明示「無」，不得為了格式完整而傳入整份根 DSL 或虛構參照。
+- `/implement` 只傳遞 `tasks.md` 已綁定的精確 DSL 參照，不重新判斷句型應屬模組或共用。
 - `BDD-ALIGN` 的 requested step 必須要求先更新既有測試語意。
 - `BDD-REMOVE` 的 requested step 必須要求移除或改寫過期測試語意。
 - 不得只傳 feature file 與 requested step，卻省略 action 與既有測試面。
@@ -88,8 +90,9 @@ REGRESSION: 跑離房清空與他房隔離 focused tests
 - action: MODIFY
 - requested step: BDD-ALIGN
 - truth row: /dsl-refine MODIFY `Then: "{玩家}" 看不到先前的聊天訊息`
-- feature file: `specs/truth/features/backend/離開後清空與他房隔離.feature`
-- dsl: `specs/truth/features/backend/dsl.md`
+- feature file: `specs/truth/features/backend/房間聊天/離開後清空與他房隔離.feature`
+- module dsl: `specs/truth/features/backend/房間聊天/dsl.md`
+- shared dsl rows: 無
 - affected automation: `backend/features/steps/modules/房間聊天/操作與斷言.py`
 ```
 

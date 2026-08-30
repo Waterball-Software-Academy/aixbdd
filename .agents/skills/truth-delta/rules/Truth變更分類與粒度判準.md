@@ -77,7 +77,7 @@
 | 動作 | Truth 規格 | 改動摘要 | 原因 |
 | --- | --- | --- | --- |
 | ADD | `specs/truth/data/data-model.dbml` -> `Table chat_messages` | 新增房間內訊息模型。 | 訊息需綁定房間生命週期。 |
-| MODIFY | `specs/truth/features/backend/dsl.md` -> `When: "{玩家}" 送出訊息 "{內容}"` | 新增送訊後必須落地 store 的驗證語意。 | Then 不能只信 API 回應。 |
+| MODIFY | `specs/truth/features/backend/房間聊天/dsl.md` -> `When: "{玩家}" 送出訊息 "{內容}"` | 新增送訊後必須落地 store 的驗證語意。 | Then 不能只信 API 回應。 |
 ```
 
 ## Bad Example
@@ -115,4 +115,31 @@
 | 動作 | Truth 規格 | 改動摘要 | 原因 |
 | --- | --- | --- | --- |
 | DELETE | `specs/truth/contracts/openapi.yaml` -> `POST /rooms/{roomId}/messages` | 移除端點。 | 我覺得用不到。 |
+```
+
+# Rule 5 - DSL 僅搬移權威位置時必須記為 MODIFY
+
+- Level: `MUST`
+- DSL row 若句型、參數、DataTable、預設值與實作契約都未改變，只是從模組 DSL 升格到介面根共用 DSL，或從根 DSL 下放到模組 DSL，必須記為一筆 `MODIFY`。
+- `Truth 規格` 必須同時列出舊位置、新位置與 DSL 句型，摘要明示「權威位置搬移，語意不變」。
+- 不得拆成 `DELETE + ADD`；這會讓下游誤判為移除舊行為並新增另一個行為。
+- 若搬移同時改變契約，仍使用 `MODIFY`，但摘要必須另列實際語意改動，不得宣稱語意不變。
+
+## Good Example
+
+- 這個例子是好的，因為同一句型只是由單模組升格為跨模組共用，不會觸發錯誤的移除與新增任務。
+
+```md
+| 動作 | Truth 規格 | 改動摘要 | 原因 |
+| --- | --- | --- | --- |
+| MODIFY | `specs/truth/features/backend/房間聊天/dsl.md` → `specs/truth/features/backend/dsl.md` -> `Then: 這次操作被拒絕` | 權威位置搬移，語意不變。 | 第二個模組開始使用完全相同契約。 |
+```
+
+## Bad Example
+
+- 這個例子是壞的，因為純搬移被拆成兩種行為變更，下游會產生錯誤的 BDD-REMOVE 與 BDD-RED。
+
+```md
+| DELETE | `specs/truth/features/backend/房間聊天/dsl.md` -> `Then: 這次操作被拒絕` | 刪除舊句型。 | 搬家。 |
+| ADD | `specs/truth/features/backend/dsl.md` -> `Then: 這次操作被拒絕` | 新增共用句型。 | 搬家。 |
 ```

@@ -19,8 +19,8 @@
 - [ ] T001 盤點聊天 MODIFY / DELETE 對既有自動化測試與產品碼的影響
   - Read:
     - `truth-delta.md` -> `/dsl-refine` MODIFY `When: "{玩家}" 送出訊息 "{內容}"`, `/dsl-refine` DELETE `Then: 對手仍看得到離房前訊息`
-    - `specs/truth/features/backend/dsl.md` -> `When: "{玩家}" 送出訊息 "{內容}"`
-    - `specs/truth/features/backend/離開後清空與他房隔離.feature` -> `Feature: 離開後清空與他房隔離`
+    - `specs/truth/features/backend/房間聊天/dsl.md` -> `When: "{玩家}" 送出訊息 "{內容}"`
+    - `specs/truth/features/backend/房間聊天/離開後清空與他房隔離.feature` -> `Feature: 離開後清空與他房隔離`
     - `backend/features/steps/` -> 聊天 step definitions 與 shared helper
     - `frontend/features/steps/` -> 聊天 page helpers 與 assertions
 
@@ -34,13 +34,13 @@
     - `specs/truth/contracts/openapi.yaml` -> `RoomSnapshot.messages`
     - `specs/truth/data/data-model.dbml` -> `Table chat_messages`
 
-## Phase 3A: ADD Feature File - backend/單人等待與空白訊息拒絕.feature
+## Phase 3A: ADD Feature File - backend/房間聊天/單人等待與空白訊息拒絕.feature
 
 **Goal**: 新增單人等待與空白拒絕的後端 BDD 覆蓋。
 
 **Shared Must Read**:
-- `specs/truth/features/backend/單人等待與空白訊息拒絕.feature` -> `Feature: 單人等待與空白訊息拒絕`
-- `specs/truth/features/backend/dsl.md` -> `When: "{玩家}" 嘗試送出空白訊息`, `Then: 這次聊天送出被拒絕`
+- `specs/truth/features/backend/房間聊天/單人等待與空白訊息拒絕.feature` -> `Feature: 單人等待與空白訊息拒絕`
+- `specs/truth/features/backend/房間聊天/dsl.md` -> `When: "{玩家}" 嘗試送出空白訊息`, `Then: 這次聊天送出被拒絕`
 - `truth-delta.md` -> `/dsl-refine` ADD 單人等待與空白訊息拒絕
 - `spec.md` -> `使用者故事 1`, `FR-004`, `FR-005`
 
@@ -52,14 +52,14 @@
 - [ ] T004 [BDD-GREEN] 以最小送訊拒絕邏輯讓此 feature file 全綠
 - [ ] T005 [BDD-REFACTOR] 整理拒絕訊息與測試 helper
 
-## Phase 3B: MODIFY Feature File - backend/雙方在場寫入房間對話.feature
+## Phase 3B: MODIFY Feature File - backend/房間聊天/雙方在場寫入房間對話.feature
 
 **Goal**: 將既有雙方在場互傳測試更新為最新版 DSL：送訊成功必須同時驗證 store 落地與再讀快照。
 
 **Shared Must Read**:
 - `truth-delta.md` -> `/dsl-refine` MODIFY `When: "{玩家}" 送出訊息 "{內容}"`
-- `specs/truth/features/backend/雙方在場寫入房間對話.feature` -> `Feature: 雙方在場寫入房間對話`
-- `specs/truth/features/backend/dsl.md` -> `When: "{玩家}" 送出訊息 "{內容}"`, `Then: "{玩家}" 與 "{玩家}" 都看得到以下聊天內容：`
+- `specs/truth/features/backend/房間聊天/雙方在場寫入房間對話.feature` -> `Feature: 雙方在場寫入房間對話`
+- `specs/truth/features/backend/房間聊天/dsl.md` -> `When: "{玩家}" 送出訊息 "{內容}"`, `Then: "{玩家}" 與 "{玩家}" 都看得到以下聊天內容：`
 - `backend/features/steps/modules/房間聊天/操作與斷言.py` -> 既有送訊與斷言 step definitions
 - `backend/features/steps/shared/chat_helpers.py` -> 既有聊天 helper
 
@@ -77,8 +77,8 @@
 
 **Shared Must Read**:
 - `truth-delta.md` -> `/dsl-refine` DELETE `Then: 對手仍看得到離房前訊息`
-- `specs/truth/features/backend/離開後清空與他房隔離.feature` -> `Feature: 離開後清空與他房隔離`
-- `specs/truth/features/backend/dsl.md` -> `Then: "{玩家}" 看不到先前的聊天訊息`
+- `specs/truth/features/backend/房間聊天/離開後清空與他房隔離.feature` -> `Feature: 離開後清空與他房隔離`
+- `specs/truth/features/backend/房間聊天/dsl.md` -> `Then: "{玩家}" 看不到先前的聊天訊息`
 - `backend/features/steps/modules/房間聊天/操作與斷言.py` -> 可能仍保護舊訊息可見性的 step assertions
 - `backend/app/store.py` -> 可能仍保留離房訊息的產品分支
 

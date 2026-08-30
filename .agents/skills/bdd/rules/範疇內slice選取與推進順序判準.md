@@ -11,7 +11,7 @@
 
 ```md
 本輪範疇：
-- `features/frontend/對戰頁三連猜選擇與一次出手.feature`
+- `features/frontend/三連猜/對戰頁三連猜選擇與一次出手.feature`
 
 推進順序：
 1. 先處理「玩家已選滿三個數字」slice

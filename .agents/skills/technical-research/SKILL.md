@@ -1,6 +1,7 @@
 ---
 name: technical-research
 description: 承接 plan package 的 `spec.md`，產出 plan-side `research.md`，並作為 truth owner 更新 `specs/truth/techstack.md`。每次執行都必須盤點 techstack truth 的 ADD / MODIFY / DELETE / NOOP，完成後委派 `/truth-delta` 更新本 plan 的 `truth-delta.md`。
+license: Complete terms in LICENSE
 disable-model-invocation: true
 ---
 
@@ -34,3 +35,10 @@ disable-model-invocation: true
 
 1. DELEGATE 呼叫 `/truth-delta`，傳入 plan package、truth root、owner `/technical-research` 與本輪 techstack truth 改動列。
 2. WRITE 向使用者回報 `research.md`、`specs/truth/techstack.md`、`truth-delta.md`、主要技術決策與殘餘風險。
+
+# License & Attribution
+
+本 skill 參考並改寫自 [GitHub Spec Kit](https://github.com/github/spec-kit)（含 `speckit-plan` 等相關流程與原始碼概念）。
+
+Spec Kit is licensed under the MIT License. Copyright GitHub, Inc.  
+完整授權條款見本目錄 [`LICENSE`](./LICENSE)。

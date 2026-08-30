@@ -6,6 +6,7 @@
 ## Task Binding Contract
 
 - 每個**開發任務**都必須對應 `truth-delta.md` 中的 ADD / MODIFY / DELETE / NOOP 語意，並引用實際存在、且有 `dsl.md` 可承接的 truth interface `.feature` 檔或 DSL 句型。
+- 每個 Feature File phase 必須引用同模組 `dsl.md`；只有該 feature 實際使用介面根共用 DSL row 時，才列出根 `dsl.md` 與精確句型，否則省略該行。
 - `Setup` / `Foundational` phase 可存在，但只能建立測試入口、共用 fixture、shared helper、DSL 承接骨架與後續 feature phases 的共同依賴；不得偷做某個故事的完整功能。
 - 若 `truth-delta.md` 含 `MODIFY` 或 `DELETE`，必須先建立 `Truth Delta Impact Audit` phase，盤點既有自動化測試、step definitions、fixtures、helpers 與產品行為。
 - `ADD` 使用 `[BDD-RED] -> [BDD-GREEN] -> [BDD-REFACTOR]`。
@@ -20,8 +21,9 @@
 - [ ] T001 盤點本輪 MODIFY / DELETE truth rows 影響的既有自動化測試與產品行為
   - Read:
     - `truth-delta.md` -> `{{TRUTH_DELTA_MODIFY_DELETE_ROWS}}`
-    - `specs/truth/features/{{INTERFACE_KIND}}/{{FEATURE_FILE_NAME}}.feature` -> `{{AFFECTED_FEATURE_SECTION}}`
-    - `specs/truth/features/{{INTERFACE_KIND}}/dsl.md` -> `{{AFFECTED_DSL_SECTION}}`
+    - `specs/truth/features/{{INTERFACE_KIND}}/{{MODULE}}/{{FEATURE_FILE_NAME}}.feature` -> `{{AFFECTED_FEATURE_SECTION}}`
+    - `specs/truth/features/{{INTERFACE_KIND}}/{{MODULE}}/dsl.md` -> `{{AFFECTED_DSL_SECTION}}`
+    {{OPTIONAL_AFFECTED_SHARED_DSL_REFERENCE}}
     - `{{EXISTING_TEST_ENTRY}}` -> `{{EXISTING_TEST_SURFACE}}`
 
 ## Phase 2: Setup / Foundational
@@ -34,13 +36,14 @@
     - `specs/truth/contracts/openapi.yaml` -> `{{CONTRACT_SECTION}}`
     - `specs/truth/data/data-model.dbml` -> `{{DATA_SECTION}}`
 
-## Phase 3A: ADD Feature File - {{INTERFACE_KIND}}/{{ADDED_FEATURE_FILE_NAME}}.feature
+## Phase 3A: ADD Feature File - {{INTERFACE_KIND}}/{{MODULE}}/{{ADDED_FEATURE_FILE_NAME}}.feature
 
 **Goal**: {{ADD_FEATURE_PHASE_GOAL}}
 
 **Shared Must Read**:
-- `specs/truth/features/{{INTERFACE_KIND}}/{{ADDED_FEATURE_FILE_NAME}}.feature` -> `Feature: {{ADDED_FEATURE_TITLE}}`
-- `specs/truth/features/{{INTERFACE_KIND}}/dsl.md` -> `{{ADDED_DSL_REQUIRED_SECTIONS}}`
+- `specs/truth/features/{{INTERFACE_KIND}}/{{MODULE}}/{{ADDED_FEATURE_FILE_NAME}}.feature` -> `Feature: {{ADDED_FEATURE_TITLE}}`
+- `specs/truth/features/{{INTERFACE_KIND}}/{{MODULE}}/dsl.md` -> `{{ADDED_DSL_REQUIRED_SECTIONS}}`
+{{OPTIONAL_ADDED_SHARED_DSL_REFERENCE}}
 - `truth-delta.md` -> `{{ADD_TRUTH_DELTA_ROWS}}`
 - `spec.md` -> `{{SPEC_RELEVANT_SECTIONS}}`
 
@@ -56,14 +59,15 @@
     - `research.md` -> `{{RESEARCH_EXTRA_SECTION}}`
 - [ ] T005 [BDD-REFACTOR] {{BDD_REFACTOR_TASK_TITLE}}
 
-## Phase 3B: MODIFY Feature File - {{INTERFACE_KIND}}/{{MODIFIED_FEATURE_FILE_NAME}}.feature
+## Phase 3B: MODIFY Feature File - {{INTERFACE_KIND}}/{{MODULE}}/{{MODIFIED_FEATURE_FILE_NAME}}.feature
 
 **Goal**: {{MODIFY_FEATURE_PHASE_GOAL}}
 
 **Shared Must Read**:
 - `truth-delta.md` -> `{{MODIFY_TRUTH_DELTA_ROWS}}`
-- `specs/truth/features/{{INTERFACE_KIND}}/{{MODIFIED_FEATURE_FILE_NAME}}.feature` -> `Feature: {{MODIFIED_FEATURE_TITLE}}`
-- `specs/truth/features/{{INTERFACE_KIND}}/dsl.md` -> `{{MODIFIED_DSL_REQUIRED_SECTIONS}}`
+- `specs/truth/features/{{INTERFACE_KIND}}/{{MODULE}}/{{MODIFIED_FEATURE_FILE_NAME}}.feature` -> `Feature: {{MODIFIED_FEATURE_TITLE}}`
+- `specs/truth/features/{{INTERFACE_KIND}}/{{MODULE}}/dsl.md` -> `{{MODIFIED_DSL_REQUIRED_SECTIONS}}`
+{{OPTIONAL_MODIFIED_SHARED_DSL_REFERENCE}}
 - `{{EXISTING_STEP_DEFINITIONS}}` -> `{{AFFECTED_STEP_DEFINITIONS}}`
 - `{{EXISTING_HELPERS_OR_FIXTURES}}` -> `{{AFFECTED_HELPERS_OR_FIXTURES}}`
 
@@ -81,7 +85,8 @@
 
 **Shared Must Read**:
 - `truth-delta.md` -> `{{DELETE_TRUTH_DELTA_ROWS}}`
-- `specs/truth/features/{{INTERFACE_KIND}}/dsl.md` -> `{{DELETE_DSL_SECTIONS}}`
+- `specs/truth/features/{{INTERFACE_KIND}}/{{MODULE}}/dsl.md` -> `{{DELETE_DSL_SECTIONS}}`
+{{OPTIONAL_DELETE_SHARED_DSL_REFERENCE}}
 - `{{EXISTING_STEP_DEFINITIONS}}` -> `{{OBSOLETE_STEP_DEFINITIONS}}`
 - `{{EXISTING_PRODUCT_CODE}}` -> `{{OBSOLETE_PRODUCT_BEHAVIOR}}`
 

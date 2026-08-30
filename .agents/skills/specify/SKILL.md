@@ -1,6 +1,7 @@
 ---
 name: specify
 description: 將自然語言功能需求轉成新的 plan package。每次執行都建立下一個 `specs/plans/NNN-<slug>/`，產出 `spec.md`、`checklists/requirements.md` 與初始化 `truth-delta.md`；不得改寫舊 plan package，也不得寫入 `specs/truth/**`。
+license: Complete terms in LICENSE
 disable-model-invocation: true
 ---
 
@@ -38,3 +39,10 @@ disable-model-invocation: true
 ## Phase 5 -- 交付後續 handoff
 
 1. WRITE 向使用者回報 plan package、spec、checklist、truth-delta 路徑、本次是否進入 `/clarify`、仍保留的 `NEEDS CLARIFICATION` 或假設，以及此 plan 是否可進入 `/spec-by-example` 或 `/technical-research`。
+
+# License & Attribution
+
+本 skill 參考並改寫自 [GitHub Spec Kit](https://github.com/github/spec-kit)（含 `speckit-specify` 等相關流程與原始碼概念）。
+
+Spec Kit is licensed under the MIT License. Copyright GitHub, Inc.  
+完整授權條款見本目錄 [`LICENSE`](./LICENSE)。

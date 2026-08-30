@@ -4,7 +4,7 @@
 
 - 目標系統介面：`前端商品瀏覽、購物車與結帳介面`
 - 需求來源：`使用者故事 1 至 4、FR-002、FR-005、FR-011、FR-014 與 NFR-003`
-- 上游依據：`spec.md、features/acceptance/**、既有使用者流程`
+- 上游依據：`spec.md、research.md、techstack.md、plan.md Wave 1`
 - 產出順序：`先定稿 ui/ui-plan.md，再依這份 plan 產出 ui/*.html 靜態雛形。`
 
 ## 視覺方向

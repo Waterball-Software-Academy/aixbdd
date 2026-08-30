@@ -26,5 +26,5 @@
 
 | 動作 | Truth 規格 | 改動摘要 | 原因 |
 | --- | --- | --- | --- |
-| ADD | `specs/truth/features/backend/雙方在場寫入房間對話.feature` | 新增雙方在場互傳的後端介面 feature。 | 承接 acceptance journey 的後端責任。 |
-| MODIFY | `specs/truth/features/backend/dsl.md` -> `When: "{玩家}" 送出訊息 "{內容}"` | 明定送訊需落地 store 並回寫聊天列表。 | 後續 BDD step 需要一致驗證語意。 |
+| ADD | `specs/truth/features/backend/房間聊天/雙方在場寫入房間對話.feature` | 新增雙方在場互傳的後端介面 feature。 | 承接 acceptance journey 的後端責任。 |
+| MODIFY | `specs/truth/features/backend/房間聊天/dsl.md` -> `When: "{玩家}" 送出訊息 "{內容}"` | 明定送訊需落地 store 並回寫聊天列表。 | 後續 BDD step 需要一致驗證語意。 |

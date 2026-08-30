@@ -7,7 +7,7 @@
 ## 1. Gherkin 語言邊界與句型收斂
 
 - Gherkin 句型只講業務語意，不講 API、HTTP、selector、sessionStorage、輪詢、fixture 名稱。
-- 前端與後端分開寫，各自有自己的 feature files 與 `dsl.md`。
+- 前端、後端等介面分開寫；每個介面下的 feature files 依功能模組分組，DSL 由同模組 `dsl.md` 與介面根共用 `dsl.md` 分層承接。
 - 每個 test case 最終都必須有對應的 Gherkin 實體。
 - 語意 100% 相同的句型，必須共用同一句型。
 - 句子若過胖、同時夾帶多個動作或多個斷言，應拆成更核心、可重用的步驟。
@@ -24,6 +24,16 @@
 - `Background` 只有在同一份 feature 裡，多個 Example 真的共用同一段 setup，且抽出後不會讓 Example 變難讀時才使用。
 - `Scenario Outline` 只用在「同一條規則、流程完全相同、只是整組資料替換」的情況；如果其實是不同規則，不要硬套 Scenario Outline。
 
+### 2.1 功能模組與 DSL 歸屬
+
+- feature file 必須放在 `{介面}/{模組}/*.feature`，介面根目錄不得直接放 `.feature`。
+- 模組優先沿用既有 truth 的功能邊界；只有既有模組都不適合時才新增。不可把某個專案當下的模組清單硬編碼成通用規則。
+- 模組專屬句型放在 `{介面}/{模組}/dsl.md`。
+- 只有跨模組使用，而且句型、Gherkin 參數、DataTable、預設值與實作契約完全一致的 row，才放在 `{介面}/dsl.md`。
+- 文字相同或出現兩次不代表可以上提；同文異義必須拆成能辨識語意的不同句型。
+- 同一句型只能有一個權威位置。升格或下放時要刪除舊 row，不保留根與模組 duplicate。
+- 讀取某個 feature 時，合併介面根與同模組 DSL 查找，每個 Gherkin step 必須恰好命中一個 row。
+
 ## 3. 句中參數與 DataTable 格式
 
 - 句中字串參數用雙引號：`"Alice"`、`"1234"`、`"等待中"`。
@@ -33,7 +43,7 @@
 
 ## 4. DSL 必備欄位
 
-每個 DSL row 至少要有：
+介面根與模組 `dsl.md` 中的每個 DSL row 至少要有：
 
 - `DSL 句型`
 - `Gherkin 參數`
@@ -133,16 +143,17 @@ Then 用「驗證契約」來寫，不用固定模板硬填，但至少從這些
 
 - 每個 test case 的 Arrange / Act / 預期輸出 / 必須維持不變，都被 Gherkin + DSL 吸收
 - 沒有只剩原文註解、但步驟沒覆蓋到的驗證點
-- 任一 Gherkin 句型若在 `dsl.md` 找不到，就算缺口
+- 任一 Gherkin step 合併查找介面根與同模組 `dsl.md` 後，若不是恰好命中一個 row，就算缺口；零個是遺漏，多個是權威位置重複或句型歧義
 - Gherkin 句子仍然是 PM 可讀的業務語言
 - DSL 已經足夠讓 AI 推理出測試程式碼，不需大量腦補
+- 機械稽核只負責指出拓樸、重複與匹配問題；共用契約是否語意一致仍由 agent 判斷
 
 ## 8. 典型重構順序
 
 1. 先從 testplan 搬出可 review 的 Gherkin 草稿
 2. 先補 `When`，再補 `Given / Then`
 3. 再收斂共用句型
-4. 先讓 DSL 補齊句型，再回填 feature
+4. 先在唯一權威 DSL 位置補齊句型，再回填 feature
 5. 再做 `Rule` / `Background` / `DataTable` / `Scenario Outline` 結構優化
 6. 最後檢查覆蓋與嚴格度
 

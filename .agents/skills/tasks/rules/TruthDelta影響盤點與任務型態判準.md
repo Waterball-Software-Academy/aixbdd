@@ -15,7 +15,7 @@
 - [ ] T001 盤點 `RoomSnapshot.messages` 修改影響的後端 step definitions、前端 page helpers 與 focused tests
   - Read:
     - `truth-delta.md` -> `/api-plan` MODIFY `RoomSnapshot.messages`
-    - `specs/truth/features/backend/dsl.md` -> `Then: "{玩家}" 看得到先前的聊天訊息`
+    - `specs/truth/features/backend/房間聊天/dsl.md` -> `Then: "{玩家}" 看得到先前的聊天訊息`
 ```
 
 ## Bad Example
@@ -33,6 +33,7 @@
 - Level: `MUST`
 - `ADD` 類 truth feature 使用 `[BDD-RED] -> [BDD-GREEN] -> [BDD-REFACTOR]`。
 - `MODIFY` 類 truth feature 或 DSL 使用 `[BDD-ALIGN] -> [BDD-GREEN] -> [BDD-REFACTOR]`。
+- DSL row 僅搬移唯一權威位置且語意不變時仍屬 `MODIFY`；任務只需對齊精確參照與既有測試入口，不得拆成 `[BDD-REMOVE]` 與 `[BDD-RED]`。
 - `DELETE` 類 truth feature、Rule、Example 或 DSL 使用 `[BDD-REMOVE] -> [CODE-REMOVE] -> [REGRESSION]`。
 - 不得把 DELETE 硬塞成新增式 RED，也不得把 MODIFY 當作完全新的 feature file。
 

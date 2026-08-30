@@ -7,48 +7,52 @@
 
 ## Good Example
 
-- 這個例子是好的，因為 UI Prototyping 已在上游完成，system-analysis 只把前端 artifact review 與後端分析依賴排進 Wave，不重新委派 `/ui-plan`。
+- 這個例子是好的，因為它先完成前端流程分析，再把依賴前端輸入與狀態定義的後端分析放到下一波。
 
 ```md
 #### Wave 1
 
-- review：
-  - `ui/ui-plan.md`
-  - `ui/room.html`
-  - `ui/game.html`
+- 平行分析介面：
+  - `前端房間與對戰介面`
 
 #### Wave 2
 
 - 平行分析介面：
   - `後端房間與對戰 API 介面`
 
-執行順序：
-1. 先確認 UI artifact 的互動入口、狀態與錯誤回饋可落地
+委派順序：
+1. 先呼叫 `/ui-plan`
 2. 等 Wave 1 完成後，再呼叫 `/api-plan`
 ```
 
 ## Bad Example
 
-- 這個例子是壞的，因為它在 system-analysis 階段重新呼叫 `/ui-plan`，把已完成的 Prototyping 責任移回系統分析。
+- 這個例子是壞的，因為它忽略 `Wave` 依賴，直接先做後端分析，讓事件契約先於前端互動需求被假設。
 
 ```md
 #### Wave 1
 
-- 呼叫 `/api-plan`
+- 平行分析介面：
+  - `前端房間與對戰介面`
 
 #### Wave 2
 
-- 發現缺少前端狀態後，再呼叫 `/ui-plan` 重做畫面流程
+- 平行分析介面：
+  - `後端房間與對戰 API 介面`
+
+委派順序：
+1. 先呼叫 `/api-plan`
+2. 後面再補 `/ui-plan`
 ```
 
 # Rule 2 - planner 對應必須依分析責任邊界決定
 
 - Level: `MUST`
 - `system-analysis` 必須依每個系統介面的主要分析責任與產物邊界決定委派對象，而不是只看名稱中是否出現某個技術詞。
-- 玩家可見流程、畫面狀態、互動節奏、資訊揭露與錯誤回饋，應讀取 plan package 內已完成的 UI plan 與靜態雛形；若缺漏會改變需求，回交 `/ui-plan`，不得由 `system-analysis` 直接重做。
+- 玩家可見流程、畫面狀態、互動節奏、資訊揭露與錯誤回饋，應委派給 `/ui-plan`。
 - 實體、欄位、狀態持有、生命週期、資料關聯與儲存責任，應委派給 `/data-plan`。
 - API 契約、事件協議、請求回應形狀、狀態轉移入口與錯誤碼語意，應委派給 `/api-plan`。
-- 若某個後端介面同時涉及多種責任，應回到 `plan.md` 的介面切分重新判斷是否需要拆分，而不是把同一介面同時丟給多個 planner。
+- 若某個介面同時涉及多種責任，應回到 `plan.md` 的介面切分重新判斷是否需要拆分，而不是把同一介面同時丟給多個 planner。
 
 ## Good Example
 
@@ -57,8 +61,7 @@
 ```md
 1. `前端配對與對戰介面`
    - 主要介面：畫面狀態、角色標示、操作回饋
-   - review：既有 `ui/ui-plan.md` 與靜態雛形
-   - 若不一致：回交 `/ui-plan`
+   - 委派：`/ui-plan`
 
 2. `房間與對戰狀態資料介面`
    - 主要介面：Room、Game、Guess 狀態持有與生命週期
@@ -75,9 +78,8 @@
 
 ```md
 1. `前端配對與對戰介面`
-   - 委派：`/api-plan`
-   - 同時直接修改 `ui/ui-plan.md`
-   - 理由：system-analysis 可以順手修 UI
+   - 委派：`/ui-plan`、`/api-plan`
+   - 理由：裡面也有 socket 事件
 ```
 
 # Rule 3 - 共用主產物邊界的同 wave 介面應優先合併 handoff

@@ -19,12 +19,13 @@ disable-model-invocation: true
 
 ## Phase 1 -- 對齊上游交付、測試入口與本輪範疇
 
-1. READ 讀取使用者需求、指定的介面 `feature file` 或其明確區塊、對應 `dsl.md`、相關測試程式與產品碼，確認本輪入口是 `red`、`green` 或 `refactor`，以及使用者圈定的範疇；若由 `/implement` 委派，額外確認當前 task 只授權單一 `slice` 與單一 `requested step`。
-2. READ 若需要確認本 skill 可承接的上游交付物、何時必須停止，或何種缺口應回交上游，讀取 `rules/上游交付承接與回交判準.md`。
-3. THINK 若本輪範疇、對應 `dsl.md`、介面邊界或上游交付物仍有高影響缺口，先收斂最小必要澄清點。
-4. DELEGATE 若仍有會改變 slice 邊界、驗收結果或 DSL 承接方式的高影響缺口，呼叫 `/clarify` 並停止受影響範圍；若缺口來自 `feature file` 或 `dsl.md` 本身，改為回交 `/dsl-refine` 或使用者指定的上游流程，不自行補寫規格。
-5. READ 若需要確認 focused rerun、Given 建態入口、既有 helper / fixture / abstraction 是否可沿用，讀取 `rules/專案測試入口與既有抽象盤點判準.md`。
-6. THINK 依本次已載入資訊與規則，收斂本輪可推進的範疇、最窄測試入口與候選 slices。
+1. READ 讀取使用者需求、指定的介面 `feature file` 或其明確區塊、同模組 `dsl.md`、該 feature 實際使用的介面根共用 `dsl.md` rows、相關測試程式與產品碼，確認本輪入口是 `red`、`green` 或 `refactor`，以及使用者圈定的範疇；若由 `/implement` 委派，額外確認當前 task 只授權單一 `slice` 與單一 `requested step`。
+2. READ 若需要確認模組化 truth 的承接方式或專案既有 symlink 策略，讀取 `rules/模組化Truth按需承接與Symlink判準.md`。
+3. READ 若需要確認本 skill 可承接的上游交付物、何時必須停止，或何種缺口應回交上游，讀取 `rules/上游交付承接與回交判準.md`。
+4. THINK 若本輪範疇、已載入 DSL、介面邊界或上游交付物仍有高影響缺口，先收斂最小必要澄清點。
+5. DELEGATE 若仍有會改變 slice 邊界、驗收結果或 DSL 承接方式的高影響缺口，呼叫 `/clarify` 並停止受影響範圍；若缺口來自 `feature file` 或任一層 DSL 本身，改為回交 `/dsl-refine` 或使用者指定的上游流程，不自行補寫規格。
+6. READ 若需要確認 focused rerun、Given 建態入口、既有 helper / fixture / abstraction 是否可沿用，讀取 `rules/專案測試入口與既有抽象盤點判準.md`。
+7. THINK 依本次已載入資訊與規則，收斂本輪可推進的範疇、最窄測試入口與候選 slices。
 
 ## Phase 2 -- 啟動指定入口與選定推進順序
 

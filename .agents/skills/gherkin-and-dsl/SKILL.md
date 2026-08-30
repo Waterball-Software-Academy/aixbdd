@@ -13,7 +13,7 @@ disable-model-invocation: true
 
 ## Quick Start
 
-1. 先讀目標 feature files、對應 `dsl.md`、上游 testplan / spec。
+1. 先讀目標 feature files、同模組 `dsl.md`、相關介面根共用 `dsl.md`、上游 testplan / spec。
 2. 先判斷本輪是「建立」、「檢查」還是「重構」。
 3. 結構與詞彙一起改，**不要只改 Gherkin 不改 DSL**。
 4. 任一 Gherkin 句型若找不到 DSL 對應，先補 DSL，再回填 feature。
@@ -23,9 +23,9 @@ disable-model-invocation: true
 
 ## Phase 1 -- 收斂輸入與輸出範圍
 
-1. READ 讀取使用者需求、目標 feature files、對應 `dsl.md`、上游 testplan / spec，確認本輪處理的是前端、後端，還是兩者一起。
-2. THINK 判斷本輪的主要任務是新建、驗證覆蓋、句型收斂、結構重組，還是嚴格度補強；同時盤點哪些檔案要修改。
-3. WRITE 向使用者回報本輪將調整哪些 feature / dsl 檔案，以及是否有會影響切檔或句型邊界的高影響歧義；若有歧義，先停下確認。
+1. READ 讀取使用者需求、目標 feature files、同模組 `dsl.md`、與目標句型相關的介面根共用 `dsl.md`、上游 testplan / spec，確認本輪介面與處理範圍。
+2. THINK 判斷本輪是新建、覆蓋驗證、句型收斂、結構重組或嚴格度補強，並盤點要修改的 feature 與 DSL 檔案。
+3. WRITE 回報修改範圍與會影響切檔或句型邊界的高影響歧義；若有歧義，先停下確認。
 
 ## Phase 2 -- 盤點測試案例與覆蓋缺口
 
@@ -42,8 +42,9 @@ disable-model-invocation: true
 ## Phase 4 -- 收斂 DSL 詞彙表
 
 1. READ 讀取 [STANDARDS.md](STANDARDS.md) 中的「DSL 必備欄位」、「後端實作語意」與「前端實作語意」。
-2. THINK 對每個 Gherkin 句型判斷：是否已有 DSL row、是否需要 DataTable 欄位、預設參數是否足夠去除腦補、實作語意是否過度格式化或過度稀釋。
-3. WRITE 建立或更新 `dsl.md`，確保句型、參數、DataTable 欄位、預設值與實作語意都能直接支援 step definition 撰寫。
+2. READ 若需要建立、移動 DSL row，或判斷句型應由模組或介面根承接，按需讀取 `rules/介面功能模組與DSL唯一歸屬判準.md`，確認完整契約與唯一歸屬判準。
+3. THINK 對每個 Gherkin 句型判斷既有 row、DataTable 欄位、預設參數與實作語意是否足夠，並依已載入判準決定唯一權威位置。
+4. WRITE 在唯一權威 DSL 檔建立或更新 row，確保句型、參數、DataTable 欄位、預設值與實作語意可直接支援 step definition。
 
 ## Phase 5 -- 做結構優化
 
@@ -53,9 +54,10 @@ disable-model-invocation: true
 
 ## Phase 6 -- 檢查可落地性
 
-1. READ 重新讀取修改後的 feature files 與 `dsl.md`。
-2. THINK 依已載入標準檢查以下事項：每個 test case 都被覆蓋、每個 Gherkin step 都有 DSL 對應、Gherkin 保持業務語言、DSL 足夠讓 AI 直接推理出測試程式碼、Then 沒有只停在表面輸出。
-3. WRITE 向使用者回報本輪做了哪些結構決策、還有哪些句型可能要再收斂、哪些部分已可直接交給 step definition / 測試實作。
+1. READ 重新讀取修改後的 feature files、同模組 DSL 與相關介面根共用 DSL。
+2. DELEGATE 執行 `uv run .agents/skills/gherkin-and-dsl/scripts/audit_feature_dsl_topology.py --root <features-root>`，機械檢查拓樸、DSL row 重複與每個 step 的唯一匹配，並保留輸出供後續判讀。
+3. THINK 結合稽核結果與已載入標準，判斷共用契約是否真的語意一致、每個 test case 是否完整覆蓋、Gherkin 是否維持業務語言、DSL 是否足以直接實作，以及 Then 是否超越表面輸出。
+4. WRITE 回報機械稽核結果、語意與結構決策、仍需收斂的句型，以及可直接交給 step definition / 測試實作的範圍。
 
 ## Additional Resources
 
