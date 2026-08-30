@@ -1,0 +1,34 @@
+Project "{{PROJECT_NAME}}" {
+  database_type: "{{DATABASE_TYPE}}"
+  Note: '''
+  {{PROJECT_NOTE}}
+  '''
+}
+
+Enum {{ENUM_1_NAME}} {
+  {{ENUM_1_VALUE_1}}
+  {{ENUM_1_VALUE_2}}
+  {{ENUM_1_VALUE_3}}
+}
+
+Table {{TABLE_1_NAME}} {
+  {{TABLE_1_PRIMARY_KEY}} {{TABLE_1_PRIMARY_KEY_TYPE}} [pk]
+  {{TABLE_1_FIELD_1_NAME}} {{TABLE_1_FIELD_1_TYPE}}
+  {{TABLE_1_FIELD_2_NAME}} {{TABLE_1_FIELD_2_TYPE}}
+  {{TABLE_1_FIELD_3_NAME}} {{TABLE_1_FIELD_3_TYPE}}
+
+  Note: '{{TABLE_1_NOTE}}'
+}
+
+Table {{TABLE_2_NAME}} {
+  {{TABLE_2_PRIMARY_KEY}} {{TABLE_2_PRIMARY_KEY_TYPE}} [pk]
+  {{TABLE_2_FIELD_1_NAME}} {{TABLE_2_FIELD_1_TYPE}}
+  {{TABLE_2_FIELD_2_NAME}} {{TABLE_2_FIELD_2_TYPE}}
+  {{TABLE_2_FIELD_3_NAME}} {{TABLE_2_FIELD_3_TYPE}}
+
+  Note: '{{TABLE_2_NOTE}}'
+}
+
+Ref: {{REF_LEFT}} > {{REF_RIGHT}}
+
+// 依實際實體數量增減 Enum、Table 與 Ref 區塊。

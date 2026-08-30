@@ -1,0 +1,95 @@
+Project "generic_ecommerce_storefront" {
+  database_type: "PostgreSQL"
+  Note: '''
+  這份 DBML 描述的是泛用電商網站中商品、購物車、訂單與配送資訊的資料邊界。
+  初版以關聯式資料庫作為主要真相來源，涵蓋前台購物流程所需的核心實體，並保留後續串接付款與促銷模組的擴充空間。
+  '''
+}
+
+Enum cart_status {
+  active
+  converted
+  abandoned
+}
+
+Enum order_status {
+  pending
+  paid
+  fulfilled
+  cancelled
+}
+
+Enum shipment_status {
+  preparing
+  shipped
+  delivered
+  returned
+}
+
+Table products {
+  product_id uuid [pk]
+  sku varchar(32) [unique]
+  name varchar(120)
+  unit_price decimal(10,2)
+  inventory_qty int
+  is_active boolean
+
+  Note: '商品主檔，負責保存可販售商品的識別資訊、售價、庫存與上架狀態。'
+}
+
+Table carts {
+  cart_id uuid [pk]
+  customer_id uuid [null]
+  status cart_status
+  created_at timestamp
+  updated_at timestamp
+
+  Note: '購物車主檔，負責追蹤單一顧客在結帳前的暫存購物狀態。'
+}
+
+Table cart_items {
+  cart_item_id uuid [pk]
+  cart_id uuid
+  product_id uuid
+  quantity int
+  unit_price_snapshot decimal(10,2)
+
+  Note: '購物車項目，負責記錄購物車內商品、數量與加入當下的價格快照。'
+}
+
+Table orders {
+  order_id uuid [pk]
+  cart_id uuid [null]
+  status order_status
+  total_amount decimal(10,2)
+  placed_at timestamp
+
+  Note: '訂單主檔，負責保存顧客完成結帳後的交易狀態、總金額與建立時間。'
+}
+
+Table order_items {
+  order_item_id uuid [pk]
+  order_id uuid
+  product_id uuid
+  quantity int
+  unit_price_snapshot decimal(10,2)
+
+  Note: '訂單項目，負責保存每筆訂單所購買的商品、數量與結帳時價格快照。'
+}
+
+Table shipments {
+  shipment_id uuid [pk]
+  order_id uuid
+  status shipment_status
+  recipient_name varchar(80)
+  shipping_address text
+
+  Note: '配送資訊，負責記錄訂單出貨進度、收件人資訊與配送地址。'
+}
+
+Ref: cart_items.cart_id > carts.cart_id
+Ref: cart_items.product_id > products.product_id
+Ref: orders.cart_id > carts.cart_id
+Ref: order_items.order_id > orders.order_id
+Ref: order_items.product_id > products.product_id
+Ref: shipments.order_id > orders.order_id

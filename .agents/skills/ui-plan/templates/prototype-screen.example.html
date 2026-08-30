@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>購物車與結帳確認畫面</title>
+  <style>
+    :root {
+      --bg: #070b17;
+      --panel: rgba(10, 18, 36, 0.88);
+      --primary: #6f7bff;
+      --text: #f3f6ff;
+      --muted: #9ea9c7;
+      --success: #65f0c2;
+      --warning: #ffcf5a;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+    }
+
+    .layout {
+      width: min(1200px, calc(100% - 32px));
+      margin: 24px auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .hero, .panel {
+      border-radius: 24px;
+      background: var(--panel);
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 12px 0 8px;
+      font-size: 34px;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .fake-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fake-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .status-ok { color: var(--success); }
+    .status-warn { color: var(--warning); }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 14px 18px;
+      border: 0;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), #4856ff);
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="hero">
+      <div class="topbar">
+        <div class="badge">購物車 3 件商品</div>
+        <div class="badge">配送方式 宅配到府</div>
+      </div>
+      <h1>確認訂單內容後，前往安全結帳</h1>
+      <p>在送出訂單前，再次檢查商品、優惠與配送資訊，讓使用者清楚知道這次購買內容與付款方式。</p>
+      <div class="actions">
+        <button onclick="location.href='order-success.html'">送出訂單</button>
+        <button class="secondary" onclick="location.href='product-list.html'">繼續購物</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <div class="card">
+          <h2>購物車摘要</h2>
+          <p>用假資料呈現本次訂單的商品小計、運費與優惠折抵，幫助使用者快速確認金額。</p>
+          <div class="fake-list">
+            <div class="fake-row">
+              <span>商品小計</span>
+              <strong class="status-ok">NT$2,480</strong>
+            </div>
+            <div class="fake-row">
+              <span>運費</span>
+              <strong class="status-ok">免運</strong>
+            </div>
+            <div class="fake-row">
+              <span>優惠折抵</span>
+              <strong class="status-warn">折 NT$180</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="card">
+          <h2>配送與付款</h2>
+          <p>這裡可模擬確認收件資訊、付款方式與送單前的關鍵驗證狀態。</p>
+          <div class="fake-list">
+            <div class="fake-row">
+              <span>收件資訊</span>
+              <strong class="status-ok">已填寫</strong>
+            </div>
+            <div class="fake-row">
+              <span>付款方式</span>
+              <strong class="status-ok">信用卡</strong>
+            </div>
+            <div class="fake-row">
+              <span>訂單狀態</span>
+              <strong class="status-warn">待送出</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

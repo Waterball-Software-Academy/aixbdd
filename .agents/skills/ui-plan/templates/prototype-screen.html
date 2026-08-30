@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{PAGE_TITLE}}</title>
+  <style>
+    :root {
+      --bg: {{PAGE_BACKGROUND}};
+      --panel: {{PANEL_BACKGROUND}};
+      --primary: {{BRAND_PRIMARY_COLOR}};
+      --text: {{TEXT_COLOR}};
+      --muted: {{MUTED_TEXT_COLOR}};
+      --success: {{SUCCESS_COLOR}};
+      --warning: {{WARNING_COLOR}};
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Arial, sans-serif;
+    }
+
+    .layout {
+      width: min(1200px, calc(100% - 32px));
+      margin: 24px auto;
+      display: grid;
+      gap: 20px;
+    }
+
+    .hero, .panel {
+      border-radius: 24px;
+      background: var(--panel);
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    h1 {
+      margin: 12px 0 8px;
+      font-size: 34px;
+    }
+
+    p {
+      color: var(--muted);
+      line-height: 1.6;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+
+    .card {
+      padding: 18px;
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .card h2 {
+      margin-top: 0;
+      font-size: 18px;
+    }
+
+    .fake-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .fake-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.03);
+    }
+
+    .status-ok { color: var(--success); }
+    .status-warn { color: var(--warning); }
+
+    .actions {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 14px 18px;
+      border: 0;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), {{BRAND_PRIMARY_COLOR_DARK}});
+      color: #fff;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    button.secondary {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text);
+    }
+
+    @media (max-width: 900px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="hero">
+      <div class="topbar">
+        <div class="badge">{{BADGE_LEFT}}</div>
+        <div class="badge">{{BADGE_RIGHT}}</div>
+      </div>
+      <h1>{{PAGE_HEADLINE}}</h1>
+      <p>{{PAGE_SUBTITLE}}</p>
+      <div class="actions">
+        <button onclick="location.href='{{PRIMARY_ACTION_TARGET}}'">{{PRIMARY_ACTION_LABEL}}</button>
+        <button class="secondary" onclick="location.href='{{SECONDARY_ACTION_TARGET}}'">{{SECONDARY_ACTION_LABEL}}</button>
+      </div>
+    </section>
+
+    <section class="grid">
+      <div class="panel">
+        <div class="card">
+          <h2>{{PANEL_1_TITLE}}</h2>
+          <p>{{PANEL_1_DESCRIPTION}}</p>
+          <div class="fake-list">
+            <div class="fake-row">
+              <span>{{ROW_1_LEFT}}</span>
+              <strong class="{{ROW_1_STATUS_CLASS}}">{{ROW_1_RIGHT}}</strong>
+            </div>
+            <div class="fake-row">
+              <span>{{ROW_2_LEFT}}</span>
+              <strong class="{{ROW_2_STATUS_CLASS}}">{{ROW_2_RIGHT}}</strong>
+            </div>
+            <div class="fake-row">
+              <span>{{ROW_3_LEFT}}</span>
+              <strong class="{{ROW_3_STATUS_CLASS}}">{{ROW_3_RIGHT}}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="card">
+          <h2>{{PANEL_2_TITLE}}</h2>
+          <p>{{PANEL_2_DESCRIPTION}}</p>
+          <div class="fake-list">
+            <div class="fake-row">
+              <span>{{ROW_4_LEFT}}</span>
+              <strong class="{{ROW_4_STATUS_CLASS}}">{{ROW_4_RIGHT}}</strong>
+            </div>
+            <div class="fake-row">
+              <span>{{ROW_5_LEFT}}</span>
+              <strong class="{{ROW_5_STATUS_CLASS}}">{{ROW_5_RIGHT}}</strong>
+            </div>
+            <div class="fake-row">
+              <span>{{ROW_6_LEFT}}</span>
+              <strong class="{{ROW_6_STATUS_CLASS}}">{{ROW_6_RIGHT}}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,339 @@
+openapi: 3.0.3
+info:
+  title: 電商網站 API 契約範例
+  version: 0.1.0
+  description: 以商品查詢、加入購物車、建立訂單與訂單查詢為例的 action-style API 契約範例。
+paths:
+  /products/search:
+    post:
+      summary: 查詢商品清單
+      description: 依關鍵字、分類與分頁條件查詢目前可販售商品。
+      operationId: searchProducts
+      tags:
+        - catalog
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductSearchRequest'
+      responses:
+        '200':
+          description: 成功回傳符合條件的商品清單與分頁資訊。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProductSearchResponse'
+        '400':
+          description: 查詢條件格式不合法。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-realtime-note: 此操作不需要即時通道同步。
+  /carts/items/add:
+    post:
+      summary: 加入商品到購物車
+      description: 將指定商品與數量加入購物車，並回傳更新後的購物車摘要。
+      operationId: addCartItem
+      tags:
+        - cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCartItemRequest'
+      responses:
+        '200':
+          description: 成功加入商品並回傳最新購物車內容。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AddCartItemResponse'
+        '409':
+          description: 商品已下架、庫存不足，或購物車狀態不允許修改。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-realtime-note: 若同一購物車會在多個客戶端同時開啟，可額外透過即時通道同步購物車摘要。
+  /checkouts/orders:
+    post:
+      summary: 建立訂單
+      description: 以購物車內容、收件資訊與付款方式建立訂單。
+      operationId: createOrderFromCheckout
+      tags:
+        - checkout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: 成功建立訂單並回傳訂單編號與初始狀態。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateOrderResponse'
+        '409':
+          description: 購物車為空、付款方式不可用，或商品庫存於結帳時不足。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-realtime-note: 建單成功後可透過事件通知後台履約、付款或物流流程。
+  /orders/query:
+    post:
+      summary: 查詢訂單
+      description: 依訂單編號與顧客電子郵件查詢訂單摘要與配送狀態。
+      operationId: queryOrder
+      tags:
+        - order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/QueryOrderRequest'
+      responses:
+        '200':
+          description: 成功回傳訂單摘要、品項與狀態資訊。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueryOrderResponse'
+        '404':
+          description: 找不到符合條件的訂單。
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+      x-realtime-note: 若訂單狀態會持續變化，可由後續事件流補充付款或配送更新。
+components:
+  schemas:
+    ProductSearchRequest:
+      type: object
+      required:
+        - page
+        - pageSize
+      properties:
+        keyword:
+          type: string
+        categorySlug:
+          type: string
+        page:
+          type: integer
+        pageSize:
+          type: integer
+    ProductSummary:
+      type: object
+      required:
+        - productId
+        - name
+        - price
+        - currency
+        - inStock
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        currency:
+          type: string
+        inStock:
+          type: boolean
+    Pagination:
+      type: object
+      required:
+        - page
+        - pageSize
+        - totalItems
+      properties:
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalItems:
+          type: integer
+    ProductSearchResponse:
+      type: object
+      required:
+        - items
+        - pagination
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductSummary'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    AddCartItemRequest:
+      type: object
+      required:
+        - cartId
+        - productId
+        - quantity
+      properties:
+        cartId:
+          type: string
+        productId:
+          type: string
+        quantity:
+          type: integer
+    CartItem:
+      type: object
+      required:
+        - productId
+        - name
+        - quantity
+        - unitPrice
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+    CartSummary:
+      type: object
+      required:
+        - cartId
+        - itemCount
+        - totalAmount
+        - currency
+        - items
+      properties:
+        cartId:
+          type: string
+        itemCount:
+          type: integer
+        totalAmount:
+          type: number
+        currency:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+    AddCartItemResponse:
+      type: object
+      required:
+        - cart
+      properties:
+        cart:
+          $ref: '#/components/schemas/CartSummary'
+    ShippingAddress:
+      type: object
+      required:
+        - recipientName
+        - line1
+        - city
+        - postalCode
+        - country
+      properties:
+        recipientName:
+          type: string
+        line1:
+          type: string
+        city:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+    CreateOrderRequest:
+      type: object
+      required:
+        - cartId
+        - customerEmail
+        - shippingAddress
+        - paymentMethod
+      properties:
+        cartId:
+          type: string
+        customerEmail:
+          type: string
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+        paymentMethod:
+          type: string
+    CreateOrderResponse:
+      type: object
+      required:
+        - orderId
+        - status
+        - totalAmount
+        - currency
+      properties:
+        orderId:
+          type: string
+        status:
+          type: string
+        totalAmount:
+          type: number
+        currency:
+          type: string
+    QueryOrderRequest:
+      type: object
+      required:
+        - orderId
+        - customerEmail
+      properties:
+        orderId:
+          type: string
+        customerEmail:
+          type: string
+    OrderLineItem:
+      type: object
+      required:
+        - productId
+        - name
+        - quantity
+        - subtotal
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+        subtotal:
+          type: number
+    QueryOrderResponse:
+      type: object
+      required:
+        - orderId
+        - status
+        - customerEmail
+        - totalAmount
+        - currency
+        - items
+      properties:
+        orderId:
+          type: string
+        status:
+          type: string
+        customerEmail:
+          type: string
+        totalAmount:
+          type: number
+        currency:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderLineItem'
+    ErrorResponse:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string

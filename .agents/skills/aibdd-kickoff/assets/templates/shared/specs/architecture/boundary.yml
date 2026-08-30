@@ -1,6 +1,0 @@
-version: 2
-id: "${KICKOFF_TLB_ID}"
-level: 1
-role: ${KICKOFF_BOUNDARY_ROLE}
-type: ${KICKOFF_BOUNDARY_TYPE}
-description: "${KICKOFF_BOUNDARY_DESCRIPTION}"
