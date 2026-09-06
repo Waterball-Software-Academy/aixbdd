@@ -1,7 +1,6 @@
 ---
 name: implement
 description: 根據 plan package 的 `tasks.md` 自主執行已解鎖 task。先序列做完 Setup 與 Foundational；Phase 3 有 Parallel Hint 時平行派出 subagent 寫測試層；review 通過後才 per Feature 做 Green / Refactor。完成整個 plan 後詢問是否用 git commit deliver。
-license: Complete terms in LICENSE
 disable-model-invocation: true
 ---
 
@@ -56,10 +55,3 @@ disable-model-invocation: true
 3. WRITE 在本輪任務集的實作與驗證都完成後，立即將對應 task 改寫為 `[X]`，並保留其他 task 狀態不變。
 4. THINK 重新計算是否仍存在已解鎖且屬於本次範圍的未完成 task；若有，返回 Phase 3。
 5. WRITE 若目標 plan package 全部 tasks 已 `[X]` 且驗證通過，向使用者回報本次 plan 已交付，並詢問是否用 git commit deliver；未取得使用者同意前不得 commit。
-
-# License & Attribution
-
-本 skill 參考並改寫自 [GitHub Spec Kit](https://github.com/github/spec-kit)（含 `speckit-implement` 等相關流程與原始碼概念）。
-
-Spec Kit is licensed under the MIT License. Copyright GitHub, Inc.  
-完整授權條款見本目錄 [`LICENSE`](./LICENSE)。
