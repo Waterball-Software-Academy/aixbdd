@@ -1,13 +1,13 @@
 ---
 name: tasks
-description: 根據 plan package 的 `spec.md`、`plan.md`、`research.md`、`ui/**`，以及 `truth-delta.md` 與 `specs/truth/**` 產出可直接執行的 `tasks.md`。測試層集中在 Phase 3 `Test Alignment & Implementation`；Feature phase 只留 Green / Refactor 或 CODE-REMOVE / REGRESSION。
+description: 根據 plan package 的 `spec.md`、`plan.md`、`research.md`、`ui/**`，以及 `truth-delta.md` 與 `specs/truth/**` 產出可直接執行的 `tasks.md`。先寫 Setup 與 Foundational，測試層集中在 Phase 3 `Test Alignment & Implementation`；Feature phase 只留 Green / Refactor 或 CODE-REMOVE / REGRESSION。
 license: Complete terms in LICENSE
 disable-model-invocation: true
 ---
 
 # Tasks Skill
 
-`tasks` 是 plan-side execution planner。它不修改 truth，只把本次 plan、truth-delta 與目前 truth 轉成 `/implement` 可逐步執行的 `tasks.md`。當 truth-delta 出現 `MODIFY` 或 `DELETE`，必須先盤點既有自動化測試；測試層在寫產品碼之前一次對齊最新版 truth。
+`tasks` 是 plan-side execution planner。它不修改 truth，只把本次 plan、truth-delta 與目前 truth 轉成 `/implement` 可逐步執行的 `tasks.md`。本輪新增技術先寫 Setup；再寫 Foundational；測試層在寫產品碼之前一次對齊最新版 truth。盤點既有自動化測試只發生在寫 Phase 3 時，不得輸出成 implement task。
 
 # SOP
 
@@ -15,14 +15,15 @@ disable-model-invocation: true
 
 1. READ 讀取使用者需求、目標 plan package 的 `spec.md`、`plan.md`、`research.md`、`ui/**`、`truth-delta.md`，以及受影響模組的 truth feature、模組 DSL、truth-delta 實際引用的介面根共用 DSL rows、相關 contracts/data 與 `specs/truth/techstack.md`。
 2. READ 讀取 `.agents/constitution/CONSTITUTION.md` 與 `.agents/constitution/shared.md`，並將其中規則視為高於本地 artifact 規範的約束。
-3. READ 讀取 `rules/TruthDelta影響盤點與任務型態判準.md`，確認 ADD / MODIFY / DELETE / NOOP 如何拆到 Phase 3 測試層與 Feature 產品層。
-4. THINK 盤點本輪 Feature 用到的全部 DSL 句：含 truth-delta 有改的句，以及本輪 Feature 用到、尚無 stepdef 的句。若任一句沒有唯一 DSL 定義，停止受影響範圍並回交 `/dsl-refine`。
+3. READ 讀取 `rules/TruthDelta影響盤點與任務型態判準.md`，確認 ADD / MODIFY / DELETE / NOOP 如何拆到 Phase 3 測試層與 Feature 產品層，以及 Setup、Foundational 與 Test Alignment 的邊界。
+4. THINK 盤點本輪 Feature 用到的全部 DSL 句：含 truth-delta 有改的句，以及本輪 Feature 用到、尚無 stepdef 的句。若有 `MODIFY` 或 `DELETE`，同時盤點既有 stepdef、helper、fixture 與產品分支，只用來寫後續 task，不輸出獨立 phase。若任一句沒有唯一 DSL 定義，停止受影響範圍並回交 `/dsl-refine`。
 
-## Phase 2 -- 產生 Impact Audit 與 Foundational
+## Phase 2 -- 產生 Setup 與 Foundational
 
-1. THINK 若 `truth-delta.md` 含有 `MODIFY` 或 `DELETE` rows，先建立 `Truth Delta Impact Audit` phase，盤點受影響的 truth feature/dsl、既有 step definitions、fixtures、helpers、focused tests、產品分支與回歸測試面。
-2. THINK 若 truth-delta 只有 `ADD` 或 `NOOP`，可省略 impact audit phase；但若 ADD 會碰到既有 shared helper 或 fixture，仍應在 Foundational task 中明列相關讀取。
-3. THINK Impact Audit 與 Foundational 只能盤點或建立共用入口，不得偷做 Phase 3 測試層或 Feature Green。
+1. THINK 若本輪有新增技術，建立 Phase 1 `Setup`：寫清套件名、配置、技術環境與最後的 smoke-test；不寫 DSL 語意、不寫產品行為。
+2. THINK 若本輪沒有新增技術，省略 Setup；不得把 helper、fixture 或落點骨架塞進 Setup。
+3. THINK 建立 Phase 2 `Foundational`：只建立後續實作程式、測試共用元件、入口、fixture、helper 與落點骨架；每則寫「只做／不做」。
+4. THINK Setup 與 Foundational 不得偷做 Phase 3 測試層或 Feature Green。
 
 ## Phase 3 -- 建立 Test Alignment & Implementation
 
@@ -42,7 +43,7 @@ disable-model-invocation: true
 ## Phase 5 -- 輸出並驗證 tasks.md
 
 1. WRITE 依 template 骨架輸出 `specs/plans/NNN-<slug>/tasks.md`。
-2. READ 回頭檢查：任務皆為 `- [ ] T###`、truth-delta 已納入 Core Inputs、Phase 3 已集中 ALIGN / REMOVE / RED、Feature phase 不含 `[BDD-RED]` / `[BDD-ALIGN]` / `[BDD-REMOVE]`、每個 Feature phase 有 `Test Scope`、truth 路徑都指向 `specs/truth/**`；若不符合，立即修正。
+2. READ 回頭檢查：任務皆為 `- [ ] T###`、truth-delta 已納入 Core Inputs、沒有 Impact Audit phase、有新增技術時 Setup 寫清套件名與 smoke-test、Foundational 每則有「只做／不做」、Phase 3 已集中 ALIGN / REMOVE / RED、Feature phase 不含 `[BDD-RED]` / `[BDD-ALIGN]` / `[BDD-REMOVE]`、每個 Feature phase 有 `Test Scope`、truth 路徑都指向 `specs/truth/**`；若不符合，立即修正。
 
 # License & Attribution
 

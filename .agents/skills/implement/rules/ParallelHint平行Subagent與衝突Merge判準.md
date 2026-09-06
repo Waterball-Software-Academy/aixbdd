@@ -7,11 +7,11 @@
 
 ## Good Example
 
-- 這個例子是好的，因為它按 Hint 一次派出 T003–T009。
+- 這個例子是好的，因為它按 Hint 一次派出 T008–T014。
 
 ```md
-Parallel Hint: T003–T009 各派一個獨立 subagent；T010 等全部回來再 review。
-本輪先派出 T003–T009，不先只做 T003。
+Parallel Hint: T008–T014 各派一個獨立 subagent；T015 等全部回來再 review。
+本輪先派出 T008–T014，不先只做 T008。
 ```
 
 ## Bad Example
@@ -19,7 +19,7 @@ Parallel Hint: T003–T009 各派一個獨立 subagent；T010 等全部回來再
 - 這個例子是壞的，因為它忽略 Hint，仍一次只做一個 Phase 3 task。
 
 ```md
-看到 T003 [P] [BDD-ALIGN]，只派一個 subagent 做 T003，T004–T009 留到後面序列。
+看到 T008 [P] [BDD-ALIGN]，只派一個 subagent 做 T008，T009–T014 留到後面序列。
 ```
 
 # Rule 2 - subagent prompt 只指向 tasks.md 的該筆任務
@@ -34,7 +34,7 @@ Parallel Hint: T003–T009 各派一個獨立 subagent；T010 等全部回來再
 - 這個例子是好的，因為 prompt 指向任務本身。
 
 ```md
-請讀 `specs/plans/004-room-chat-adjustment/tasks.md` 的 T003。
+請讀 `specs/plans/004-room-chat-adjustment/tasks.md` 的 T008。
 你的職責就是開發此任務。
 若目標檔已被其他 subagent 改過，先讀最新內容，自己 merge 這條 DSL 的改動。
 ```
@@ -59,9 +59,9 @@ Parallel Hint: T003–T009 各派一個獨立 subagent；T010 等全部回來再
 - 這個例子是好的，因為同檔衝突留在寫入端。
 
 ```md
-T003 與 T004 都寫 `操作與斷言.py`。
-T004 的 subagent 發現檔已被 T003 改過，讀最新內容後只 merge 自己那條 Then。
-T010 只 review 結果。
+T008 與 T009 都寫 `操作與斷言.py`。
+T009 的 subagent 發現檔已被 T008 改過，讀最新內容後只 merge 自己那條 Then。
+T015 只 review 結果。
 ```
 
 ## Bad Example
@@ -69,7 +69,7 @@ T010 只 review 結果。
 - 這個例子是壞的，因為它把合併丟給 review。
 
 ```md
-T003–T006 只交 patch，等 T010 合併。
+T008–T011 只交 patch，等 T015 合併。
 ```
 
 # Rule 4 - review 有 issues 就修正，再 review，直到沒有任何問題
@@ -85,8 +85,8 @@ T003–T006 只交 patch，等 T010 合併。
 - 這個例子是好的，因為它形成迴圈閘門。
 
 ```md
-T010 review 回報 T007 的 stepdef 沒讀 `權威狀態落地`。
-修正後再 review。第二次沒有 issues，才解鎖 T011 [BDD-GREEN]。
+T015 review 回報 T012 的 stepdef 沒讀 `權威狀態落地`。
+修正後再 review。第二次沒有 issues，才解鎖 T016 [BDD-GREEN]。
 ```
 
 ## Bad Example
@@ -94,6 +94,6 @@ T010 review 回報 T007 的 stepdef 沒讀 `權威狀態落地`。
 - 這個例子是壞的，因為它 review 一次有 issues 仍進 Green。
 
 ```md
-T010 列出 3 個 issues。
-agent 說之後 Green 再修，直接開始 T011。
+T015 列出 3 個 issues。
+agent 說之後 Green 再修，直接開始 T016。
 ```

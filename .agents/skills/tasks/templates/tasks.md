@@ -6,28 +6,64 @@
 ## Task Binding Contract
 
 - 每個**開發任務**都必須對應 `truth-delta.md` 中的 ADD / MODIFY / DELETE / NOOP 語意。
-- 若 `truth-delta.md` 含 `MODIFY` 或 `DELETE`，必須先建立 `Truth Delta Impact Audit` phase。
+- Phase 1 `Setup` 只做本輪新增技術的基礎建設、技術環境與最後的 smoke-test；不寫 DSL 語意、不寫產品行為。
+- Phase 2 `Foundational` 只建立後續實作程式、測試共用元件、入口、fixture、helper 與落點骨架。
 - Phase 3 `Test Alignment & Implementation` 的目的：在寫產品碼之前，先把本輪所有受影響 DSL 的自動化測試對齊最新版 truth。
 - Truth 參照必須使用 `specs/truth/**` 路徑；plan 參照才使用當前 plan package 內相對路徑。
 
-## Phase 1: Truth Delta Impact Audit
+## Phase 1: Setup
 
-**Goal**: {{IMPACT_AUDIT_GOAL}}
+**Goal**: {{SETUP_GOAL}}
 
-- [ ] T001 盤點本輪 MODIFY / DELETE 對既有自動化測試與產品碼的影響
+- [ ] T{{SETUP_PACKAGE_TASK_ID}} {{SETUP_PACKAGE_TASK_TITLE}}
   - Read:
-    - `truth-delta.md` -> `{{TRUTH_DELTA_MODIFY_DELETE_ROWS}}`
-    - `{{EXISTING_BACKEND_STEPS_DIR}}` -> {{EXISTING_BACKEND_TEST_SURFACE}}
-    - `{{EXISTING_FRONTEND_STEPS_DIR}}` -> {{EXISTING_FRONTEND_TEST_SURFACE}}
+    - `specs/truth/techstack.md` -> {{SETUP_PACKAGE_TECHSTACK_SECTION}}
+  - {{SETUP_PACKAGE_DEPENDENCY_ACTION}}
+  - {{SETUP_PACKAGE_CONFIG_ACTION}}
+
+- [ ] T{{SETUP_ENV_TASK_ID}} {{SETUP_ENV_TASK_TITLE}}
+  - Read:
+    - `specs/truth/techstack.md` -> {{SETUP_ENV_TECHSTACK_SECTION}}
+    - `{{SETUP_ENV_APP_PATH}}` -> {{SETUP_ENV_MOUNT_POINT}}
+  - {{SETUP_ENV_ENABLE_ACTION}}
+  - {{SETUP_ENV_BOUNDARY}}
+
+- [ ] T{{SETUP_SMOKE_TASK_ID}} {{SETUP_SMOKE_TASK_TITLE}}
+  - Read:
+    - `specs/truth/techstack.md` -> {{SETUP_SMOKE_TECHSTACK_SECTION}}
+  - {{SETUP_SMOKE_VERIFY_ACTION}}
+  - {{SETUP_SMOKE_BOUNDARY}}
 
 ## Phase 2: Foundational
 
-**Goal**: {{SETUP_OR_FOUNDATIONAL_GOAL}}
+**Goal**: {{FOUNDATIONAL_GOAL}}
 
-- [ ] T002 {{SETUP_OR_FOUNDATIONAL_TASK_TITLE}}
+- [ ] T{{FOUNDATIONAL_HELPER_TASK_ID}} {{FOUNDATIONAL_HELPER_TASK_TITLE}}
   - Read:
-    - `truth-delta.md` -> `{{TRUTH_DELTA_RELEVANT_ROWS}}`
+    - `truth-delta.md` -> {{FOUNDATIONAL_HELPER_TRUTH_DELTA_ROWS}}
     - `{{FOUNDATIONAL_HELPER_PATH}}`
+  - 只做：{{FOUNDATIONAL_HELPER_DO}}
+  - 不做：{{FOUNDATIONAL_HELPER_DONT}}
+
+- [ ] T{{FOUNDATIONAL_CONNECTION_TASK_ID}} {{FOUNDATIONAL_CONNECTION_TASK_TITLE}}
+  - Read:
+    - `specs/truth/techstack.md` -> {{FOUNDATIONAL_CONNECTION_TECHSTACK_SECTION}}
+    - `{{FOUNDATIONAL_CONNECTION_HELPER_PATH}}`
+  - 只做：{{FOUNDATIONAL_CONNECTION_DO}}
+  - 不做：{{FOUNDATIONAL_CONNECTION_DONT}}
+
+- [ ] T{{FOUNDATIONAL_LANDING_TASK_ID}} {{FOUNDATIONAL_LANDING_TASK_TITLE}}
+  - Read:
+    - `{{FOUNDATIONAL_LANDING_PATH}}`
+  - 只做：{{FOUNDATIONAL_LANDING_DO}}
+  - 不做：{{FOUNDATIONAL_LANDING_DONT}}
+
+- [ ] T{{FOUNDATIONAL_FIXTURE_TASK_ID}} {{FOUNDATIONAL_FIXTURE_TASK_TITLE}}
+  - Read:
+    - `{{FOUNDATIONAL_FIXTURE_DATA_PATH}}` -> {{FOUNDATIONAL_FIXTURE_DATA_SECTION}}
+    - `{{FOUNDATIONAL_FIXTURE_HELPER_PATH}}`
+  - 只做：{{FOUNDATIONAL_FIXTURE_DO}}
+  - 不做：{{FOUNDATIONAL_FIXTURE_DONT}}
 
 ## Phase 3: Test Alignment & Implementation
 

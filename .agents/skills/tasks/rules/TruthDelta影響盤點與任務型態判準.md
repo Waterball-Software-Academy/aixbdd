@@ -1,31 +1,33 @@
-# Rule 1 - MODIFY 或 DELETE 必須先建立 impact audit
+# Rule 1 - 盤點只用來寫 Phase 3，不得輸出 Impact Audit phase
 
 - Level: `MUST`
-- 當 `truth-delta.md` 包含任何 `MODIFY` 或 `DELETE` row，`tasks.md` 必須在 Phase 3 與 Feature phases 前建立 `Truth Delta Impact Audit` phase 或等價的早期盤點任務。
-- Impact audit 必須盤點受影響的 truth feature/dsl、既有 step definitions、fixtures、helpers、focused tests、產品分支與回歸測試面。
-- Impact audit 不得偷做 Phase 3 測試層或 Feature Green，只負責找出需要對齊的既有測試與實作入口。
+- 當 `truth-delta.md` 包含 `MODIFY` 或 `DELETE` row，寫 Phase 3 前必須盤點受影響的 truth feature/dsl、既有 step definitions、fixtures、helpers、focused tests、產品分支與回歸測試面。
+- 這份盤點只發生在 `/tasks` 收斂與寫 task 時，用來決定 ALIGN / REMOVE / RED、Foundational 的 `Read`，以及 Feature 的產品碼落點。
+- 不得把盤點寫成 `Truth Delta Impact Audit` phase，也不得輸出給 `/implement` 做的 T00x。
+- Phase 1 `Setup` 只在本輪有新增技術時建立：寫清套件名、配置、技術環境與最後的 smoke-test；不寫 DSL 語意、不寫產品行為。
+- 本輪沒有新增技術就省略 Setup；不得把 helper、fixture 或落點骨架塞進 Setup。
+- Phase 2 `Foundational` 只建立後續實作程式、測試共用元件、入口、fixture、helper 與落點骨架；每則必須寫「只做／不做」。
+- Setup 與 Foundational 不得偷做 Phase 3 測試層或 Feature Green。
 
 ## Good Example
 
-- 這個例子是好的，因為修改既有 DSL 時先盤點既有測試落點。
+- 這個例子是好的，因為盤點留在寫 task 時，輸出從 Setup 開始，且套件名寫死。
 
 ```md
-## Phase 1: Truth Delta Impact Audit
+寫 Phase 3 前先盤點既有 `操作與斷言.py`，用來標 `[BDD-ALIGN]`。
+`tasks.md` 第一個 phase 是 Setup：
 
-- [ ] T001 盤點 `RoomSnapshot.messages` 修改影響的後端 step definitions、前端 page helpers 與 focused tests
-  - Read:
-    - `truth-delta.md` -> `/api-plan` MODIFY `RoomSnapshot.messages`
-    - `specs/truth/features/backend/房間聊天/dsl.md` -> `Then: "{玩家}" 看得到先前的聊天訊息`
+- [ ] T001 加入 `websockets` 套件與測試用連線設定
 ```
 
 ## Bad Example
 
-- 這個例子是壞的，因為直接在 Feature phase 寫測試層任務，沒有先盤點。
+- 這個例子是壞的，因為把盤點寫成 implement 要做的 phase。
 
 ```md
-## Phase 4A: ADD Feature File - backend/聊天.feature
+## Phase 1: Truth Delta Impact Audit
 
-- [ ] T001 [BDD-RED] 新增聊天規則紅燈
+- [ ] T001 盤點聊天 MODIFY / DELETE 對既有自動化測試與產品碼的影響
 ```
 
 # Rule 2 - 測試層集中在 Phase 3，Feature phase 只留產品碼任務
@@ -45,12 +47,12 @@
 ```md
 ## Phase 3: Test Alignment & Implementation
 
-- [ ] T003 [P] [BDD-ALIGN] `When: "{玩家}" 送出訊息 "{內容}"`
+- [ ] T008 [P] [BDD-ALIGN] `When: "{玩家}" 送出訊息 "{內容}"`
 
 ## Phase 4B: MODIFY Feature File - backend/房間聊天/雙方在場寫入房間對話.feature
 
-- [ ] T013 [BDD-GREEN] 讓 Test Scope 全綠
-- [ ] T014 [BDD-REFACTOR] 在綠燈下整理聊天寫入與再讀確認共用邏輯
+- [ ] T018 [BDD-GREEN] 讓 Test Scope 全綠
+- [ ] T019 [BDD-REFACTOR] 在綠燈下整理聊天寫入與再讀確認共用邏輯
 ```
 
 ## Bad Example
@@ -78,8 +80,8 @@
 - 這個例子是好的，因為本輪 Feature 用到、但不在 truth-delta 的句也進了 Phase 3。
 
 ```md
-- [ ] T006 [P] [BDD-RED] `Given: "{玩家}" 在房間內單人等待`
-- [ ] T007 [P] [BDD-RED] `When: "{玩家}" 嘗試送出空白訊息`
+- [ ] T011 [P] [BDD-RED] `Given: "{玩家}" 在房間內單人等待`
+- [ ] T012 [P] [BDD-RED] `When: "{玩家}" 嘗試送出空白訊息`
 ```
 
 ## Bad Example
@@ -113,5 +115,5 @@ Phase 4C: [REGRESSION] 跑 Test Scope
 - 這個例子是壞的，因為只刪產品碼，留下過期測試。
 
 ```md
-- [ ] T014 [CODE-REMOVE] 移除舊功能
+- [ ] T020 [CODE-REMOVE] 移除舊功能
 ```

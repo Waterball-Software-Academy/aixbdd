@@ -1,6 +1,6 @@
 ---
 name: implement
-description: 根據 plan package 的 `tasks.md` 自主執行已解鎖 task。Phase 3 有 Parallel Hint 時平行派出 subagent 寫測試層；review 通過後才 per Feature 做 Green / Refactor。完成整個 plan 後詢問是否用 git commit deliver。
+description: 根據 plan package 的 `tasks.md` 自主執行已解鎖 task。先序列做完 Setup 與 Foundational；Phase 3 有 Parallel Hint 時平行派出 subagent 寫測試層；review 通過後才 per Feature 做 Green / Refactor。完成整個 plan 後詢問是否用 git commit deliver。
 license: Complete terms in LICENSE
 disable-model-invocation: true
 ---
@@ -37,7 +37,7 @@ disable-model-invocation: true
 1. READ 讀取 `rules/嚴格禁止跳步驟判準.md` 與 `rules/平行執行與檔案衝突判準.md`，確認不得跳過 review、不得在 Phase 3 寫產品碼、不得把 Phase 3 與 Green 混在同一輪。
 2. READ 若 `tasks.md` 當前 phase 含 `Parallel Hint`，讀取 `rules/ParallelHint平行Subagent與衝突Merge判準.md`。
 3. THINK 收斂本輪任務集：有 `Parallel Hint` 則為 Hint 列出的 `[P]` 批次；否則恰好 1 個已解鎖 task。
-4. THINK 收斂執行模式：Phase 3 的 ALIGN / REMOVE / RED 走 subagent 測試層；review 走 review 迴圈；`[BDD-GREEN]` / `[BDD-REFACTOR]` 委派 `/bdd` 並帶 `Test Scope`；`[CODE-REMOVE]`、`[REGRESSION]`、Setup / Foundational 則直接實作或直接驗證。
+4. THINK 收斂執行模式：Setup 與 Foundational 序列、直接實作；Setup 完成條件是套件與配置在、smoke-test 連得上；Foundational 完成條件是實作程式、測試共用元件、入口、fixture、helper 與落點骨架已在，且停在該則「只做／不做」。Phase 3 的 ALIGN / REMOVE / RED 走 subagent 測試層；review 走 review 迴圈；`[BDD-GREEN]` / `[BDD-REFACTOR]` 委派 `/bdd` 並帶 `Test Scope`；`[CODE-REMOVE]`、`[REGRESSION]` 直接實作或直接驗證。
 
 ## Phase 4 -- 載入精確參照並執行
 

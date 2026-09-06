@@ -11,7 +11,7 @@
 - 這個例子是好的，因為 implement 先判斷當前 task 是 MODIFY。
 
 ```md
-T003 [BDD-ALIGN]
+T008 [BDD-ALIGN]
 truth-delta: /dsl-refine MODIFY `When: "{玩家}" 送出訊息 "{內容}"`
 action: MODIFY
 ```
@@ -36,7 +36,7 @@ action: MODIFY
 - 這個例子是好的，因為產品碼只在測試層對齊之後才動。
 
 ```md
-T010 review 通過後，T013 [BDD-GREEN] 才調整送訊實作。
+T015 review 通過後，T018 [BDD-GREEN] 才調整送訊實作。
 ```
 
 ## Bad Example
