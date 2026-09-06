@@ -29,6 +29,8 @@
 
 ### 測試與驗證
 
+<!-- 各端都要看得見 BDD techstack。測試策略沒講時預設都是 E2E。 -->
+
 | 類別 | 採用技術 | 用途 |
 | --- | --- | --- |
 | {{TESTING_CATEGORY_1}} | {{TESTING_TECH_1}} | {{TESTING_PURPOSE_1}} |

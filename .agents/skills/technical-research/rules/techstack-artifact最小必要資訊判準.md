@@ -92,7 +92,44 @@
 | UI 技術 | `React?` / `原生 JavaScript?` | 還在考慮 |
 ````
 
-# Rule 4 - `techstack.md` 的分類與列舉粒度應服務後續 handoff
+# Rule 4 - `techstack.md` 的 `測試與驗證` 必須看得見各端 BDD techstack
+
+- Level: `MUST`
+- `測試與驗證` 不可只列一個通用測試框架。每個已確認存在的端，都要寫出該端的 BDD techstack 與用途。
+- 測試策略沒被使用者改判時，各端應寫成 E2E，不得把「完整瀏覽器 E2E」或後端 E2E 列進 `本次開發不引入的技術`。
+- 前端 webapp 的 runner 與後端 API 的 runner 分列。用途要寫它跑的是哪一端的 Gherkin，以及打的是畫面還是 API／權威狀態。
+
+## Good Example
+
+- 這個例子是好的，因為各端 BDD techstack 都看得到，而且預設是 E2E。
+
+````md
+### 測試與驗證
+
+| 類別 | 採用技術 | 用途 |
+| --- | --- | --- |
+| 前端 BDD techstack | `Playwright` | webapp E2E，跑前端 Gherkin |
+| 後端 BDD techstack | `behave` | 後端 E2E，跑後端 Gherkin，驗 API 與權威狀態 |
+````
+
+## Bad Example
+
+- 這個例子是壞的，因為看不出各端 runner，還把 E2E 排除掉。
+
+````md
+### 測試與驗證
+
+| 類別 | 採用技術 | 用途 |
+| --- | --- | --- |
+| API 測試 | `vitest` | 測試執行框架 |
+| 手動驗證 | `quickstart.md` | 前端操作 |
+
+## 本次開發不引入的技術
+
+- 完整瀏覽器 E2E 測試框架
+````
+
+# Rule 5 - `techstack.md` 的分類與列舉粒度應服務後續 handoff
 
 - Level: `SHOULD`
 - `techstack.md` 的分類應以後續規劃或實作最容易接手的高層視角組織，例如前端、後端、資料與媒體處理、測試與驗證。
@@ -108,8 +145,8 @@
 
 | 類別 | 採用技術 | 用途 |
 | --- | --- | --- |
-| API 測試 | `vitest` | 測試執行框架 |
-| HTTP 驗證 | `supertest` | API 行為驗證 |
+| 前端 BDD techstack | `Playwright` | webapp E2E |
+| 後端 BDD techstack | `behave` | 後端 E2E |
 ````
 
 ## Bad Example

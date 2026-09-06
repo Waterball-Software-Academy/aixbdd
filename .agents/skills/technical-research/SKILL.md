@@ -20,9 +20,11 @@ disable-model-invocation: true
 
 ## Phase 2 -- 收斂研究缺口與 truth 變更風險
 
-1. THINK 先從 `spec.md` 與現有 techstack truth 整理本次研究要拍板的核心決策、候選方案、已知限制、比較面向與成功條件。
-2. READ 若需要判斷 clarify 門檻，讀取 `rules/Clarify升級門檻與研究提問預算判準.md`。
-3. DELEGATE 若缺口會改變決策集合、候選方案、技術邊界，或高影響修改/刪除既有 techstack truth，呼叫 `/clarify`；未收斂前停止。
+1. READ 讀取 `rules/AIxBDD必問問題與起始專案介面澄清判準.md`，對過 `spec.md`、既有 `techstack.md` 與使用者這輪原話，標出尚未拍板的必問題。
+2. DELEGATE 若 BDD techstack、測試策略、或起始專案下系統有哪些端尚未拍板，呼叫 `/clarify`；未問完前停止，不進入 Phase 3。
+3. THINK 必問題已拍板後，再從 `spec.md` 與現有 techstack truth 整理其餘要拍板的核心決策、候選方案、已知限制、比較面向與成功條件。
+4. READ 若需要判斷其餘缺口是否升級 clarify，讀取 `rules/Clarify升級門檻與研究提問預算判準.md`。
+5. DELEGATE 若其餘缺口會改變決策集合、候選方案、技術邊界，或高影響修改/刪除既有 techstack truth，呼叫 `/clarify`；未收斂前停止。
 
 ## Phase 3 -- 產出 research 與更新 techstack truth
 

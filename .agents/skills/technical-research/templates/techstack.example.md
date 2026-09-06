@@ -31,13 +31,11 @@
 
 | 類別 | 採用技術 | 用途 |
 | --- | --- | --- |
-| API 測試 | `vitest` | 測試執行框架 |
-| HTTP 驗證 | `supertest` | API 行為驗證 |
-| 手動驗證 | `quickstart.md` | 前端拖放與整體操作驗證 |
+| 前端 BDD techstack | `Playwright` | webapp E2E，跑前端 Gherkin |
+| 後端 BDD techstack | `behave` | 後端 E2E，跑後端 Gherkin，驗 API 與權威狀態 |
 
 ## 本次開發不引入的技術
 
 - `React` 或其他前端框架
 - 第三方拖放套件（如 `SortableJS`）
 - 檔案系統路徑式圖片儲存
-- 完整瀏覽器 E2E 測試框架

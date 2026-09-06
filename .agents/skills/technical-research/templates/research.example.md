@@ -69,10 +69,18 @@
   - 每次拖放重寫整個相簿的連續序號：可行，但更新成本較高
   - 另外建立排序表：對 MVP 過度設計
 
-## 決策 9：測試策略以後端自動化為主，前端互動以 Quickstart 補強
+## 決策 9：BDD techstack 分端指定
 
-- **Decision**: 使用 `vitest + supertest` 驗證匯入分組、相簿查詢、排序持久化與跨相簿拒絕；拖放視覺互動以 `quickstart.md` 手動驗證。
-- **Rationale**: 核心風險在資料正確性與 API 行為，先以自動化穩住後端邏輯，再用有限度手動驗證前端原生拖放體驗，最符合初版最小複雜度原則。
+- **Decision**: 前端 webapp 的 Gherkin 用 `Playwright` 落地；後端 API 的 Gherkin 用 `behave` 落地。
+- **Rationale**: 這是 AIxBDD workflow，BDD techstack 一定要先 clarify。前端驗的是畫面操作，後端驗的是 API 與權威狀態，runner 不能混成一個。
 - **Alternatives considered**:
-  - 一開始就引入完整瀏覽器 E2E：覆蓋更完整，但對教學版 MVP 成本偏高
-  - 完全不做自動化：不符合專案憲法
+  - 前後端都只用 Playwright：後端權威狀態不該只靠畫面推斷。
+  - 前後端都只用 behave：behave 不是前端 webapp E2E 的預設。
+
+## 決策 10：測試策略預設都是 E2E
+
+- **Decision**: 前端用 Playwright 打 webapp E2E；後端用 behave 打 API 與資料庫權威狀態。匯入分組、相簿查詢、排序持久化與跨相簿拒絕都走 E2E，不把主驗收收成單元測或手動 Quickstart。
+- **Rationale**: 測試策略沒被改判時，預設都是 E2E。拖放與清單是否真的更新，要在畫面上看到；分組與拒絕，要在後端權威狀態看到。
+- **Alternatives considered**:
+  - 先 `vitest + supertest`、E2E 以後再補：會把驗收旅程測成假綠燈。
+  - 完全不做自動化：Gherkin 沒有落地。
