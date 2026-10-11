@@ -16,10 +16,22 @@ from pathlib import Path
 from typing import Iterable
 
 
+# 關鍵字依 Gherkin 官方 gherkin-languages.json 的 en 與 zh-TW：
+# 英文關鍵字與 `*` 後必須有空白，中文關鍵字後可不加空白。
 STEP_RE = re.compile(
-    r"^\s*(?:Given|When|Then|And|But|\*|"
-    r"假如|假設|假定|當|那麼|而且|並且|同時|但是)\s+(.+?)\s*$"
+    r"^\s*(?:(?:Given|When|Then|And|But|\*)\s+|"
+    r"(?:假如|假設|假定|當|那麼|而且|並且|同時|但是)\s*)(.+?)\s*$"
 )
+# 只有這些區塊內的行才可能是 step。
+STEP_SECTION_RE = re.compile(
+    r"^\s*(?:Background|Scenario Outline|Scenario Template|Scenario|Example|"
+    r"背景|場景大綱|劇本大綱|場景|劇本):"
+)
+# 這些區塊之後的描述文字不是 step。
+NON_STEP_SECTION_RE = re.compile(
+    r"^\s*(?:Feature|Business Need|Ability|Rule|Examples|Scenarios|功能|例子):"
+)
+DOCSTRING_RE = re.compile(r'^\s*("""|```)')
 PLACEHOLDER_RE = re.compile(r"\{[^{}]+\}")
 SEPARATOR_CELL_RE = re.compile(r"^:?-{3,}:?$")
 
@@ -139,7 +151,30 @@ def parse_feature(path: Path, errors: list[str]) -> list[GherkinStep]:
         return []
 
     steps: list[GherkinStep] = []
+    in_steps = False
+    fence: str | None = None
+    fence_line = 0
     for line_number, line in enumerate(text.splitlines(), start=1):
+        delimiter = DOCSTRING_RE.match(line)
+        if fence is not None:
+            # 與官方 parser 相同：以同種分隔符開頭的行即結束 DocString。
+            if delimiter and delimiter.group(1) == fence:
+                fence = None
+            continue
+        if in_steps and delimiter:
+            fence = delimiter.group(1)
+            fence_line = line_number
+            continue
+        if line.lstrip().startswith(("#", "@", "|")):
+            continue
+        if STEP_SECTION_RE.match(line):
+            in_steps = True
+            continue
+        if NON_STEP_SECTION_RE.match(line):
+            in_steps = False
+            continue
+        if not in_steps:
+            continue
         match = STEP_RE.match(line)
         if match:
             steps.append(
@@ -149,6 +184,8 @@ def parse_feature(path: Path, errors: list[str]) -> list[GherkinStep]:
                     line=line_number,
                 )
             )
+    if fence is not None:
+        errors.append(f"{path}:{fence_line} 的 DocString 未閉合（{fence}）")
     return steps
 
 
