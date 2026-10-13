@@ -43,5 +43,5 @@ disable-model-invocation: true
 
 ## Phase 5 -- 輸出並驗證 tasks.md
 
-1. WRITE 先讀取 `templates/tasks.md` 與 `templates/tasks.example.md`，再依骨架複製結構、參考範例改寫填位符號與具體內容，輸出 `specs/plans/NNN-<slug>/tasks.md`。
+1. WRITE 先讀取 `templates/tasks.md` 與 `templates/tasks.example.md`，再依骨架複製結構、參考範例改寫填位符號與具體內容，輸出 `specs/plans/<slug>/tasks.md`。
 2. READ 回頭檢查：任務皆為 `- [ ] T###`、truth-delta 已納入 Core Inputs、沒有 Impact Audit phase、有新增技術時 Setup 寫清套件名與 smoke-test、Foundational 每則有「只做／不做」、Phase 3 已集中 ALIGN / REMOVE / RED、Feature phase 不含 `[BDD-RED]` / `[BDD-ALIGN]` / `[BDD-REMOVE]`、每個 Feature phase 有 `Test Scope`、Feature `Shared Must Read` 含回追產物、每個 plan-side 產物家族在最後一個消費者之後有 quality gate、truth 參照指向 `specs/truth/**`、plan-side 參照只有回追產出時才出現；若不符合，立即修正。

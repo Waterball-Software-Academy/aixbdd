@@ -1,7 +1,7 @@
 # Rule 1 - Acceptance feature files 必須留在 plan package
 
 - Level: `MUST`
-- `/spec-by-example` 的輸出位置固定為 `specs/plans/NNN-<slug>/features/acceptance/*.feature`。
+- `/spec-by-example` 的輸出位置固定為 `specs/plans/<slug>/features/acceptance/*.feature`。
 - Acceptance Gherkin 是本次迭代的業務驗收旅程，不是 interface truth。
 - 不得把 acceptance feature files 寫入 `specs/truth/features/**`。
 
@@ -10,7 +10,7 @@
 - 這個例子是好的，因為 acceptance 留在當次 plan package。
 
 ```text
-specs/plans/004-room-game-chat/features/acceptance/雙方在場即時互傳.feature
+specs/plans/room-game-chat/features/acceptance/雙方在場即時互傳.feature
 ```
 
 ## Bad Example

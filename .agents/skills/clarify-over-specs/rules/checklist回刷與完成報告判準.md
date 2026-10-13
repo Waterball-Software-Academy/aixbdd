@@ -87,7 +87,7 @@
 
 ```md
 完成回報：
-- 目標 spec：`specs/001-online-pvp-1a2b/spec.md`
+- 目標 spec：`specs/plans/online-pvp-1a2b/spec.md`
 - 進入 `/clarify`：是，2 題
 - 更新 section：使用者故事 3、邊界情況、成功標準
 - checklist：12/16 -> 14/16

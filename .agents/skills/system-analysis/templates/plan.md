@@ -5,7 +5,7 @@
 ### 文件結構（本功能）
 
 ```text
-specs/{{FEATURE_BRANCH}}/
+specs/plans/{{PLAN_SLUG}}/
 ├── plan.md
 ├── {{ARTIFACT_FILE_1}}
 ├── {{ARTIFACT_FILE_2}}

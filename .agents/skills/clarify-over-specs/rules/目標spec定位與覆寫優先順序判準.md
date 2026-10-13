@@ -11,11 +11,11 @@
 
 ```md
 使用者指定：
-- 目標 spec：`specs/003-billing/spec.md`
+- 目標 spec：`specs/plans/billing/spec.md`
 
 決策：
-- `SPEC_FILE` = `specs/003-billing/spec.md`
-- `CHECKLIST_FILE` = `specs/003-billing/checklists/requirements.md`（若存在）
+- `SPEC_FILE` = `specs/plans/billing/spec.md`
+- `CHECKLIST_FILE` = `specs/plans/billing/checklists/requirements.md`（若存在）
 ```
 
 ## Bad Example
@@ -24,10 +24,10 @@
 
 ```md
 使用者指定：
-- 目標 spec：`specs/003-billing/spec.md`
+- 目標 spec：`specs/plans/billing/spec.md`
 
 決策：
-- 改用最近剛打開的 `specs/004-search/spec.md`
+- 改用最近剛打開的 `specs/plans/search/spec.md`
 ```
 
 # Rule 2 - 未顯式指定時，依固定順序自動定位目標 spec
@@ -47,10 +47,10 @@
 ```md
 條件：
 - 本輪剛執行完 `/specify`
-- `/specify` 已回報 `SPEC_FILE = specs/001-online-pvp-1a2b/spec.md`
+- `/specify` 已回報 `SPEC_FILE = specs/plans/online-pvp-1a2b/spec.md`
 
 決策：
-- 直接沿用 `specs/001-online-pvp-1a2b/spec.md`
+- 直接沿用 `specs/plans/online-pvp-1a2b/spec.md`
 - 不再改看 IDE 焦點或最近檔案
 ```
 
@@ -80,8 +80,8 @@
 
 ```md
 本輪 target：
-- `specs/001-online-pvp-1a2b/spec.md`
-- `specs/001-online-pvp-1a2b/checklists/requirements.md`
+- `specs/plans/online-pvp-1a2b/spec.md`
+- `specs/plans/online-pvp-1a2b/checklists/requirements.md`
 
 處理：
 - 只更新這兩份檔案
@@ -94,9 +94,9 @@
 
 ```md
 本輪 target：
-- `specs/001-online-pvp-1a2b/spec.md`
+- `specs/plans/online-pvp-1a2b/spec.md`
 
 處理：
-- 另外順手修改 `specs/002-ranking/spec.md`
+- 另外順手修改 `specs/plans/ranking/spec.md`
 - 也同步調整另一份 checklist
 ```

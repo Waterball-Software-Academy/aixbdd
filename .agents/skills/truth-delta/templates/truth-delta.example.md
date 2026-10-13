@@ -1,6 +1,6 @@
-# Truth Delta: 004-room-game-chat
+# Truth Delta: room-game-chat
 
-**Plan Package**: `specs/plans/004-room-game-chat`
+**Plan Package**: `specs/plans/room-game-chat`
 **Truth Root**: `specs/truth`
 
 ## /technical-research

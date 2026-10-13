@@ -27,7 +27,7 @@ disable-model-invocation: true
 
 1. READ 需要判斷先後與平行分組時，讀取 `rules/Wave依賴排序與平行分組判準.md`。
 2. THINK 依介面依賴、truth 變更風險與可平行程度安排 Wave，確認每個介面至少被一個後續 planner 承接。
-3. WRITE 將系統介面盤點、Wave、分析重點與委派理由寫入 `specs/plans/NNN-<slug>/plan.md`。
+3. WRITE 將系統介面盤點、Wave、分析重點與委派理由寫入 `specs/plans/<slug>/plan.md`。
 
 ## Phase 4 -- 委派 planner 並交付
 

@@ -28,7 +28,7 @@ disable-model-invocation: true
 ## Phase 3 -- 產出 research 與更新 techstack truth
 
 1. READ 需要確認 research 與 techstack 最小必要資訊時，讀取 `rules/研究artifact最小必要資訊判準.md` 與 `rules/techstack-artifact最小必要資訊判準.md`。
-2. WRITE 將 decision-driven 研究內容寫入 `specs/plans/NNN-<slug>/research.md`。
+2. WRITE 將 decision-driven 研究內容寫入 `specs/plans/<slug>/research.md`。
 3. WRITE 依現有 truth 與本輪決策更新 `specs/truth/techstack.md`，使其代表目前系統完整技術堆疊，不保留「以某 plan 為準」的分散說法。
 4. THINK 將 techstack truth 改動整理為語意單元層級的 ADD / MODIFY / DELETE / NOOP 列。
 

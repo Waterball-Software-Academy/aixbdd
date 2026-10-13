@@ -1,6 +1,6 @@
 ---
 name: spec-by-example
-description: 承接新的 plan package 中的 `spec.md`，把需求收斂成 plan-side `features/acceptance/*.feature`。此 skill 只寫入 `specs/plans/NNN-*/features/acceptance/**`，不修改 `specs/truth/**`，也不更新 `truth-delta.md`。
+description: 承接新的 plan package 中的 `spec.md`，把需求收斂成 plan-side `features/acceptance/*.feature`。此 skill 只寫入 `specs/plans/*/features/acceptance/**`，不修改 `specs/truth/**`，也不更新 `truth-delta.md`。
 disable-model-invocation: true
 ---
 
@@ -14,7 +14,7 @@ disable-model-invocation: true
 
 1. READ 讀取使用者需求、呼叫者要求、目標 plan package 的 `spec.md`、既有 `features/acceptance/` 內容，以及必要的 `specs/truth/**` 高層現況。
 2. READ 讀取 `rules/輸出位置與acceptance切檔判準.md`，確認 acceptance feature files 必須輸出到當前 plan package。
-3. WRITE 若 `specs/plans/NNN-<slug>/features/acceptance/` 尚不存在，建立該目錄。
+3. WRITE 若 `specs/plans/<slug>/features/acceptance/` 尚不存在，建立該目錄。
 
 ## Phase 2 -- 收斂驗收旅程與需求缺口
 

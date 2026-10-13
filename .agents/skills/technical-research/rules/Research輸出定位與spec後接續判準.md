@@ -1,7 +1,7 @@
 # Rule 1 - research 留在 plan package
 
 - Level: `MUST`
-- `/technical-research` 的 decision-driven 研究過程必須輸出到 `specs/plans/NNN-<slug>/research.md`。
+- `/technical-research` 的 decision-driven 研究過程必須輸出到 `specs/plans/<slug>/research.md`。
 - `research.md` 描述本次迭代如何做技術決策，可包含替代方案、採納理由與殘餘風險。
 
 ## Good Example
@@ -9,7 +9,7 @@
 - 這個例子是好的，因為研究過程留在本次 plan。
 
 ```text
-specs/plans/004-room-game-chat/research.md
+specs/plans/room-game-chat/research.md
 ```
 
 ## Bad Example
@@ -40,5 +40,5 @@ specs/truth/techstack.md
 - 這個例子是壞的，因為每個 plan package 各自保存一份 techstack truth。
 
 ```text
-specs/plans/004-room-game-chat/techstack.md
+specs/plans/room-game-chat/techstack.md
 ```

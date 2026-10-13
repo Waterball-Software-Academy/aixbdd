@@ -1,6 +1,6 @@
 ---
 name: specify
-description: 將自然語言功能需求轉成新的 plan package。每次執行都建立下一個 `specs/plans/NNN-<slug>/`，產出 `spec.md`、`checklists/requirements.md` 與初始化 `truth-delta.md`；不得改寫舊 plan package，也不得寫入 `specs/truth/**`。
+description: 將自然語言功能需求轉成新的 plan package。每次執行都建立新的 `specs/plans/<slug>/`，產出 `spec.md`、`checklists/requirements.md` 與初始化 `truth-delta.md`；不得改寫舊 plan package，也不得寫入 `specs/truth/**`。
 disable-model-invocation: true
 ---
 
@@ -12,11 +12,11 @@ disable-model-invocation: true
 
 ## Phase 1 -- 建立新的 plan package
 
-1. READ 讀取使用者需求、呼叫者要求、目前 `specs/plans/` 下既有編號與 `specs/truth/**` 的高層現況，確認本次功能主題、範圍、語言要求與明示限制。
+1. READ 讀取使用者需求、呼叫者要求、目前 `specs/plans/` 下既有資料夾與 `specs/plans/index.yaml`，以及 `specs/truth/**` 的高層現況，確認本次功能主題、範圍、語言要求與明示限制。
 2. READ 讀取 `templates/spec.template.md`、`templates/spec.example.md`、`templates/requirements-checklist.md` 與 `templates/requirements-checklist.example.md`，確認 spec 與 checklist 的固定結構。
-3. READ 讀取 `rules/Feature目錄命名與輸出定位判準.md`，確認下一個 `NNN-<slug>` plan package 命名方式與輸出定位。
+3. READ 讀取 `rules/Feature目錄命名與輸出定位判準.md`，確認新的 `<slug>` plan package 命名方式與輸出定位。
 4. READ 讀取 `.agents/constitution/CONSTITUTION.md`、`.agents/constitution/shared.md`、`.agents/constitution/skills/specify/spec.md` 與 `.agents/constitution/skills/specify/requirements-checklist.md`，並將其中規則視為高於本地 artifact 規範的約束。
-5. WRITE 建立 `specs/plans/NNN-<slug>/` 與 `checklists/`，並初始化 `truth-delta.md` 骨架；本 phase 不建立或修改 `specs/truth/**`。
+5. WRITE 只取得一次當下 UTC 時間並保留為 `CREATED_AT`，建立 `specs/plans/<slug>/` 與 `checklists/`，並初始化 `truth-delta.md` 骨架。本步不寫入 index，也不建立或修改 `specs/truth/**`。
 
 ## Phase 2 -- 收斂需求缺口與 clarify 策略
 
@@ -33,9 +33,9 @@ disable-model-invocation: true
 
 ## Phase 4 -- 產出 plan artifacts 並自檢
 
-1. WRITE 將 spec 寫入 `specs/plans/NNN-<slug>/spec.md`，將 checklist 寫入 `specs/plans/NNN-<slug>/checklists/requirements.md`。
+1. WRITE 將 spec 寫入 `specs/plans/<slug>/spec.md`（`建立時間 (UTC)` = `CREATED_AT`），並將 checklist 寫入 `specs/plans/<slug>/checklists/requirements.md`。同一步驟依 Rule 4 將 `{created: CREATED_AT, plan: <slug>, title: <最終 spec 標題>}` 插入 `specs/plans/index.yaml` 的排序位置；`title` 必須與最終 spec 標題相同。若 index 不存在，先依 Rules 5、6 從既有 plan package（包含保留原名稱的 legacy `NNN-<slug>` package）重建；只有完全沒有既有 package 時才建立空清單，再插入新 plan。
 2. READ 讀取 `rules/spec完整性與一致性自檢判準.md`，檢查使用者故事、FR / NFR、驗收情境、邊界情況、成功標準、假設、剩餘 clarify 缺口，以及 checklist「舉例、證明點與狀態公式」四條是否一致；若不符合，立即修正。
 
 ## Phase 5 -- 交付後續 handoff
 
-1. WRITE 向使用者回報 plan package、spec、checklist、truth-delta 路徑、本次是否進入 `/clarify`、仍保留的 `NEEDS CLARIFICATION` 或假設，以及此 plan 是否可進入 `/spec-by-example` 或 `/technical-research`。
+1. WRITE 向使用者回報 plan package、spec、checklist、truth-delta 路徑、index 項目（`created`／`plan`／`title`）、本次是否進入 `/clarify`、仍保留的 `NEEDS CLARIFICATION` 或假設，以及此 plan 是否可進入 `/spec-by-example` 或 `/technical-research`。

@@ -1,4 +1,4 @@
-# Truth Delta: {{PLAN_ID}}
+# Truth Delta: {{PLAN_SLUG}}
 
 **Plan Package**: `{{PLAN_PACKAGE}}`
 **Truth Root**: `specs/truth`

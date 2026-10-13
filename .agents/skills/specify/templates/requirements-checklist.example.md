@@ -2,9 +2,9 @@
 
 **建立日期**: 2026-07-22
 
-**Feature Directory**: `specs/001-online-pvp-1a2b`
+**Feature Directory**: `specs/plans/online-pvp-1a2b`
 
-**Spec 路徑**: `specs/001-online-pvp-1a2b/spec.md`
+**Spec 路徑**: `specs/plans/online-pvp-1a2b/spec.md`
 
 ## 使用方式
 

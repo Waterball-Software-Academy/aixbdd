@@ -5,7 +5,7 @@
 ### 文件結構（本功能）
 
 ```text
-specs/001-course-subscription-checkout/
+specs/plans/course-subscription-checkout/
 ├── plan.md
 ├── research.md
 ├── data-model.md

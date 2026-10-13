@@ -34,7 +34,7 @@ Parallel Hint: T008–T014 各派一個獨立 subagent；T015 等全部回來再
 - 這個例子是好的，因為 prompt 指向任務本身。
 
 ```md
-請讀 `specs/plans/004-room-chat-adjustment/tasks.md` 的 T008。
+請讀 `specs/plans/room-chat-adjustment/tasks.md` 的 T008。
 你的職責就是開發此任務。
 若目標檔已被其他 subagent 改過，先讀最新內容，自己 merge 這條 DSL 的改動。
 ```

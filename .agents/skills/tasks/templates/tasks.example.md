@@ -1,6 +1,6 @@
 # Tasks: 房間聊天規格調整
 
-**Plan Package**: `specs/plans/004-room-chat-adjustment`
+**Plan Package**: `specs/plans/room-chat-adjustment`
 **Core Inputs**: `spec.md`, `plan.md`, `research.md`, `truth-delta.md`, `specs/truth/techstack.md`, `specs/truth/contracts/**`, `specs/truth/data/**`, `specs/truth/features/backend/**`, `specs/truth/features/frontend/**`, `ui/**`
 
 ## Task Binding Contract

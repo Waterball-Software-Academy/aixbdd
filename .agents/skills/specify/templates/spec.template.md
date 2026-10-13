@@ -1,8 +1,10 @@
 # 功能規格：{{FEATURE_TITLE}}
 
-**功能分支**: `{{FEATURE_BRANCH}}`
+**Plan**: `{{PLAN_SLUG}}`
 
-**建立日期**: {{CREATED_DATE}}
+**建立時間 (UTC)**: {{CREATED_AT}}
+
+<!-- 此值等於 package 資料夾名稱，且必須與 specs/plans/index.yaml 中本 plan 項目的 plan 欄位相同。 -->
 
 **狀態**: 草稿
 
